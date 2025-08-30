@@ -49,7 +49,7 @@
 
         <!-- Soil Monitoring Card -->
         <div class="col-xl-4 col-md-6">
-            <a href="#" class="text-decoration-none">
+            <a href="{{ route('soil-test') }}" class="text-decoration-none">
                 <div class="card card-h-100 text-center">
                     <div class="card-body">
                         <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
