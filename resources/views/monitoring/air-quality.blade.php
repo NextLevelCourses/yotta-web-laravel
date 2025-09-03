@@ -16,5 +16,6 @@
         </div>
     </div>
 
-    <livewire:air-quality-livewire />
+    <script src="{{ asset('assets/js/pages/air-quality.js') }}"></script> 
+    <livewire:air-quality-liveware />
 @endsection

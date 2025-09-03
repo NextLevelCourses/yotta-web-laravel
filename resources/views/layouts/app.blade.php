@@ -113,8 +113,6 @@
 <script src="{{ asset('assets/libs/echarts/echarts.min.js') }}"></script> 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
-<!-- <script src="{{ asset('assets/js/pages/air-quality.js') }}"></script>  -->
-<script src="{{ asset('assets/js/pages/soil-test.js') }}"></script> 
 <script src="{{ asset('assets/js/app.js') }}"></script>
     
     @livewireScripts

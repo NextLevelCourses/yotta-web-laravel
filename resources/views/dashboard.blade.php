@@ -1,7 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    <!-- start page title -->
     <div class="row">
         <div class="col-12">
             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
@@ -16,72 +15,156 @@
             </div>
         </div>
     </div>
-    <!-- end page title -->
-
     {{-- Introductory text --}}
     <div class="row">
         <div class="col-12">
             <div class="py-3">
                 <p class="text-muted">
-                    Welcome to your IoT Monitoring Hub. Please select a system below to view its real-time data and analytics.
+                    Selamat datang di Hub Monitoring IoT Anda. Silakan pilih sistem di bawah ini untuk melihat data dan analitik real-time.
                 </p>
             </div>
         </div>
     </div>
 
-    <!-- Container for monitoring system cards -->
     <div class="row">
-        <!-- Air Quality Monitoring Card -->
         <div class="col-xl-4 col-md-6">
             <a href="{{ route('air-quality') }}" class="text-decoration-none">
                 <div class="card card-h-100 text-center">
                     <div class="card-body">
                         <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
-                             style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(85, 110, 230, 0.1);">
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(85, 110, 230, 0.1);">
                             <i class="fas fa-wind fa-2x text-primary"></i>
                         </div>
-                        <h5 class="card-title">Air Quality</h5>
-                        <p class="card-text text-muted">View real-time pollution and air quality data from sensors.</p>
+                        <h5 class="card-title">Kualitas Udara</h5>
+                        <p class="card-text text-muted">Lihat data polusi dan kualitas udara secara real-time dari sensor.</p>
                     </div>
                 </div>
             </a>
         </div>
 
-        <!-- Soil Monitoring Card -->
         <div class="col-xl-4 col-md-6">
             <a href="{{ route('soil-test') }}" class="text-decoration-none">
                 <div class="card card-h-100 text-center">
                     <div class="card-body">
                         <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
-                             style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(52, 195, 143, 0.1);">
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(52, 195, 143, 0.1);">
                             <i class="fas fa-seedling fa-2x text-success"></i>
                         </div>
-                        <h5 class="card-title">Soil Monitoring</h5>
-                        <p class="card-text text-muted">Monitor soil moisture, temperature, and nutrient levels.</p>
+                        <h5 class="card-title">Monitoring Tanah</h5>
+                        <p class="card-text text-muted">Pantau kelembaban, suhu, dan tingkat nutrisi tanah.</p>
                     </div>
                 </div>
             </a>
         </div>
 
-        <!-- Solar Panel Monitoring Card -->
         <div class="col-xl-4 col-md-6">
             <a href="#" class="text-decoration-none">
                 <div class="card card-h-100 text-center">
                     <div class="card-body">
                         <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
-                             style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(241, 180, 76, 0.1);">
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(241, 180, 76, 0.1);">
                             <i class="fas fa-solar-panel fa-2x text-warning"></i>
                         </div>
-                        <h5 class="card-title">Solar Panel</h5>
-                        <p class="card-text text-muted">Track energy production and overall panel efficiency.</p>
+                        <h5 class="card-title">Panel Surya</h5>
+                        <p class="card-text text-muted">Lacak produksi energi dan efisiensi panel secara keseluruhan.</p>
                     </div>
                 </div>
             </a>
         </div>
-    </div>
-    <!-- end row -->
-@endsection
 
+        <div class="col-xl-4 col-md-6">
+            <a href="#" class="text-decoration-none">
+                <div class="card card-h-100 text-center">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(23, 162, 184, 0.1);">
+                            <i class="fas fa-tint fa-2x text-info"></i>
+                        </div>
+                        <h5 class="card-title">Kualitas Air</h5>
+                        <p class="card-text text-muted">Analisis tingkat kemurnian, pH, dan suhu air.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-xl-4 col-md-6">
+            <a href="#" class="text-decoration-none">
+                <div class="card card-h-100 text-center">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(244, 106, 106, 0.1);">
+                            <i class="fas fa-bolt fa-2x text-danger"></i>
+                        </div>
+                        <h5 class="card-title">Konsumsi Energi</h5>
+                        <p class="card-text text-muted">Monitor penggunaan daya di berbagai perangkat dan lokasi.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-4 col-md-6">
+            <a href="#" class="text-decoration-none">
+                <div class="card card-h-100 text-center">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(108, 117, 125, 0.1);">
+                            <i class="fas fa-map-marker-alt fa-2x text-secondary"></i>
+                        </div>
+                        <h5 class="card-title">Pelacakan Aset</h5>
+                        <p class="card-text text-muted">Lacak lokasi dan status aset berharga secara real-time.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-4 col-md-6">
+            <a href="#" class="text-decoration-none">
+                <div class="card card-h-100 text-center">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(255, 193, 7, 0.15);">
+                            <i class="fas fa-lightbulb fa-2x text-warning"></i>
+                        </div>
+                        <h5 class="card-title">Pencahayaan Cerdas</h5>
+                        <p class="card-text text-muted">Kontrol dan otomatisasi sistem pencahayaan untuk efisiensi.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-xl-4 col-md-6">
+            <a href="#" class="text-decoration-none">
+                <div class="card card-h-100 text-center">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(52, 58, 64, 0.1);">
+                            <i class="fas fa-shield-alt fa-2x text-dark"></i>
+                        </div>
+                        <h5 class="card-title">Sistem Keamanan</h5>
+                        <p class="card-text text-muted">Pantau sensor gerak, kamera, dan status akses pintu.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-xl-4 col-md-6">
+            <a href="#" class="text-decoration-none">
+                <div class="card card-h-100 text-center">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-center align-items-center mb-3 mx-auto"
+                            style="width: 60px; height: 60px; border-radius: 50%; background-color: rgba(40, 167, 69, 0.1);">
+                            <i class="fas fa-leaf fa-2x text-success"></i>
+                        </div>
+                        <h5 class="card-title">Sistem Hidroponik</h5>
+                        <p class="card-text text-muted">Kelola nutrisi, pH, dan kondisi lingkungan untuk tanaman.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+    </div>
+    @endsection
+<!-- 
 @push('styles')
 <style>
     /* Card hover effect */
@@ -98,4 +181,4 @@
         text-decoration: none;
     }
 </style>
-@endpush
+@endpush -->
