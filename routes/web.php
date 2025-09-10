@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitoring, bukan Api
+use App\Http\Controllers\Monitoring\SoilManagController;
 use App\Http\Controllers\Monitoring\SoilTestController;
 
 // Halaman utama (cukup satu kali)
@@ -29,6 +30,7 @@ Route::middleware('auth')->group(function () {
     // Monitoring Air Quality (hanya bisa diakses kalau sudah login)
     Route::get('/monitoring/air-quality', [AirQualityController::class, 'index'])->name('air-quality');
     Route::get('/monitoring/soil-test', [SoilTestController::class, 'index'])->name('soil-test');
+    Route::get('/monitoring/soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');
 });
 
 // Jangan lupa tambahkan rute untuk admin di sini nanti

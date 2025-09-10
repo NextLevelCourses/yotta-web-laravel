@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use App\Actions\Mqtt\PublishMessage;
 
-class AirQualityLiveware extends Component
+class AirQualityLivewire extends Component
 {
     public $temperature = 'N/A';
     public $humidity = 'N/A';

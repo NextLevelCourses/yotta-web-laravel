@@ -1,192 +1,398 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // --------------------------------------------------
-    // ELEMEN HTML
-    // --------------------------------------------------
-    const suhuKnob = $("#suhuKnob");
-    const kelembabanKnob = $("#kelembabanKnob");
-    const airQualityKnob = $("#airQualityKnob");
-    const soilMoistureKnob = $("#soilMoistureKnob");
-    const lastUpdateEl = document.getElementById("lastUpdate");
-    const fanStatusEl = document.getElementById("fanStatus");
-    const btnOn = document.getElementById("btnOn");
-    const btnOff = document.getElementById("btnOff");
-    const btnDownload = document.getElementById("btnDownload");
+document.addEventListener("livewire:init", () => {
+    let gauges = {};
+    let charts = {};
 
-    // --------------------------------------------------
-    // INISIALISASI ECHARTS
-    // --------------------------------------------------
-    const chartDom = document.getElementById("sensorChart");
-    // Pastikan elemen chart ada sebelum inisialisasi
-    if (!chartDom) return;
-
-    const myChart = echarts.init(chartDom);
-    const chartOption = {
-        title: { text: "Grafik Sensor Real-time" },
-        tooltip: { trigger: "axis" },
+    const gaugeOptions = (title, unit, min, max, zones) => ({
+        responsive: true,
+        maintainAspectRatio: false,
         legend: {
-            data: ["Suhu", "Kelembaban", "Kualitas Udara", "Kelembaban Tanah"],
+            display: false,
         },
-        xAxis: { type: "category", boundaryGap: false, data: [] },
-        yAxis: [
-            {
-                type: "value",
-                name: "Suhu (°C)",
-                min: 0,
-                max: 50,
-                position: "left",
+        title: {
+            display: true,
+            text: title,
+        },
+        layout: {
+            padding: {
+                bottom: 30,
             },
-            {
-                type: "value",
-                name: "Kelembaban/Tanah (%)",
-                min: 0,
-                max: 100,
-                position: "right",
+        },
+        needle: {
+            radiusPercentage: 2,
+            widthPercentage: 3.2,
+            lengthPercentage: 80,
+            color: "rgba(0, 0, 0, 1)",
+        },
+        valueLabel: {
+            display: true,
+            formatter: (value) => `${value} ${unit}`,
+            color: "rgba(0, 0, 0, 1)",
+            fontSize: 24,
+        },
+        animation: {
+            duration: 1000,
+            easing: "easeOutQuart",
+        },
+        scales: {
+            xAxes: [
+                {
+                    display: false,
+                },
+            ],
+            yAxes: [
+                {
+                    display: false,
+                    ticks: {
+                        min,
+                        max,
+                    },
+                    gridLines: {
+                        drawBorder: false,
+                        display: false,
+                    },
+                },
+            ],
+        },
+        plugins: {
+            gauge: {
+                data: zones,
             },
-            {
-                type: "value",
-                name: "Kualitas Udara",
-                position: "left",
-                offset: 50,
-            },
-        ],
-        series: [
-            {
-                name: "Suhu",
-                type: "line",
-                yAxisIndex: 0,
-                data: [],
-                smooth: true,
-            },
-            {
-                name: "Kelembaban",
-                type: "line",
-                yAxisIndex: 1,
-                data: [],
-                smooth: true,
-            },
-            {
-                name: "Kualitas Udara",
-                type: "line",
-                yAxisIndex: 2,
-                data: [],
-                smooth: true,
-            },
-            {
-                name: "Kelembaban Tanah",
-                type: "line",
-                yAxisIndex: 1,
-                data: [],
-                smooth: true,
-            },
-        ],
-    };
-    myChart.setOption(chartOption);
-
-    // --------------------------------------------------
-    // FUNGSI UNTUK UPDATE UI
-    // --------------------------------------------------
-    function updateSensorReadings(data) {
-        if (!data) return;
-
-        const now = new Date();
-        const timeString = now.toLocaleTimeString("id-ID");
-
-        // Update Knobs
-        suhuKnob.val(data.temperature || 0).trigger("change");
-        kelembabanKnob.val(data.humidity || 0).trigger("change");
-        airQualityKnob.val(data.air_quality || 0).trigger("change");
-        soilMoistureKnob.val(data.soil_moisture || 0).trigger("change");
-
-        // Update Teks
-        lastUpdateEl.innerText = "Update Terakhir: " + timeString;
-        updateFanStatusUI(data.fan_status);
-
-        // Update Grafik
-        const maxDataPoints = 30;
-        const xAxisData = chartOption.xAxis.data;
-
-        xAxisData.push(timeString);
-        chartOption.series[0].data.push(data.temperature || null);
-        chartOption.series[1].data.push(data.humidity || null);
-        chartOption.series[2].data.push(data.air_quality || null);
-        chartOption.series[3].data.push(data.soil_moisture || null);
-
-        if (xAxisData.length > maxDataPoints) {
-            xAxisData.shift();
-            chartOption.series.forEach((series) => series.data.shift());
-        }
-        myChart.setOption(chartOption);
-    }
-
-    function updateFanStatusUI(status) {
-        if (status) {
-            fanStatusEl.innerText = "ON";
-            fanStatusEl.className = "fw-bold text-success ms-2";
-        } else {
-            fanStatusEl.innerText = "OFF";
-            fanStatusEl.className = "fw-bold text-danger ms-2";
-        }
-    }
-
-    // --------------------------------------------------
-    // INTERAKSI DENGAN LIVEWIRE
-    // --------------------------------------------------
-    // Mendengarkan event 'sensorDataUpdated' yang dikirim dari komponen Livewire
-    Livewire.on("sensorDataUpdated", (sensorData) => {
-        updateSensorReadings(sensorData);
+        },
     });
 
-    // Mengirim event ke komponen Livewire untuk mengontrol kipas
-    if (btnOn)
-        btnOn.addEventListener("click", () =>
-            Livewire.emit("controlFan", true)
-        );
-    if (btnOff)
-        btnOff.addEventListener("click", () =>
-            Livewire.emit("controlFan", false)
-        );
+    const initGauge = (id, title, unit, min, max, zones) => {
+        const ctx = document.getElementById(id).getContext("2d");
+        const data = {
+            datasets: [
+                {
+                    data: [0],
+                    backgroundColor: zones.map((zone) => zone.color),
+                },
+            ],
+        };
+        const config = {
+            type: "gauge",
+            data: data,
+            options: gaugeOptions(title, unit, min, max, zones),
+        };
+        return new Chart(ctx, config);
+    };
 
-    // --------------------------------------------------
-    // FUNGSI DOWNLOAD DATA CSV
-    // --------------------------------------------------
-    function downloadDataAsCSV() {
-        const headers = [
-            "Waktu",
-            "Suhu (C)",
-            "Kelembaban (%)",
-            "Kualitas Udara",
-            "Kelembaban Tanah (%)",
-        ];
-        const xAxisData = chartOption.xAxis.data;
+    const initChart = (id, title, unit, color, max) => {
+        const ctx = document.getElementById(id).getContext("2d");
+        const config = {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: title,
+                        backgroundColor: color,
+                        borderColor: color,
+                        data: [],
+                        fill: false,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                title: {
+                    display: true,
+                    text: title,
+                },
+                scales: {
+                    xAxes: [
+                        {
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: "Waktu",
+                            },
+                        },
+                    ],
+                    yAxes: [
+                        {
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: `Nilai (${unit})`,
+                            },
+                            ticks: {
+                                suggestedMin: 0,
+                                suggestedMax: max,
+                            },
+                        },
+                    ],
+                },
+            },
+        };
+        return new Chart(ctx, config);
+    };
 
-        const rows = xAxisData.map((time, index) =>
-            [
-                time,
-                chartOption.series[0].data[index], // Suhu
-                chartOption.series[1].data[index], // Kelembaban
-                chartOption.series[2].data[index], // Kualitas Udara
-                chartOption.series[3].data[index], // Kelembaban Tanah
-            ].join(",")
-        );
+    // Initialize all gauges
+    gauges["suhuGauge"] = initGauge("suhuGauge", "Suhu", "°C", 0, 50, [
+        { value: 15, color: "#3399ff" },
+        { value: 30, color: "#33cc33" },
+        { value: 50, color: "#ff4d4d" },
+    ]);
+    gauges["kelembabanGauge"] = initGauge(
+        "kelembabanGauge",
+        "Kelembaban",
+        "%",
+        0,
+        100,
+        [
+            { value: 30, color: "#ff4d4d" },
+            { value: 70, color: "#33cc33" },
+            { value: 100, color: "#ff4d4d" },
+        ]
+    );
+    gauges["ecGauge"] = initGauge("ecGauge", "EC", "uS/cm", 0, 2000, [
+        { value: 500, color: "#ff4d4d" },
+        { value: 1500, color: "#33cc33" },
+        { value: 2000, color: "#ff4d4d" },
+    ]);
+    gauges["phGauge"] = initGauge("phGauge", "pH", "", 0, 14, [
+        { value: 5, color: "#ff4d4d" },
+        { value: 9, color: "#33cc33" },
+        { value: 14, color: "#ff4d4d" },
+    ]);
+    gauges["nitrogenGauge"] = initGauge(
+        "nitrogenGauge",
+        "Nitrogen",
+        "mg/kg",
+        0,
+        500,
+        [
+            { value: 100, color: "#ff4d4d" },
+            { value: 400, color: "#33cc33" },
+            { value: 500, color: "#ff4d4d" },
+        ]
+    );
+    gauges["fosforGauge"] = initGauge(
+        "fosforGauge",
+        "Fosfor",
+        "mg/kg",
+        0,
+        500,
+        [
+            { value: 100, color: "#ff4d4d" },
+            { value: 400, color: "#33cc33" },
+            { value: 500, color: "#ff4d4d" },
+        ]
+    );
+    gauges["kaliumGauge"] = initGauge(
+        "kaliumGauge",
+        "Kalium",
+        "mg/kg",
+        0,
+        500,
+        [
+            { value: 100, color: "#ff4d4d" },
+            { value: 400, color: "#33cc33" },
+            { value: 500, color: "#ff4d4d" },
+        ]
+    );
 
-        const csvContent = [headers.join(","), ...rows].join("\n");
+    // Initialize all line charts
+    charts["suhuChart"] = initChart("suhuChart", "Suhu", "°C", "#ff4d4d", 50);
+    charts["kelembabanChart"] = initChart(
+        "kelembabanChart",
+        "Kelembaban",
+        "%",
+        "#3399ff",
+        100
+    );
+    charts["ecChart"] = initChart("ecChart", "EC", "uS/cm", "#33cc33", 2000);
+    charts["phChart"] = initChart("phChart", "pH", "", "#ffcc00", 14);
+    charts["nitrogenChart"] = initChart(
+        "nitrogenChart",
+        "Nitrogen",
+        "mg/kg",
+        "#9933ff",
+        500
+    );
+    charts["fosforChart"] = initChart(
+        "fosforChart",
+        "Fosfor",
+        "mg/kg",
+        "#ff9933",
+        500
+    );
+    charts["kaliumChart"] = initChart(
+        "kaliumChart",
+        "Kalium",
+        "mg/kg",
+        "#009999",
+        500
+    );
 
-        const blob = new Blob([csvContent], {
-            type: "text/csv;charset=utf-8;",
+    // Livewire listener to update charts
+    Livewire.on("updateKnobs", (data) => {
+        Object.keys(data[0]).forEach((key) => {
+            const value = data[0][key];
+            if (
+                value !== null &&
+                value !== undefined &&
+                value !== "--" &&
+                !isNaN(parseFloat(value))
+            ) {
+                // Update gauge charts
+                const gaugeKey = `${key}Gauge`;
+                if (gauges[gaugeKey]) {
+                    gauges[gaugeKey].data.datasets[0].data = [
+                        parseFloat(value),
+                    ];
+                    gauges[gaugeKey].update();
+                }
+
+                // Update line charts
+                const chartKey = `${key}Chart`;
+                if (charts[chartKey]) {
+                    const now = new Date();
+                    charts[chartKey].data.labels.push(now.toLocaleTimeString());
+                    charts[chartKey].data.datasets[0].data.push(
+                        parseFloat(value)
+                    );
+
+                    // Batasi jumlah data di grafik
+                    const maxDataPoints = 20;
+                    if (charts[chartKey].data.labels.length > maxDataPoints) {
+                        charts[chartKey].data.labels.shift();
+                        charts[chartKey].data.datasets[0].data.shift();
+                    }
+                    charts[chartKey].update();
+                }
+            }
         });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        const filename = `sensor_data_${new Date()
-            .toISOString()
-            .slice(0, 10)}.csv`;
+    });
 
-        link.setAttribute("href", url);
-        link.setAttribute("download", filename);
-        link.style.visibility = "hidden";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+    // Cleanup and re-init on livewire:update
+    Livewire.on("livewire:update", () => {
+        // Destroy existing gauges
+        Object.keys(gauges).forEach((key) => {
+            if (gauges[key]) {
+                gauges[key].destroy();
+            }
+        });
+        gauges = {};
+        // Destroy existing charts
+        Object.keys(charts).forEach((key) => {
+            if (charts[key]) {
+                charts[key].destroy();
+            }
+        });
+        charts = {};
 
-    if (btnDownload) btnDownload.addEventListener("click", downloadDataAsCSV);
+        // Re-initialize all gauges
+        gauges["suhuGauge"] = initGauge("suhuGauge", "Suhu", "°C", 0, 50, [
+            { value: 15, color: "#3399ff" },
+            { value: 30, color: "#33cc33" },
+            { value: 50, color: "#ff4d4d" },
+        ]);
+        gauges["kelembabanGauge"] = initGauge(
+            "kelembabanGauge",
+            "Kelembaban",
+            "%",
+            0,
+            100,
+            [
+                { value: 30, color: "#ff4d4d" },
+                { value: 70, color: "#33cc33" },
+                { value: 100, color: "#ff4d4d" },
+            ]
+        );
+        gauges["ecGauge"] = initGauge("ecGauge", "EC", "uS/cm", 0, 2000, [
+            { value: 500, color: "#ff4d4d" },
+            { value: 1500, color: "#33cc33" },
+            { value: 2000, color: "#ff4d4d" },
+        ]);
+        gauges["phGauge"] = initGauge("phGauge", "pH", "", 0, 14, [
+            { value: 5, color: "#ff4d4d" },
+            { value: 9, color: "#33cc33" },
+            { value: 14, color: "#ff4d4d" },
+        ]);
+        gauges["nitrogenGauge"] = initGauge(
+            "nitrogenGauge",
+            "Nitrogen",
+            "mg/kg",
+            0,
+            500,
+            [
+                { value: 100, color: "#ff4d4d" },
+                { value: 400, color: "#33cc33" },
+                { value: 500, color: "#ff4d4d" },
+            ]
+        );
+        gauges["fosforGauge"] = initGauge(
+            "fosforGauge",
+            "Fosfor",
+            "mg/kg",
+            0,
+            500,
+            [
+                { value: 100, color: "#ff4d4d" },
+                { value: 400, color: "#33cc33" },
+                { value: 500, color: "#ff4d4d" },
+            ]
+        );
+        gauges["kaliumGauge"] = initGauge(
+            "kaliumGauge",
+            "Kalium",
+            "mg/kg",
+            0,
+            500,
+            [
+                { value: 100, color: "#ff4d4d" },
+                { value: 400, color: "#33cc33" },
+                { value: 500, color: "#ff4d4d" },
+            ]
+        );
+
+        // Re-initialize all line charts
+        charts["suhuChart"] = initChart(
+            "suhuChart",
+            "Suhu",
+            "°C",
+            "#ff4d4d",
+            50
+        );
+        charts["kelembabanChart"] = initChart(
+            "kelembabanChart",
+            "Kelembaban",
+            "%",
+            "#3399ff",
+            100
+        );
+        charts["ecChart"] = initChart(
+            "ecChart",
+            "EC",
+            "uS/cm",
+            "#33cc33",
+            2000
+        );
+        charts["phChart"] = initChart("phChart", "pH", "", "#ffcc00", 14);
+        charts["nitrogenChart"] = initChart(
+            "nitrogenChart",
+            "Nitrogen",
+            "mg/kg",
+            "#9933ff",
+            500
+        );
+        charts["fosforChart"] = initChart(
+            "fosforChart",
+            "Fosfor",
+            "mg/kg",
+            "#ff9933",
+            500
+        );
+        charts["kaliumChart"] = initChart(
+            "kaliumChart",
+            "Kalium",
+            "mg/kg",
+            "#009999",
+            500
+        );
+    });
 });

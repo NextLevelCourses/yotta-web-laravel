@@ -1,56 +1,94 @@
 <div wire:poll.5s="fetchData">
-    {{-- Card utama untuk membungkus semua elemen --}}
-    <div class="card">
-        <div class="card-header">
-            <h4 class="card-title mb-0">Air Quality Monitoring</h4>
-        </div><!-- end card header -->
+    <div class="card shadow-lg rounded-3 border-0">
+        <div class="card-header bg-primary text-white rounded-top-3">
+            <h4 class="card-title mb-0 fw-bold">🌍 Soil Quality Monitoring</h4>
+        </div>
+        <div class="card-body p-4">
 
-        <div class="card-body">
-            <div class="row text-center">
+            @php
+                $circumference = 2 * pi() * 50; // keliling lingkaran untuk radius 50
+                $sensors = [
+                    ['label' => '🌡️ Suhu (°C)', 'value' => $temperature, 'max' => 50, 'color' => '#ff4d4d', 'unit' => '°C'],
+                    ['label' => '💧 Kelembaban (%)', 'value' => $humidity, 'max' => 100, 'color' => '#3399ff', 'unit' => '%'],
+                    ['label' => '⚡ EC (µS/cm)', 'value' => $ec, 'max' => 2000, 'color' => '#33cc33', 'unit' => 'µS/cm'],
+                    ['label' => '🧪 pH', 'value' => $ph, 'max' => 14, 'color' => '#ffcc00', 'unit' => '']
+                ];
+            @endphp
 
-                <!-- Data Suhu -->
-                <div class="col-sm-4">
-                    <div class="card bg-light border">
-                        <div class="card-body">
-                            <h5 class="text-muted mb-3">🌡️ Suhu</h5>
-                            <h1 class="mb-0 fw-bold display-5">{{ $temperature }}</h1>
-                            <span class="fs-4 text-muted">°C</span>
-                        </div>
+            {{-- Sensor Utama --}}
+            <div class="row g-4 text-center">
+                @foreach ($sensors as $s)
+                <div class="col-md-3 col-6">
+                    <div class="bg-light rounded-3 p-3 shadow-sm">
+                        @php
+                            $val = is_numeric($s['value']) ? min($s['value'], $s['max']) : 0;
+                            $dash = ($val / $s['max']) * $circumference;
+                        @endphp
+                        <svg width="120" height="120" viewBox="0 0 120 120" style="transform: rotate(-125deg);">
+                            <circle cx="60" cy="60" r="50" fill="transparent" stroke="#e5e7eb" stroke-width="10" />
+                            <circle cx="60" cy="60" r="50" fill="transparent" 
+                                stroke="{{ $s['color'] }}" stroke-width="10" 
+                                stroke-dasharray="{{ $dash }} {{ $circumference }}"
+                                stroke-linecap="round">
+                                <animate attributeName="stroke-dasharray" 
+                                    from="0 {{ $circumference }}" 
+                                    to="{{ $dash }} {{ $circumference }}" 
+                                    dur="1s" fill="freeze" />
+                            </circle>
+                            <text x="60" y="60" fill="{{ $s['color'] }}" font-size="18" font-weight="bold" text-anchor="middle" alignment-baseline="middle" transform="rotate(125, 60, 60)">
+                                {{ is_numeric($s['value']) ? $s['value'] . $s['unit'] : $s['value'] }}
+                            </text>
+                        </svg>
+                        <div class="mt-2 fw-semibold">{{ $s['label'] }}</div>
                     </div>
-                </div><!-- end col -->
-
-                <!-- Data Kelembaban -->
-                <div class="col-sm-4">
-                    <div class="card bg-light border">
-                        <div class="card-body">
-                            <h5 class="text-muted mb-3">💧 Kelembaban</h5>
-                            <h1 class="mb-0 fw-bold display-5">{{ $humidity }}</h1>
-                            <span class="fs-4 text-muted">%</span>
-                        </div>
-                    </div>
-                </div><!-- end col -->
-
-                <!-- Data Kualitas Udara -->
-                <div class="col-sm-4">
-                    <div class="card bg-light border">
-                        <div class="card-body">
-                            <h5 class="text-muted mb-3">🌫️ Kualitas Udara</h5>
-                            <h1 class="mb-0 fw-bold display-5">{{ $airQuality }}</h1>
-                            <span class="fs-4 text-muted">Index</span>
-                        </div>
-                    </div>
-                </div><!-- end col -->
-
-            </div><!-- end row -->
-
-            {{-- Indikator loading saat Livewire memperbarui data --}}
-            <div class="text-center mt-3" wire:loading>
-                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
                 </div>
-                <span class="text-muted ms-1">Memperbarui data dari sensor...</span>
+                @endforeach
             </div>
 
-        </div><!-- end card-body -->
-    </div><!-- end card -->
+            {{-- Nutrisi NPK --}}
+            <h5 class="mt-5 mb-3 fw-bold text-primary">🌱 Nutrient Levels (NPK)</h5>
+            <div class="row g-4 text-center">
+                @php
+                    $npks = [
+                        ['label' => '🌱 Nitrogen (mg/kg)', 'value' => $nitrogen, 'max' => 500, 'color' => '#9933ff', 'unit' => 'mg/kg'],
+                        ['label' => '🌾 Fosfor (mg/kg)', 'value' => $fosfor, 'max' => 500, 'color' => '#ff9933', 'unit' => 'mg/kg'],
+                        ['label' => '🥔 Kalium (mg/kg)', 'value' => $kalium, 'max' => 500, 'color' => '#009999', 'unit' => 'mg/kg']
+                    ];
+                @endphp
+
+                @foreach ($npks as $n)
+                <div class="col-md-4 col-12">
+                    <div class="bg-light rounded-3 p-3 shadow-sm">
+                        @php
+                            $val = is_numeric($n['value']) ? min($n['value'], $n['max']) : 0;
+                            $dash = ($val / $n['max']) * $circumference;
+                        @endphp
+                        <svg width="120" height="120" viewBox="0 0 120 120" style="transform: rotate(-125deg);">
+                            <circle cx="60" cy="60" r="50" fill="transparent" stroke="#e5e7eb" stroke-width="10" />
+                            <circle cx="60" cy="60" r="50" fill="transparent" 
+                                stroke="{{ $n['color'] }}" stroke-width="10" 
+                                stroke-dasharray="{{ $dash }} {{ $circumference }}"
+                                stroke-linecap="round">
+                                <animate attributeName="stroke-dasharray" 
+                                    from="0 {{ $circumference }}" 
+                                    to="{{ $dash }} {{ $circumference }}" 
+                                    dur="1s" fill="freeze" />
+                            </circle>
+                            <text x="60" y="60" fill="{{ $n['color'] }}" font-size="18" font-weight="bold" text-anchor="middle" alignment-baseline="middle" transform="rotate(125, 60, 60)">
+                                {{ is_numeric($n['value']) ? $n['value'] . $n['unit'] : $n['value'] }}
+                            </text>
+                        </svg>
+                        <div class="mt-2 fw-semibold">{{ $n['label'] }}</div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+
+            {{-- Loading --}}
+            <div class="text-center mt-4" wire:loading>
+                <div class="spinner-border spinner-border-sm text-primary"></div>
+                <span class="text-muted ms-2">Memperbarui data dari sensor...</span>
+            </div>
+        </div>
+    </div>
 </div>
