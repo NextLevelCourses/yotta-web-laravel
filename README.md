@@ -61,7 +61,7 @@
 
 ## Fix Performance
 
-1. **Import .env:**
+1. **artisan fix:**
 
     ```bash
     php artisan optimize
