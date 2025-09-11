@@ -27,8 +27,20 @@
     ```
 
 2. **Install composer:**
+
     ```bash
     composer install
+    ```
+
+3. **if composer error install(optional):**
+
+    ```bash
+    composer update
+    ```
+
+4. **validate dependancy has installed or not(optional):**
+    ```bash
+    composer show | grep <dependancy> ex:firebase | (composer show | grep firebase)
     ```
 
 ## Database
