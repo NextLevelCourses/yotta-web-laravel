@@ -10,7 +10,11 @@ class SoilTestLivewire extends Component
 {
     public $temperature = '--';
     public $humidity = '--';
-    public $airQuality = '--';
+    public $ec = '--';
+    public $ph = '--';
+    public $nitrogen = '--';
+    public $fosfor = '--';
+    public $kalium = '--';
 
     public function mount()
     {
@@ -24,47 +28,48 @@ class SoilTestLivewire extends Component
             $firestore = app('firebase.firestore');
             $database = $firestore->database();
 
-            // [PERBAIKAN] Path disesuaikan agar cocok persis dengan struktur di Firestore
-            $snapshot = $database->collection('artifacts')
-                                 ->document('default-app-id')
-                                 ->collection('public')
-                                 ->document('data')
-                                 ->collection('sensor')
-                                 ->document('latest')
-                                 ->snapshot();
+            // Ambil dari path: soil_data/latest
+            $snapshot = $database->collection('soil_data')
+                                ->document('latest')
+                                ->snapshot();
 
             if ($snapshot->exists()) {
                 $data = $snapshot->data();
 
-                $this->temperature = isset($data['temperature'])
-                    ? number_format((float) $data['temperature'], 1)
-                    : '--';
+                $this->temperature = $data['temperature'] ?? '--';
+                $this->humidity = $data['humidity'] ?? '--';
+                $this->ec = $data['ec'] ?? '--';
+                $this->ph = $data['ph'] ?? '--';
+                $this->nitrogen = $data['nitrogen'] ?? '--';
+                $this->fosfor = $data['fosfor'] ?? '--';
+                $this->kalium = $data['kalium'] ?? '--';
 
-                $this->humidity = isset($data['humidity'])
-                    ? number_format((float) $data['humidity'], 1)
-                    : '--';
-
-                $this->airQuality = $data['airQuality'] ?? '--';
+                // Kirim ke JS
+                // $this->dispatch('sensorDataUpdated', $data);
+                // Kirim event ke JavaScript dengan data yang diperbarui
+    $this->dispatch('updateKnobs', [
+        'temperature' => $this->temperature,
+        'humidity' => $this->humidity,
+        'ec' => $this->ec,
+        'ph' => $this->ph,
+        'nitrogen' => $this->nitrogen,
+        'fosfor' => $this->fosfor,
+        'kalium' => $this->kalium,
+    ]);
             } else {
-                $this->temperature = 'Not Found';
-                $this->humidity = 'Not Found';
-                $this->airQuality = 'Not Found';
+                $this->temperature = $this->humidity = $this->ec = $this->ph =
+                $this->nitrogen = $this->fosfor = $this->kalium = 'Not Found';
             }
         } catch (\Throwable $e) {
-            // Jika ada error, properti akan menampilkan 'Error'
-            $this->temperature = 'Error';
-            $this->humidity = 'Error';
-            $this->airQuality = 'Error';
+            $this->temperature = $this->humidity = $this->ec = $this->ph =
+            $this->nitrogen = $this->fosfor = $this->kalium = 'Error';
 
-            // Mencatat error ke dalam file log Laravel untuk debugging
             Log::error('Firestore error: ' . $e->getMessage());
         }
     }
 
     public function render()
     {
-        // Pastikan file view Anda berada di 'resources/views/livewire/soil-test.blade.php'
         return view('livewire.soil-test');
     }
 }
-
