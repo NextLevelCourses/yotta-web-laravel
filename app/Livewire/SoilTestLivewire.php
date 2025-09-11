@@ -30,8 +30,8 @@ class SoilTestLivewire extends Component
 
             // Ambil dari path: soil_data/latest
             $snapshot = $database->collection('soil_data')
-                                ->document('latest')
-                                ->snapshot();
+                ->document('latest')
+                ->snapshot();
 
             if ($snapshot->exists()) {
                 $data = $snapshot->data();
@@ -47,22 +47,22 @@ class SoilTestLivewire extends Component
                 // Kirim ke JS
                 // $this->dispatch('sensorDataUpdated', $data);
                 // Kirim event ke JavaScript dengan data yang diperbarui
-    $this->dispatch('updateKnobs', [
-        'temperature' => $this->temperature,
-        'humidity' => $this->humidity,
-        'ec' => $this->ec,
-        'ph' => $this->ph,
-        'nitrogen' => $this->nitrogen,
-        'fosfor' => $this->fosfor,
-        'kalium' => $this->kalium,
-    ]);
+                $this->dispatch('updateKnobs', [
+                    'temperature' => $this->temperature,
+                    'humidity' => $this->humidity,
+                    'ec' => $this->ec,
+                    'ph' => $this->ph,
+                    'nitrogen' => $this->nitrogen,
+                    'fosfor' => $this->fosfor,
+                    'kalium' => $this->kalium,
+                ]);
             } else {
                 $this->temperature = $this->humidity = $this->ec = $this->ph =
-                $this->nitrogen = $this->fosfor = $this->kalium = 'Not Found';
+                    $this->nitrogen = $this->fosfor = $this->kalium = 'Not Found';
             }
         } catch (\Throwable $e) {
             $this->temperature = $this->humidity = $this->ec = $this->ph =
-            $this->nitrogen = $this->fosfor = $this->kalium = 'Error';
+                $this->nitrogen = $this->fosfor = $this->kalium = 'Error';
 
             Log::error('Firestore error: ' . $e->getMessage());
         }

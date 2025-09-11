@@ -1,39 +1,77 @@
-📌 yottaaksara-iot-dashboard
+# Laravel 12 Base Project IOT Documentation : YOTTA AKSARA ENERGI
 
-IoT Monitoring Dashboard untuk menampilkan data sensor secara real-time (suhu, kelembaban, kualitas udara, dan parameter lingkungan lainnya) yang dikirim dari perangkat berbasis ESP32 melalui MQTT ke sistem web berbasis Laravel + Livewire.
+## Requirements
 
-✨ Fitur Utama
+-   **PHP**: >= 8.2
+-   **Composer**: Latest version
+-   **PHP Extensions** (minimum required):
+    -   openssl
+    -   bcmath
+    -   curl
+    -   json
+    -   mbstring
+    -   mysql
+    -   tokenizer
+    -   xml
+    -   zip
+    -   grpc
 
-📡 Integrasi MQTT: ESP32 mengirim data sensor (dummy/real) ke broker MQTT dan dashboard menampilkannya.
+## Installation
 
-📊 Monitoring Real-time: Data lingkungan (air quality, suhu, kelembaban, dll.) divisualisasikan langsung di web.
+1. **Clone the repository:**
 
-💡 Kontrol Perangkat: Dashboard dapat mengirim perintah balik ke ESP32 (misalnya ON/OFF lampu/relay).
+    ```bash
+    git clone https://github.com/teguhafrianda/yottaaksara-iot-dahsboard.git
+    cd yottaaksara-iot-dahsboard.git
 
-📁 Export Data: Unduh log data sensor (Excel/CSV).
+    ```
 
-🎨 UI Responsif: Tampilan modern berbasis Laravel Blade + Livewire.
+2. **Install composer:**
+    ```bash
+    composer install
+    ```
 
-🛠️ Teknologi yang Digunakan
+## Database
 
-Backend: Laravel 12, Livewire
+1. **Migrate:**
 
-Frontend: Blade, Bootstrap, Chart.js/EasyPieChart
+    ```bash
+    php artisan migrate
+    ```
 
-IoT Device: ESP32 dengan protokol MQTT
+2. **Seed:**
 
-Broker MQTT: EMQX (broker.emqx.io / self-hosted)
+    ```bash
+    php artisan db:seed
+    ```
 
-Database: MySQL
+## Credential
 
-🚀 Cara Kerja Singkat
+1. **Import .env:**
 
-ESP32 membaca data sensor (atau dummy data).
+    ```bash
+    cp .env.example .env #copy all env documentation to .env file
+    ```
 
-ESP32 publish data ke broker MQTT.
+2. **Key generate:**
 
-Laravel + Livewire subscribe data tersebut dan menampilkannya di dashboard.
+    ```bash
+    php artisan key:generate
+    ```
 
-User bisa mengirim perintah kontrol (misalnya nyalakan/matikan lampu) dari dashboard ke ESP32.
+## Fix Performance
 
-👉 Repo ini bisa jadi fondasi IoT Platform untuk smart building, pertanian cerdas, atau sistem monitoring energi.
+1. **Import .env:**
+
+    ```bash
+    php artisan optimize
+    php artisan route:cache
+    php artisan view:clear
+    php artisan cache:clear
+    ```
+
+## Load JSON Firebase
+
+```bash
+copy firebase_credentials.json > storage/app
+```
