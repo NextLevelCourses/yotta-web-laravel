@@ -2,9 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Models\SoilTest;
 use Livewire\Component;
 use Kreait\Firebase\Contract\Firestore;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class SoilTestLivewire extends Component
 {
@@ -21,7 +23,18 @@ class SoilTestLivewire extends Component
         $this->fetchData();
     }
 
-    public function handleStoreData() {}
+    public function handleStoreDataCollection(array $data): array
+    {
+        return array(
+            'temperature' => $data['temperature'] ?? 0,
+            'humidity' => $data['humidity'] ?? 0,
+            'ph' => $data['ph'] ?? 0,
+            'ec' => $data['ec'] ?? 0,
+            'nitrogen' => $data['nitrogen'] ?? 0,
+            'fosfor' => $data['fosfor'] ?? 0,
+            'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
+        );
+    }
 
     public function fetchData()
     {
@@ -45,6 +58,7 @@ class SoilTestLivewire extends Component
                 $this->nitrogen = $data['nitrogen'] ?? '--';
                 $this->fosfor = $data['fosfor'] ?? '--';
                 $this->kalium = $data['kalium'] ?? '--';
+                SoilTest::create($this->handleStoreDataCollection($data)); //store data history every 3 seconds
 
                 // Kirim ke JS
                 // $this->dispatch('sensorDataUpdated', $data);

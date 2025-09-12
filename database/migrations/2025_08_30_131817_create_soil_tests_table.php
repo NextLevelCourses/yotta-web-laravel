@@ -15,6 +15,8 @@ return new class extends Migration
             $table->float('humidity')->nullable();     // kelembaban
             $table->float('ph')->nullable();           // pH
             $table->float('ec')->nullable();           // electrical conductivity
+            $table->float('nitrogen')->nullable();      // nitrogen
+            $table->float('fosfor')->nullable();        // fosfor
             $table->string('status')->nullable();      // status tanah
             $table->timestamp('measured_at')->nullable(); // waktu pengukuran
             $table->timestamps();
