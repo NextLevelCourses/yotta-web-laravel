@@ -21,6 +21,8 @@ class SoilTestLivewire extends Component
         $this->fetchData();
     }
 
+    public function handleStoreData() {}
+
     public function fetchData()
     {
         try {
@@ -33,9 +35,9 @@ class SoilTestLivewire extends Component
                 ->document('latest')
                 ->snapshot();
 
+
             if ($snapshot->exists()) {
                 $data = $snapshot->data();
-
                 $this->temperature = $data['temperature'] ?? '--';
                 $this->humidity = $data['humidity'] ?? '--';
                 $this->ec = $data['ec'] ?? '--';
