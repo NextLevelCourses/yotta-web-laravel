@@ -23,14 +23,19 @@ Route::middleware('guest')->group(function () {
 // Rute untuk User yang sudah Login
 Route::middleware('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
-    Route::get('/dashboard', function() {
+    Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
 
     // Monitoring Air Quality (hanya bisa diakses kalau sudah login)
-    Route::get('/monitoring/air-quality', [AirQualityController::class, 'index'])->name('air-quality');
-    Route::get('/monitoring/soil-test', [SoilTestController::class, 'index'])->name('soil-test');
-    Route::get('/monitoring/soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');
+    Route::prefix('monitoring')->group(function () {
+        Route::get('air-quality', [AirQualityController::class, 'index'])->name('air-quality');
+        Route::prefix('soil-test')->group(function () {
+            Route::get('/', [SoilTestController::class, 'index'])->name('soil-test');
+            Route::get('/export', [SoilTestController::class, 'export'])->name('soil-test.export');
+        });
+        Route::get('soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');
+    });
 });
 
 // Jangan lupa tambahkan rute untuk admin di sini nanti
