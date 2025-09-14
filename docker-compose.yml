@@ -1,0 +1,42 @@
+# version: "3.9"
+
+services:
+  # Backend Laravel + Apache
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: yotta-backend
+    ports:
+      - "8000:80"
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./.env:/var/www/html/.env
+    depends_on:
+      - mysql
+    networks:
+      - yotta-energi
+
+  # Database MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: yotta-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: yotta_db
+      MYSQL_USER: yotta
+      MYSQL_PASSWORD: yotta_pass
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - yotta-energi
+
+volumes:
+  db_data:
+
+networks:
+  yotta-energi:
+    driver: bridge
