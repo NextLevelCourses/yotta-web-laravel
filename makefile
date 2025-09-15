@@ -36,3 +36,14 @@ dy-seed:
 #exec app docker via composer install
 dy-composer:
 	docker compose -f docker-compose.yml exec dashboard composer install
+
+y-start:
+	php artisan serve
+y-migrate:
+	php artisan migrate
+y-rollback:
+	php artisan migrate:rollback
+y-refresh:
+	php artisan migrate:refresh
+y-seed:
+	php artisan db:seed
