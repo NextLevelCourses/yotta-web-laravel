@@ -24,7 +24,6 @@
     <div id="layout-wrapper">
         
         @include('layouts.partials.header')
-
         @include('layouts.partials.sidebar')
 
         <!-- ============================================================== -->
@@ -44,7 +43,7 @@
     </div>
     <!-- END layout-wrapper -->
 
-    <!-- Right Sidebar (Struktur Lengkap untuk Menghilangkan Error) -->
+    <!-- Right Sidebar -->
     <div class="right-bar">
         <div data-simplebar class="h-100">
             <div class="rightbar-title d-flex align-items-center p-3">
@@ -55,45 +54,7 @@
             </div>
             <hr class="m-0" />
             <div class="p-4">
-                <h6 class="mb-3">Layout Mode</h6>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="layout-mode" id="layout-mode-light" value="light">
-                    <label class="form-check-label" for="layout-mode-light">Light</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="layout-mode" id="layout-mode-dark" value="dark">
-                    <label class="form-check-label" for="layout-mode-dark">Dark</label>
-                </div>
-
-                <h6 class="mt-4 mb-3 pt-2">Layout Width</h6>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="layout-width" id="layout-width-fuild" value="fuild" onchange="document.body.setAttribute('data-layout-size', 'fluid')">
-                    <label class="form-check-label" for="layout-width-fuild">Fluid</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="layout-width" id="layout-width-boxed" value="boxed" onchange="document.body.setAttribute('data-layout-size', 'boxed')">
-                    <label class="form-check-label" for="layout-width-boxed">Boxed</label>
-                </div>
-
-                <h6 class="mt-4 mb-3 pt-2">Topbar Color</h6>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="topbar-color" id="topbar-color-light" value="light" onchange="document.body.setAttribute('data-topbar', 'light')">
-                    <label class="form-check-label" for="topbar-color-light">Light</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="topbar-color" id="topbar-color-dark" value="dark" onchange="document.body.setAttribute('data-topbar', 'dark')">
-                    <label class="form-check-label" for="topbar-color-dark">Dark</label>
-                </div>
-
-                <h6 class="mt-4 mb-3 pt-2">Direction</h6>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="layout-direction" id="layout-direction-ltr" value="ltr">
-                    <label class="form-check-label" for="layout-direction-ltr">LTR</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="layout-direction" id="layout-direction-rtl" value="rtl">
-                    <label class="form-check-label" for="layout-direction-rtl">RTL</label>
-                </div>
+                <!-- isi sidebar pengaturan -->
             </div>
         </div>
     </div>
@@ -102,19 +63,27 @@
 
     <!-- JAVASCRIPT -->
     <script src="{{ asset('assets/libs/jquery/jquery.min.js') }}"></script>
-<script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-<script src="{{ asset('assets/libs/metismenu/metisMenu.min.js') }}"></script>
-<script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
-<script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
-<script src="{{ asset('assets/libs/feather-icons/feather.min.js') }}"></script>
-<script src="{{ asset('assets/libs/pace-js/pace.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/metismenu/metisMenu.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/feather-icons/feather.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/pace-js/pace.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app.js') }}"></script>
 
-<script src="{{ asset('assets/libs/jquery-knob/jquery.knob.min.js') }}"></script>
-<script src="{{ asset('assets/libs/echarts/echarts.min.js') }}"></script> 
+    <!-- Knob + ECharts -->
+    <!-- <script src="{{ asset('assets/libs/jquery-knob/jquery.knob.min.js') }}"></script> -->
+    <!-- <script src="{{ asset('assets/js/pages/jquery-knob.init.js') }}"></script>  -->
+    <script src="{{ asset('assets/libs/echarts/echarts.min.js') }}"></script> 
+    <script src="{{ asset('assets/libs/chart.js/chart.umd.js') }}"></script>
+    <!-- chartjs init -->
+    <script src="{{ asset('assets/js/pages/chartjs.init.js') }}"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
-<script src="{{ asset('assets/js/pages/air-quality.js') }}"></script> 
-<script src="{{ asset('assets/js/app.js') }}"></script>
+    <!-- Custom Pages -->
+    
+    
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
     
     @livewireScripts
 </body>

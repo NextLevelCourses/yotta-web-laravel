@@ -1,20 +1,17 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Monitoring Air Quality</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Air Quality</li>
-                    </ol>
-                </div>
-            </div>
-            <a href="{{ route('dashboard') }}" class="btn btn-secondary mb-3">&laquo; Kembali</a>
+    <div class="container-fluid py-4">
+        {{-- Breadcrumbs Minimalis --}}
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h5 class="m-0 text-muted">Dashboard / <span class="fw-bold text-primary">Soil Test</span></h5>
+            <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Kembali
+            </a>
         </div>
-    </div>
+        
+        <script src="{{ asset('assets/js/pages/soil-test.js') }}"></script>
 
-    <livewire:air-quality-liveware />
+        <livewire:air-quality-livewire />
+    </div>
 @endsection

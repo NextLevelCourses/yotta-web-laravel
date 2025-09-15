@@ -1,39 +1,89 @@
-📌 yottaaksara-iot-dashboard
+# Laravel 12 Base Project IOT Documentation : YOTTA AKSARA ENERGI
 
-IoT Monitoring Dashboard untuk menampilkan data sensor secara real-time (suhu, kelembaban, kualitas udara, dan parameter lingkungan lainnya) yang dikirim dari perangkat berbasis ESP32 melalui MQTT ke sistem web berbasis Laravel + Livewire.
+## Requirements
 
-✨ Fitur Utama
+-   **PHP**: >= 8.2
+-   **Composer**: Latest version
+-   **PHP Extensions** (minimum required):
+    -   openssl
+    -   bcmath
+    -   curl
+    -   json
+    -   mbstring
+    -   mysql
+    -   tokenizer
+    -   xml
+    -   zip
+    -   grpc
 
-📡 Integrasi MQTT: ESP32 mengirim data sensor (dummy/real) ke broker MQTT dan dashboard menampilkannya.
+## Installation
 
-📊 Monitoring Real-time: Data lingkungan (air quality, suhu, kelembaban, dll.) divisualisasikan langsung di web.
+1. **Clone the repository:**
 
-💡 Kontrol Perangkat: Dashboard dapat mengirim perintah balik ke ESP32 (misalnya ON/OFF lampu/relay).
+    ```bash
+    git clone https://github.com/teguhafrianda/yottaaksara-iot-dahsboard.git
+    cd yottaaksara-iot-dahsboard.git
 
-📁 Export Data: Unduh log data sensor (Excel/CSV).
+    ```
 
-🎨 UI Responsif: Tampilan modern berbasis Laravel Blade + Livewire.
+2. **Install composer:**
 
-🛠️ Teknologi yang Digunakan
+    ```bash
+    composer install
+    ```
 
-Backend: Laravel 12, Livewire
+3. **if composer error install(optional):**
 
-Frontend: Blade, Bootstrap, Chart.js/EasyPieChart
+    ```bash
+    composer update
+    ```
 
-IoT Device: ESP32 dengan protokol MQTT
+4. **validate dependancy has installed or not(optional):**
+    ```bash
+    composer show | grep <dependancy> ex:firebase | (composer show | grep firebase)
+    ```
 
-Broker MQTT: EMQX (broker.emqx.io / self-hosted)
+## Database
 
-Database: MySQL
+1. **Migrate:**
 
-🚀 Cara Kerja Singkat
+    ```bash
+    php artisan migrate
+    ```
 
-ESP32 membaca data sensor (atau dummy data).
+2. **Seed:**
 
-ESP32 publish data ke broker MQTT.
+    ```bash
+    php artisan db:seed
+    ```
 
-Laravel + Livewire subscribe data tersebut dan menampilkannya di dashboard.
+## Credential
 
-User bisa mengirim perintah kontrol (misalnya nyalakan/matikan lampu) dari dashboard ke ESP32.
+1. **Import .env:**
 
-👉 Repo ini bisa jadi fondasi IoT Platform untuk smart building, pertanian cerdas, atau sistem monitoring energi.
+    ```bash
+    cp .env.example .env #copy all env documentation to .env file
+    ```
+
+2. **Key generate:**
+
+    ```bash
+    php artisan key:generate
+    ```
+
+## Fix Performance
+
+1. **artisan fix:**
+
+    ```bash
+    php artisan optimize
+    php artisan route:cache
+    php artisan view:clear
+    php artisan cache:clear
+    ```
+
+## Load JSON Firebase
+
+```bash
+copy firebase_credentials.json > storage/app
+```
