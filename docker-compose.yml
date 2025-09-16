@@ -6,7 +6,7 @@ services:
       dockerfile: dockerfile
     container_name: yotta-dashboard
     ports:
-      - "8000:80"
+      - "8000:8000"
     depends_on:
       - mysql
     environment:
@@ -37,22 +37,22 @@ services:
       - yotta-energi
 
   # PhpMyAdmin
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: yotta-phpmyadmin
-    ports:
-      - 8001:80
-    depends_on:
-      - mysql
-    restart: unless-stopped
-    environment:
-      PMA_HOST: mysql
-      PMA_USER: yotta
-      PMA_PASSWORD: yotta_pass
-      PMA_PORT: 3306
-      PMA_ARBITRARY: 1
-    networks:
-      - yotta-energi
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin:latest
+  #   container_name: yotta-phpmyadmin
+  #   ports:
+  #     - 8001:80
+  #   depends_on:
+  #     - mysql
+  #   restart: unless-stopped
+  #   environment:
+  #     PMA_HOST: mysql
+  #     PMA_USER: yotta
+  #     PMA_PASSWORD: yotta_pass
+  #     PMA_PORT: 3306
+  #     PMA_ARBITRARY: 1
+  #   networks:
+  #     - yotta-energi
 
 volumes:
   db_data:
