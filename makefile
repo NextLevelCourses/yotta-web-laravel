@@ -41,6 +41,12 @@ dy-php-m:
 	docker compose -f docker-compose.yml exec dashboard php -m
 dy-dir-project:
 	docker exec -it yotta-dashboard bash
+dy-laravel-optimize-all:
+	docker compose -f docker-compose.yml exec dashboard php artisan optimize
+	docker compose -f docker-compose.yml exec dashboard php artisan cache:clear
+	docker compose -f docker-compose.yml exec dashboard php artisan config:clear
+	docker compose -f docker-compose.yml exec dashboard php artisan route:clear
+	docker compose -f docker-compose.yml exec dashboard php artisan view:clear
 
 y-start:
 	php artisan serve
