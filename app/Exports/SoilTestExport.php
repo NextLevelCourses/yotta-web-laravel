@@ -16,14 +16,15 @@ class SoilTestExport implements FromCollection, WithHeadings
     {
         $data = SoilTest::all()->map(function ($item) {
             return [
-                'Measured At' => $item->measured_at,
-                'Temperature' => $item->temperature,
-                'Humidity' => $item->humidity,
-                'pH' => $item->ph,
-                'EC' => $item->ec,
-                'Nitrogen' => $item->nitrogen,
-                'Fosfor' => $item->fosfor,
-                'Status' => $item->status,
+                'Measured At' => $item->measured_at ?? '-',
+                'Temperature (°C)' => $item->temperature ?? 0,
+                'Humidity (%)' => $item->humidity ?? 0,
+                'pH' => $item->ph ?? 0,
+                'EC (µS/cm)' => $item->ec ?? 0,
+                'Nitrogen (mg/kg)' => $item->nitrogen ?? 0,
+                'Fosfor (mg/kg)' => $item->fosfor ?? 0,
+                'kalium (mg/kg)' => $item->kalium ?? 0,
+                'Status' => $item->status ?? '-',
             ];
         });
         return $data;
@@ -33,12 +34,13 @@ class SoilTestExport implements FromCollection, WithHeadings
     {
         return [
             'Measured At',
-            'Temperature',
-            'Humidity',
+            'Temperature (°C)',
+            'Humidity (%)',
             'pH',
-            'EC',
-            'Nitrogen',
-            'Fosfor',
+            'EC (µS/cm)',
+            'Nitrogen (mg/kg)',
+            'Fosfor (mg/kg)',
+            'kalium (mg/kg)',
             'Status',
         ];
     }

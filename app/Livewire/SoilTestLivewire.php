@@ -29,9 +29,10 @@ class SoilTestLivewire extends Component
             'temperature' => $data['temperature'] ?? 0,
             'humidity' => $data['humidity'] ?? 0,
             'ph' => $data['ph'] ?? 0,
-            'ec' => $data['ec'] ?? 0,
+            'ec' => $data['Konduktivitas'] ?? 0,
             'nitrogen' => $data['nitrogen'] ?? 0,
-            'fosfor' => $data['fosfor'] ?? 0,
+            'fosfor' => $data['Fosfor'] ?? 0,
+            'kalium' => $data['Kalium'] ?? 0,
             'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
         );
     }
@@ -53,11 +54,11 @@ class SoilTestLivewire extends Component
                 $data = $snapshot->data();
                 $this->temperature = $data['temperature'] ?? '--';
                 $this->humidity = $data['humidity'] ?? '--';
-                $this->ec = $data['ec'] ?? '--';
+                $this->ec = $data['Konduktivitas'] ?? '--';
                 $this->ph = $data['ph'] ?? '--';
                 $this->nitrogen = $data['nitrogen'] ?? '--';
-                $this->fosfor = $data['fosfor'] ?? '--';
-                $this->kalium = $data['kalium'] ?? '--';
+                $this->fosfor = $data['Fosfor'] ?? '--';
+                $this->kalium = $data['Kalium'] ?? '--';
                 SoilTest::create($this->handleStoreDataCollection($data)); //store data history every 3 seconds
 
                 // Kirim ke JS
