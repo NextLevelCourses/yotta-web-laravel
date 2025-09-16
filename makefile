@@ -18,6 +18,8 @@ dy-logs:
 #build docker haircut
 dy-build:
 	docker compose -f docker-compose.yml build dashboard
+dy-php-m:
+    docker compose -f docker-compose.yml exec yotta-dashboard php -m
 
 
 #================= Docker Command Laravel ================
