@@ -17,6 +17,7 @@ return new class extends Migration
             $table->float('ec')->nullable();           // electrical conductivity
             $table->float('nitrogen')->nullable();      // nitrogen
             $table->float('fosfor')->nullable();        // fosfor
+            $table->float('kalium')->nullable();        // kalium
             $table->string('status')->nullable();      // status tanah
             $table->timestamp('measured_at')->nullable(); // waktu pengukuran
             $table->timestamps();

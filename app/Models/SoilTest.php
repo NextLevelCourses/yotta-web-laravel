@@ -17,6 +17,7 @@ class SoilTest extends Model
         'ec',            // electrical conductivity
         'nitrogen',      // nitrogen
         'fosfor',        // fosfor
+        'kalium',        // kalium
         'status',        // status kondisi tanah
         'measured_at',   // waktu pengukuran
     ];
