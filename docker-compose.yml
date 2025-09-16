@@ -10,8 +10,8 @@ services:
     depends_on:
       - yotta-mysql
     environment:
-      DB_HOST: yotta-mysql
-      DB_PORT: 3306
+      DB_HOST: mysql
+      DB_PORT: 3307
       DB_DATABASE: yotta_db
       DB_USERNAME: yotta
       DB_PASSWORD: yotta_pass
@@ -24,7 +24,7 @@ services:
     container_name: yotta-mysql
     restart: unless-stopped
     ports:
-      - "3307:3306"
+      - "3307:3307"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: yotta_db
@@ -35,22 +35,22 @@ services:
     networks:
       - yotta-energi
 
-  # phpmyadmin:
-  #   image: phpmyadmin/phpmyadmin:latest
-  #   container_name: yotta-phpmyadmin
-  #   ports:
-  #     - 8001:80
-  #   depends_on:
-  #     - mysql
-  #   restart: unless-stopped
-  #   environment:
-  #     PMA_HOST: mysql
-  #     PMA_USER: yotta
-  #     PMA_PASSWORD: yotta_pass
-  #     PMA_PORT: 3306
-  #     PMA_ARBITRARY: 1
-  #   networks:
-  #     - yotta-energi
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: yotta-phpmyadmin
+    ports:
+      - 8001:8001
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: yotta
+      PMA_PASSWORD: yotta_pass
+      PMA_PORT: 3307
+      PMA_ARBITRARY: 1
+    networks:
+      - yotta-energi
 
 volumes:
   db_data:
