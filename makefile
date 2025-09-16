@@ -18,9 +18,6 @@ dy-logs:
 #build docker haircut
 dy-build:
 	docker compose -f docker-compose.yml build dashboard
-dy-php-m:
-    docker compose -f docker-compose.yml exec dashboard php -m
-
 
 #================= Docker Command Laravel and PHP ================
 dy-migrate:
