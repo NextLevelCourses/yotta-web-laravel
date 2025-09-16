@@ -17,7 +17,7 @@ dy-logs:
 	docker compose -f docker-compose.yml logs -f
 #build docker haircut
 dy-build:
-	docker compose -f docker-compose.yml build yotta-dashboard
+	docker compose -f docker-compose.yml build dashboard
 
 #================= Docker Command Laravel and PHP ================
 dy-migrate:
