@@ -1,6 +1,6 @@
 services:
   # Laravel CLI
-  yotta-dashboard:
+  dashboard:
     build:
       context: .
       dockerfile: dockerfile
@@ -19,7 +19,7 @@ services:
       - yotta-energi
 
   # Database MySQL
-  yotta-mysql:
+  mysql:
     image: mysql:8.0
     container_name: yotta-mysql
     restart: unless-stopped
@@ -35,23 +35,22 @@ services:
     networks:
       - yotta-energi
 
-  # PhpMyAdmin
-  yotta-phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: yotta-phpmyadmin
-    ports:
-      - 8001:8001
-    depends_on:
-      - yotta-mysql
-    restart: unless-stopped
-    environment:
-      PMA_HOST: yotta-mysql
-      PMA_USER: yotta
-      PMA_PASSWORD: yotta_pass
-      PMA_PORT: 3306
-      PMA_ARBITRARY: 1
-    networks:
-      - yotta-energi
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin:latest
+  #   container_name: yotta-phpmyadmin
+  #   ports:
+  #     - 8001:80
+  #   depends_on:
+  #     - mysql
+  #   restart: unless-stopped
+  #   environment:
+  #     PMA_HOST: mysql
+  #     PMA_USER: yotta
+  #     PMA_PASSWORD: yotta_pass
+  #     PMA_PORT: 3306
+  #     PMA_ARBITRARY: 1
+  #   networks:
+  #     - yotta-energi
 
 volumes:
   db_data:

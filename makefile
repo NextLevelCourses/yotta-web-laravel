@@ -17,29 +17,31 @@ dy-logs:
 	docker compose -f docker-compose.yml logs -f
 #build docker haircut
 dy-build:
-	docker compose -f docker-compose.yml build yotta-dashboard
+	docker compose -f docker-compose.yml build dashboard
+dy-php-m:
+    docker compose -f docker-compose.yml exec dashboard php -m
 
 
 #================= Docker Command Laravel and PHP ================
 dy-migrate:
-	docker compose -f docker-compose.yml exec yotta-dashboard php artisan migrate
-	docker compose -f docker-compose.yml exec yotta-dashboard php artisan db:seed
+	docker compose -f docker-compose.yml exec dashboard php artisan migrate
+	docker compose -f docker-compose.yml exec dashboard php artisan db:seed
 dy-rollback:
-	docker compose -f docker-compose.yml exec yotta-dashboard php artisan migrate:rollback
+	docker compose -f docker-compose.yml exec dashboard php artisan migrate:rollback
 #exec run migrate refresh
 dy-refresh:
-	docker compose -f docker-compose.yml exec yotta-dashboard php artisan migrate:refresh
-	docker compose -f docker-compose.yml exec yotta-dashboard php artisan db:seed
+	docker compose -f docker-compose.yml exec dashboard php artisan migrate:refresh
+	docker compose -f docker-compose.yml exec dashboard php artisan db:seed
 #exec run seeder
 dy-seed:
-	docker compose -f docker-compose.yml exec yotta-dashboard php artisan db:seed
+	docker compose -f docker-compose.yml exec dashboard php artisan db:seed
 #exec app docker via composer install
 dy-composer:
-	docker compose -f docker-compose.yml exec yotta-dashboard composer install
+	docker compose -f docker-compose.yml exec dashboard composer install
 dy-php-m:
-	docker compose -f docker-compose.yml exec yotta-dashboard php -m
+	docker compose -f docker-compose.yml exec dashboard php -m
 dy-dir-project:
-	docker exec -it yotta-dashboard bash
+	docker exec -it dashboard bash
 
 y-start:
 	php artisan serve
