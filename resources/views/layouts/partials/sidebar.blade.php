@@ -17,14 +17,12 @@
                         <span data-key="t-monitoring">Monitoring</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        <li><a href="{{ route('soil-test') }}" data-key="t-soil-test">Soil Monitoring</a></li>
                         <li><a href="{{ route('air-quality') }}" data-key="t-air-quality">Air Quality</a></li>
-                        {{-- 
-                            Jika Anda memiliki halaman monitoring lain, tambahkan di sini.
-                            Contoh:
-                            <li><a href="{{ route('solar-panel') }}" data-key="t-solar-panel">Solar Panel</a></li>
-                            <li><a href="{{ route('water-quality') }}" data-key="t-water-quality">Water Quality</a></li> 
-                        --}}
+                        <li><a href="{{ route('monitoring.solar-dome') }}" data-key="t-solar-dome">Solar Dome</a></li>
+                        <li><a href="{{ route('monitoring.greenhouse') }}" data-key="t-greenhouse-quality">Greenhouse</a></li>
+                        <li><a href="{{ route('soil-test') }}" data-key="t-soil-monitoring">Soil Monitoring</a></li>
+                        <li><a href="#" data-key="t-air-quality">Soil Quality</a></li>
+                        <li><a href="#" data-key="t-air-testing">Soil Testing</a></li>
                     </ul>
                 </li>
                 @if(Auth::user()->isAdmin())

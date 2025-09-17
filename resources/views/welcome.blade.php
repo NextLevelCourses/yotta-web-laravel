@@ -7,7 +7,7 @@
     <meta content="Dashboard IoT Profesional" name="description" />
     <meta content="Yotta Aksara" name="author" />
     <!-- App favicon -->
-    <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/images/YAE_Image.png') }}">
 
     <!-- preloader css -->
     <link rel="stylesheet" href="{{ asset('assets/css/preloader.min.css') }}" type="text/css" />
@@ -34,7 +34,7 @@
                                     <!-- Logo -->
                                     <div class="mb-4">
                                         <a href="{{ url('/') }}" class="d-inline-flex align-items-center gap-2">
-                                            <img src="{{ asset('assets/images/logo-sm.svg') }}" alt="Logo" height="42">
+                                            <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="Logo" height="42">
                                             <span class="logo-txt fs-2 fw-bold text-white">Yotta Aksara Energy</span>
                                         </a>
                                     </div>

@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Http\Controllers\Monitoring;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class SolarDomeController extends Controller
+{
+    /**
+     * Tampilkan halaman monitoring Solar Dome.
+     */
+    public function index()
+    {
+        // Data dummy (sementara hardcoded)
+        $dummyData = [
+            'labels' => ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+            'temperature' => [28, 30, 35, 37, 33, 29],
+            'humidity' => [75, 70, 68, 65, 72, 78],
+        ];
+
+        return view('monitoring.solar-dome', compact('dummyData'));
+    }
+}

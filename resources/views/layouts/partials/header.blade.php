@@ -5,18 +5,18 @@
             <div class="navbar-brand-box">
                 <a href="{{ route('dashboard') }}" class="logo logo-dark">
                     <span class="logo-sm">
-                        <img src="{{ asset('assets/images/logo-sm.svg') }}" alt="" height="24">
+                        <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24">
                     </span>
                     <span class="logo-lg">
-                        <img src="{{ asset('assets/images/logo-sm.svg') }}" alt="" height="24"> <span class="logo-txt">Yotta</span>
+                        <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24"> <span class="logo-txt">Yotta</span>
                     </span>
                 </a>
                 <a href="{{ route('dashboard') }}" class="logo logo-light">
                      <span class="logo-sm">
-                        <img src="{{ asset('assets/images/logo-sm.svg') }}" alt="" height="24">
+                        <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24">
                     </span>
                     <span class="logo-lg">
-                        <img src="{{ asset('assets/images/logo-sm.svg') }}" alt="" height="24"> <span class="logo-txt">Yotta</span>
+                        <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24"> <span class="logo-txt">Yotta</span>
                     </span>
                 </a>
             </div>
@@ -27,13 +27,6 @@
         </div>
 
         <div class="d-flex align-items-center">
-            <!-- tombol settings -->
-            <div class="dropdown d-inline-block">
-                <button type="button" class="btn header-item right-bar-toggle me-2">
-                    <i data-feather="settings" class="icon-lg"></i>
-                </button>
-            </div>
-            <!-- user dropdown -->
             <div class="dropdown d-inline-block">
                 <button type="button" class="btn header-item bg-soft-light border-start border-end" id="page-header-user-dropdown"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

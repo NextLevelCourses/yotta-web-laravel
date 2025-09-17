@@ -1,77 +1,95 @@
 @extends('layouts.app')
 
-@section('content')
-    <div class="container-fluid py-4">
-        {{-- Breadcrumbs Minimalis --}}
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <h5 class="m-0 text-muted">Dashboard / <span class="fw-bold text-primary">Monitoring Hub</span></h5>
-        </div>
-        
-        {{-- Introductory Text --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <p class="text-muted">
-                    Selamat datang di Hub Monitoring IoT Yotta. Silakan pilih sistem di bawah ini untuk melihat data dan analitik real-time.
-                </p>
-            </div>
-        </div>
-
-        {{-- Monitoring Cards --}}
-        <div class="row g-4">
-            @php
-                $modules = [
-                    ['href' => route('air-quality'), 'icon' => 'fas fa-wind', 'color' => 'primary', 'title' => 'Kualitas Udara', 'text' => 'Lihat data polusi dan kualitas udara secara real-time dari sensor.'],
-                    ['href' => route('soil-test'), 'icon' => 'fas fa-seedling', 'color' => 'success', 'title' => 'Monitoring Tanah', 'text' => 'Pantau kelembaban, suhu, dan tingkat nutrisi tanah.'],
-                    ['href' => '#', 'icon' => 'fas fa-solar-panel', 'color' => 'warning', 'title' => 'Panel Surya', 'text' => 'Lacak produksi energi dan efisiensi panel secara keseluruhan.'],
-                    ['href' => '#', 'icon' => 'fas fa-tint', 'color' => 'info', 'title' => 'Kualitas Air', 'text' => 'Analisis tingkat kemurnian, pH, dan suhu air.'],
-                    ['href' => '#', 'icon' => 'fas fa-bolt', 'color' => 'danger', 'title' => 'Konsumsi Energi', 'text' => 'Monitor penggunaan daya di berbagai perangkat dan lokasi.'],
-                    ['href' => '#', 'icon' => 'fas fa-map-marker-alt', 'color' => 'secondary', 'title' => 'Pelacakan Aset', 'text' => 'Lacak lokasi dan status aset berharga secara real-time.'],
-                    ['href' => '#', 'icon' => 'fas fa-lightbulb', 'color' => 'warning', 'title' => 'Pencahayaan Cerdas', 'text' => 'Kontrol dan otomatisasi sistem pencahayaan untuk efisiensi.'],
-                    ['href' => route('soil-manag'), 'icon' => 'fas fa-leaf', 'color' => 'success', 'title' => 'Soil Management', 'text' => 'Kelola nutrisi, pH, dan kondisi lingkungan untuk tanaman.'],
-                ];
-            @endphp
-            
-            @foreach ($modules as $module)
-            <div class="col-xl-4 col-md-6">
-                <a href="{{ $module['href'] }}" class="text-decoration-none">
-                    <div class="card card-h-100 text-center shadow-sm rounded-3 hover-lift">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-center align-items-center mb-3 mx-auto icon-bg-{{ $module['color'] }}">
-                                <i class="{{ $module['icon'] }} fa-2x text-{{ $module['color'] }}"></i>
-                            </div>
-                            <h5 class="card-title fw-bold">{{ $module['title'] }}</h5>
-                            <p class="card-text text-muted">{{ $module['text'] }}</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            @endforeach
-        </div>
-    </div>
+{{-- Bootstrap Icons --}}
+@section('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 @endsection
 
-@push('styles')
-<style>
-    .icon-bg-primary { background-color: rgba(85, 110, 230, 0.1); }
-    .icon-bg-success { background-color: rgba(52, 195, 143, 0.1); }
-    .icon-bg-warning { background-color: rgba(241, 180, 76, 0.1); }
-    .icon-bg-info { background-color: rgba(23, 162, 184, 0.1); }
-    .icon-bg-danger { background-color: rgba(244, 106, 106, 0.1); }
-    .icon-bg-secondary { background-color: rgba(108, 117, 125, 0.1); }
-    
-    .icon-bg-primary, .icon-bg-success, .icon-bg-warning, .icon-bg-info, .icon-bg-danger, .icon-bg-secondary {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-    }
+@section('content')
+<div class="bg-light">
+    <div class="container py-5">
 
-    /* Card hover effect */
-    .hover-lift {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-    .hover-lift:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-</style>
-@endpush
+        {{-- Hero Section --}}
+        <div class="text-center py-2">
+            <div class="d-flex justify-content-center align-items-center mb-4">
+                <img src="{{ asset('assets/images/YAE_image.png') }}" 
+                     alt="Yotta Aksara Energy Logo" 
+                     class="img-fluid me-3" 
+                     style="max-height: 80px;">
+                <h1 class="fw-bold text-dark m-0" style="font-size: 2rem;">
+                    YOTTA AKSARA ENERGI
+                </h1>
+            </div>
+
+            <h2 class="fw-bold text-primary mb-3">
+                Mendorong Transformasi Industri 4.0
+            </h2>
+            <p class="lead text-secondary mx-auto" style="max-width: 750px;">
+                Industri modern membutuhkan <strong>kecepatan, efisiensi, dan data real-time</strong>.  
+                Kami menghadirkan <strong>Industrial Internet of Things (IIoT)</strong> yang 
+                memungkinkan pabrik, energi, dan bisnis Anda beroperasi lebih <em>cerdas, hemat, dan aman</em>.
+            </p>
+            <div class="mt-4">
+                <a href="#solutions" class="btn btn-primary btn-lg px-4 me-sm-3 fw-bold">
+                    Jelajahi Solusi
+                </a>
+                <a href="#contact" class="btn btn-outline-dark btn-lg px-4">
+                    Konsultasi Gratis
+                </a>
+            </div>
+        </div>
+
+        {{-- Solutions Section --}}
+        <div id="solutions" class="py-2">
+            <h3 class="text-center fw-bold mb-4">
+                Solusi IIoT untuk Masa Depan Industri
+            </h3>
+            <p class="text-center text-muted mb-5 mx-auto" style="max-width: 700px;">
+                Dari otomasi pabrik hingga manajemen energi, teknologi kami dirancang 
+                untuk <strong>membangun keunggulan kompetitif</strong> dan 
+                membuat bisnis Anda <strong>selangkah lebih maju</strong>.
+            </p>
+
+            <div class="row text-center g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="p-4 rounded shadow-sm h-100 border-top border-primary border-3">
+                        <i class="bi bi-gear-fill fs-1 text-primary"></i>
+                        <h5 class="fw-bold mt-3">Otomasi & Kontrol</h5>
+                        <p class="text-muted mb-0">
+                            Produksi tanpa hambatan dengan integrasi mesin dan sistem kontrol cerdas.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="p-4 rounded shadow-sm h-100 border-top border-success border-3">
+                        <i class="bi bi-lightning-charge-fill fs-1 text-success"></i>
+                        <h5 class="fw-bold mt-3">Energi & Aset</h5>
+                        <p class="text-muted mb-0">
+                            Optimalkan konsumsi energi dan lakukan <em>predictive maintenance</em> mesin Anda.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="p-4 rounded shadow-sm h-100 border-top border-warning border-3">
+                        <i class="bi bi-bar-chart-line-fill fs-1 text-warning"></i>
+                        <h5 class="fw-bold mt-3">Monitoring Produksi</h5>
+                        <p class="text-muted mb-0">
+                            Dashboard OEE real-time untuk menemukan bottleneck lebih cepat.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="p-4 rounded shadow-sm h-100 border-top border-danger border-3">
+                        <i class="bi bi-shield-check fs-1 text-danger"></i>
+                        <h5 class="fw-bold mt-3">Keselamatan & Kepatuhan</h5>
+                        <p class="text-muted mb-0">
+                            Sensor HSE pintar memastikan keamanan karyawan & standar regulasi terpenuhi.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+@endsection
