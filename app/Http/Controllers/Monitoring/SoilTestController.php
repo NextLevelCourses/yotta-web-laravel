@@ -16,6 +16,7 @@ class SoilTestController extends Controller
         // ambil data terbaru soil test
         $data = SoilTest::latest()->get();
 
+
         return view('monitoring.soil-test', compact('data'));
     }
 
@@ -31,4 +32,9 @@ class SoilTestController extends Controller
             return 'Error exporting data';
         }
     }
+
+    
+
+    
+
 }
