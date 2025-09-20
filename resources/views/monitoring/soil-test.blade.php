@@ -2,58 +2,36 @@
 
 @section('content')
     <div class="container-fluid py-4">
-        {{-- Breadcrumbs Minimalis --}}
         <div class="d-flex align-items-center justify-content-between mb-4">
-            <h5 class="m-0 text-muted">Monitoring / <span class="fw-bold text-primary">Soil Test</span></h5>
-            <div>
+            <h5 class="m-0 text-muted">Dashboard / <span class="fw-bold text-primary">Soil Test</span></h5>
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm" name="export-month-select" id="export-month-select"
+                    aria-label="Pilih Bulan untuk Ekspor"></select>
+                <button onclick="exportData()" class="btn btn-sm btn-success d-flex align-items-center">
+                    <i class="fas fa-file-export me-1"></i> Export
+                </button>
                 <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Kembali
+                    <i class="fas fa-arrow-left me-1"></i>
                 </a>
             </div>
         </div>
-        <script src="{{ asset('assets/js/pages/soil-test.js') }}"></script>
-        <livewire:soil-test-livewire />
-        <div class="d-flex justify-content-end">
-            <div class="card col-lg-6 col-md-8">
-                <div class="card-body">
-                    <div class="row align-items-end">
-                        <div class="col-md-8">
-                            <div class="mb-3 mb-md-0">
-                                <label for="export-month-select" class="form-label font-size-13 text-muted">Pilih
-                                    Bulan</label>
-                                <select class="form-control" name="export-month-select" id="export-month-select">
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end justify-content-end">
-                            {{-- <a href="{{ route('soil-test.export') }}" class="btn btn-success w-100 w-md-auto">
-                                <i class="fas fa-file-export me-1"></i> Export Data
-                            </a> --}}
-                            <button onclick="exportData()" class="btn btn-success w-100 w-md-auto"><i
-                                    class="fas fa-file-export me-1"></i>Export Data</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
+        <script src="{{ asset('assets/js/pages/soil-test.js') }}"></script>
+
+        <livewire:soil-test-livewire />
+    </div>
 
     {{-- Card Line Chart --}}
-        <div class="card mt-4 shadow-sm rounded-3">
-            <div class="card-header">
-                <h4 class="card-title mb-0">Line Chart</h4>
-            </div>
-            <div class="card-body">
-                <div id="line-chart" 
-                     data-colors='["#2ab57d", "#ccc"]' 
-                     class="e-charts" 
-                     style="height: 350px;">
-                </div>
+    <div class="card mt-4 shadow-sm rounded-3">
+        <div class="card-header">
+            <h4 class="card-title mb-0">Line Chart</h4>
+        </div>
+        <div class="card-body">
+            <div id="line-chart" data-colors='["#2ab57d", "#ccc"]' class="e-charts" style="height: 350px;">
             </div>
         </div>
     </div>
-
+    </div>
 @endsection
 
 @push('scripts')
