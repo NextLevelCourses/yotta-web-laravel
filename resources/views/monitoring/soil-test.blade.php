@@ -9,14 +9,92 @@
                 <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">
                     <i class="fas fa-arrow-left me-1"></i> Kembali
                 </a>
-                <a href="{{ route('soil-test.export') }}" class="btn btn-sm btn-success ms-2">
-                    <i class="fas fa-file-export me-1"></i> Export Data
-                </a>
             </div>
         </div>
+        {{-- <div class="card col-lg-4 col-md-6">
+            <div class="col-lg-6 col-md-6">
+                <div class="mb-4">
+                    <label for="choices-single-default" class="form-label font-size-13 text-muted">Default</label>
+                    <select class="form-control" data-trigger name="choices-single-default" id="choices-single-default"
+                        placeholder="This is a search placeholder">
+                        <option value="">This is a placeholder</option>
+                        <option value="Choice 1">Choice 1</option>
+                        <option value="Choice 2">Choice 2</option>
+                        <option value="Choice 3">Choice 3</option>
+                    </select>
+                </div>
+            </div>
+        </div> --}}
+
 
         <script src="{{ asset('assets/js/pages/soil-test.js') }}"></script>
 
         <livewire:soil-test-livewire />
+        <div class="d-flex justify-content-end">
+            <div class="card col-lg-6 col-md-8">
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-8">
+                            <div class="mb-3 mb-md-0">
+                                <label for="export-month-select" class="form-label font-size-13 text-muted">Pilih
+                                    Bulan</label>
+                                <select class="form-control" name="export-month-select" id="export-month-select">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end justify-content-end">
+                            {{-- <a href="{{ route('soil-test.export') }}" class="btn btn-success w-100 w-md-auto">
+                                <i class="fas fa-file-export me-1"></i> Export Data
+                            </a> --}}
+                            <button onclick="exportData()" class="btn btn-success w-100 w-md-auto"><i
+                                    class="fas fa-file-export me-1"></i>Export Data</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script type="text/javascript">
+        function getEndOfMonth(year, month) {
+            return new Date(year, month + 1, 0); // last day of given month
+        }
+
+        function loadMonths() {
+            const select = document.getElementById("export-month-select");
+            const now = new Date();
+
+            for (let i = 0; i < 12; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const end = getEndOfMonth(d.getFullYear(), d.getMonth());
+                const option = document.createElement("option");
+
+                option.value = end.toISOString().split("T")[0];
+                option.textContent = d.toLocaleString("default", {
+                    month: "long",
+                    year: "numeric"
+                });
+
+                if (i === 0) {
+                    option.selected = true; // default current month
+                }
+
+                select.appendChild(option);
+            }
+        }
+
+        function exportData() {
+            const select = document.getElementById("export-month-select");
+            const selectedValue = select.value;
+            console.log("Exporting data for: " + selectedValue);
+
+            // Example: Call backend export API
+            // fetch('/api/export?month=' + selectedValue)
+        }
+
+        // Load months on page load
+        loadMonths();
+    </script>
+@endpush
