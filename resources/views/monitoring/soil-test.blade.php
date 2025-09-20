@@ -14,12 +14,10 @@
                 </a>
             </div>
         </div>
-        <div class="card shadow-lg rounded-3 border-0 mt-5">
-            <div class="card-body p-4">
         <script src="{{ asset('assets/js/pages/soil-test.js') }}"></script>
         <livewire:soil-test-livewire />
     </div>
-    
+
 
     {{-- Card Line Chart --}}
         <div class="card mt-4 shadow-sm rounded-3">
