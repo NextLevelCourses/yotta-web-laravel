@@ -11,21 +11,6 @@
                 </a>
             </div>
         </div>
-        {{-- <div class="card col-lg-4 col-md-6">
-            <div class="col-lg-6 col-md-6">
-                <div class="mb-4">
-                    <label for="choices-single-default" class="form-label font-size-13 text-muted">Default</label>
-                    <select class="form-control" data-trigger name="choices-single-default" id="choices-single-default"
-                        placeholder="This is a search placeholder">
-                        <option value="">This is a placeholder</option>
-                        <option value="Choice 1">Choice 1</option>
-                        <option value="Choice 2">Choice 2</option>
-                        <option value="Choice 3">Choice 3</option>
-                    </select>
-                </div>
-            </div>
-        </div> --}}
-
 
         <script src="{{ asset('assets/js/pages/soil-test.js') }}"></script>
 
@@ -88,10 +73,9 @@
         function exportData() {
             const select = document.getElementById("export-month-select");
             const selectedValue = select.value;
-            console.log("Exporting data for: " + selectedValue);
-
-            // Example: Call backend export API
-            // fetch('/api/export?month=' + selectedValue)
+            const exportUrl = "{{ route('soil-test.export', ['date' => 'DATE_SELECT']) }}".replace(
+                'DATE_SELECT', selectedValue);
+            window.location.href = exportUrl
         }
 
         // Load months on page load
