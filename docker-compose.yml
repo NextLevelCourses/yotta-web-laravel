@@ -1,27 +1,30 @@
-# version: "3.9"
-
 services:
-  # Backend Laravel + Apache
-  backend:
+  # Laravel CLI
+  dashboard:
     build:
       context: .
-      dockerfile: backend.Dockerfile
-    container_name: yotta-backend
+      dockerfile: dockerfile
+    container_name: yotta-dashboard
     ports:
-      - "8000:80"
-    volumes:
-      - ./storage:/var/www/html/storage
-      - ./.env:/var/www/html/.env
+      - "8002:8002"
     depends_on:
       - mysql
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: yotta_db
+      DB_USERNAME: yotta
+      DB_PASSWORD: yotta_pass
     networks:
-      - yotta-energi
+      - laravel
 
   # Database MySQL
   mysql:
     image: mysql:8.0
     container_name: yotta-mysql
-    restart: always
+    restart: unless-stopped
+    ports:
+      - "4406:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: yotta_db
@@ -29,14 +32,32 @@ services:
       MYSQL_PASSWORD: yotta_pass
     volumes:
       - db_data:/var/lib/mysql
-    ports:
-      - "3307:3306"
     networks:
-      - yotta-energi
+      - laravel
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: yotta-phpmyadmin
+    ports:
+      - 8001:80
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: yotta
+      PMA_PASSWORD: yotta_pass
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    volumes:
+      - pma_data:/etc/phpmyadmin
+    networks:
+      - laravel
 
 volumes:
   db_data:
+  pma_data:
 
 networks:
-  yotta-energi:
+  laravel:
     driver: bridge
