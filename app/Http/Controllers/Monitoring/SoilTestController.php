@@ -16,16 +16,25 @@ class SoilTestController extends Controller
         // ambil data terbaru soil test
         $data = SoilTest::latest()->get();
 
+
         return view('monitoring.soil-test', compact('data'));
     }
 
-    public function export(): BinaryFileResponse|string
+    public function export(string $date): BinaryFileResponse|string
     {
         try {
-            return Excel::download(new SoilTestExport, 'soiltest.xlsx');
+            $month = substr($date, 5, 2); // hasilnya mm (month) only without yyyy or dd
+            $year = substr($date, 0, 4); // hasilnya yyyy (year) only without mm or dd
+            $now = date('Y-m-d');
+            return Excel::download(new SoilTestExport($month, $year), "soiltest_{$now}.xlsx");
         } catch (\Exception $e) {
-            Log::error('Firestore error: ' . $e->getMessage());
+            Log::error('Export error: ' . $e->getMessage());
             return 'Error exporting data';
         }
     }
+
+    
+
+    
+
 }
