@@ -34,7 +34,7 @@ Route::middleware('auth')->group(function () {
         Route::get('air-quality', [AirQualityController::class, 'index'])->name('air-quality');
         Route::prefix('soil-test')->group(function () {
             Route::get('/', [SoilTestController::class, 'index'])->name('soil-test');
-            Route::get('/export', [SoilTestController::class, 'export'])->name('soil-test.export');
+            Route::get('/export/{date}', [SoilTestController::class, 'export'])->name('soil-test.export');
             Route::get('/linechart', [SoilTestController::class, 'linechart'])->name('soil-test.linechart');
         });
         Route::get('soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');

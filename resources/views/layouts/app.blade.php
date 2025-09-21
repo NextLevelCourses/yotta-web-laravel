@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8" />
     <title>Dashboard | Yotta Aksara Energy</title>
@@ -19,10 +20,11 @@
     <link href="{{ asset('assets/css/app.min.css') }}" id="app-style" rel="stylesheet" type="text/css" />
     @livewireStyles
 </head>
+
 <body>
     <!-- Begin page -->
     <div id="layout-wrapper">
-        
+
         @include('layouts.partials.header')
         @include('layouts.partials.sidebar')
 
@@ -74,17 +76,19 @@
     <!-- Knob + ECharts -->
     <!-- <script src="{{ asset('assets/libs/jquery-knob/jquery.knob.min.js') }}"></script> -->
     <!-- <script src="{{ asset('assets/js/pages/jquery-knob.init.js') }}"></script>  -->
-    <script src="{{ asset('assets/libs/echarts/echarts.min.js') }}"></script> 
+    <script src="{{ asset('assets/libs/echarts/echarts.min.js') }}"></script>
     <script src="{{ asset('assets/libs/chart.js/chart.umd.js') }}"></script>
     <!-- chartjs init -->
     <script src="{{ asset('assets/js/pages/chartjs.init.js') }}"></script>
 
     <!-- Custom Pages -->
-    
-    
+    @stack('scripts')
+
+
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
-    
+
     @livewireScripts
 </body>
+
 </html>

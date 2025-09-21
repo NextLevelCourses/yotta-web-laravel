@@ -61,7 +61,9 @@ document.addEventListener("livewire:init", () => {
     });
 
     const initGauge = (id, title, unit, min, max, zones) => {
-        const ctx = document.getElementById(id).getContext("2d");
+        const el = document.getElementById(id);
+        if (!el) return null;
+        const ctx = el.getContext("2d");
         const data = {
             datasets: [
                 {
@@ -79,7 +81,9 @@ document.addEventListener("livewire:init", () => {
     };
 
     const initChart = (id, title, unit, color, max) => {
-        const ctx = document.getElementById(id).getContext("2d");
+        const el = document.getElementById(id);
+        if (!el) return null;
+        const ctx = el.getContext("2d");
         const config = {
             type: "line",
             data: {
