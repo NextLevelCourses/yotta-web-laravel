@@ -1,0 +1,129 @@
+version: 2.1
+
+# Note: Tambahkan variable & secret di GitHub repo
+# DOCKERHUB_USERNAME=
+# DOCKERHUB_PASSWORD=
+# DOCKERHUB_REPO=xamppsulmar/yotta-aksara-energi
+# STAGING_USER=
+# STAGING_HOST=
+# STAGING_PATH=/home/ubuntu/dev-yotta
+
+executors:
+  docker-executor:
+    docker:
+      - image: cimg/base:stable
+
+jobs:
+  # -------------------------------
+  # Job 1: Build & Test Docker Image
+  # -------------------------------
+  build-and-test:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.14
+      - run:
+          name: Build Docker image & determine version
+          command: |
+            VERSION="v1.$CIRCLE_BUILD_NUM"
+            echo "VERSION=$VERSION" > version.env
+            make dy-build
+      - run:
+          name: Run tests & check endpoint
+          command: |
+            source version.env
+            if [ ! -f .env ]; then cp .env.example .env; fi
+            make dy-start
+            docker compose run --rm dashboard npm test
+            sleep 5
+            STATUS=$(docker compose exec dashboard curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health)
+            if [ "$STATUS" -ne 200 ]; then
+              echo "❌ Endpoint test failed! Status code: $STATUS"
+              make dy-stop
+              exit 1
+            else
+              echo "✅ Endpoint test success! Status code: $STATUS"
+            fi
+            make dy-stop
+
+  # -------------------------------
+  # Job 2: Push Docker Image
+  # -------------------------------
+  push-image:
+    executor: docker-executor
+    steps:
+      - setup_remote_docker
+      - run:
+          name: Push Docker image to Docker Hub
+          command: |
+            source version.env
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker tag $DOCKERHUB_REPO:$VERSION $DOCKERHUB_REPO:${CIRCLE_SHA1}
+            docker tag $DOCKERHUB_REPO:$VERSION $DOCKERHUB_REPO:latest
+            docker push $DOCKERHUB_REPO:$VERSION
+            docker push $DOCKERHUB_REPO:${CIRCLE_SHA1}
+            docker push $DOCKERHUB_REPO:latest
+
+  # -------------------------------
+  # Job 3: Deploy ke Staging dengan Rollback + Endpoint test
+  # -------------------------------
+  deploy-staging:
+    executor: docker-executor
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "xx:xx:xx:xx" # Ganti dengan fingerprint SSH key di CircleCI
+      - run:
+          name: Deploy to staging with rollback & endpoint check
+          command: |
+            source version.env
+            ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "
+              cd $STAGING_PATH &&
+              if docker ps -q -f name=dashboard > /dev/null; then
+                BACKUP_NAME=dashboard_backup_$(date +%s)
+                docker rename dashboard $BACKUP_NAME
+              else
+                BACKUP_NAME=
+              fi
+              docker pull $DOCKERHUB_REPO:$VERSION
+              make dy-start
+              if ! make dy-migrate; then
+                echo 'Migration failed! Rolling back...'
+                make dy-stop
+                if [ ! -z \"$BACKUP_NAME\" ]; then
+                  docker rename $BACKUP_NAME dashboard
+                  docker start dashboard
+                fi
+                exit 1
+              fi
+              sleep 5
+              STATUS=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8002/health)
+              if [ \"\$STATUS\" -ne 200 ]; then
+                echo '❌ Endpoint test failed! Rolling back... Status code:' \$STATUS
+                make dy-stop
+                if [ ! -z \"\$BACKUP_NAME\" ]; then
+                  docker rename \$BACKUP_NAME dashboard
+                  docker start dashboard
+                fi
+                exit 1
+              else
+                echo '✅ Endpoint test success! Status code:' \$STATUS
+              fi
+              if [ ! -z \"\$BACKUP_NAME\" ]; then
+                docker rm -f \$BACKUP_NAME 2>/dev/null || true
+              fi
+              echo 'Deploy successful!'
+            "
+
+workflows:
+  version: 2
+  build-test-push-deploy:
+    jobs:
+      - build-and-test
+      - push-image:
+          requires:
+            - build-and-test
+      - deploy-staging:
+          requires:
+            - push-image
