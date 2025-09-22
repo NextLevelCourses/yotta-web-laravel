@@ -28,7 +28,7 @@
                             <div class="d-flex flex-column h-100">
                                 <div class="mb-4 mb-md-5 text-center">
                                     <a href="{{ url('/') }}" class="d-block auth-logo">
-                                        <img src="{{ asset('assets/images/logo-sm.svg') }}" alt="" height="28"> <span class="logo-txt">Yotta Aksara</span>
+                                        <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="28"> <span class="logo-txt">Yotta Aksara</span>
                                     </a>
                                 </div>
                                 @yield('content')
