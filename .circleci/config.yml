@@ -30,35 +30,40 @@
 #     jobs:
 #       - say-hello
 
-# ======= CI/CD Configuration for CircleCI  Testing =======
+# CI/CD Configuration for CircleCI Testing
 
 version: 2.1
 
-# Note: Tambahkan variable & secret di GitHub repo
-# DOCKERHUB_USERNAME=
-# DOCKERHUB_PASSWORD=
-# DOCKERHUB_REPO=xamppsulmar/yotta-aksara-energi
-# STAGING_USER=
-# STAGING_HOST=
-# STAGING_PATH=/home/ubuntu/dev-yotta
+# ======================================================
+# CircleCI Environment Variables (Add these in Project Settings)
+# ======================================================
+#
+# 1️⃣ Docker Hub Credentials
+# DOCKERHUB_USERNAME   # Username akun Docker Hub, contoh: mydockeruser
+# DOCKERHUB_PASSWORD   # Password atau Docker Hub token (gunakan secret)
+# DOCKERHUB_REPO       # Repository Docker Hub, contoh: mydockeruser/yotta-aksara-energi
+#
+# 2️⃣ Staging Server Credentials
+# STAGING_USER         # User SSH di server staging, contoh: ubuntu
+# STAGING_HOST         # IP atau domain server staging, contoh: 123.45.67.89
+# STAGING_PATH         # Path project di server staging, contoh: /home/ubuntu/dev-yotta
 
+# =======================
+# Executors
+# =======================
 executors:
   docker-executor:
     docker:
       - image: cimg/base:stable
 
-jobs:
-  # -------------------------------
-  # Job 1: Build & Test Docker Image
-  # -------------------------------
-  build-and-test:
-    executor: docker-executor
+# =======================
+# Reusable Commands
+# =======================
+commands:
+  # Install Docker Compose
+  install-docker-compose:
+    description: "Install Docker Compose"
     steps:
-      - checkout
-      #adding remote docker to build docker image
-      - setup_remote_docker
-
-      # Install docker-compose
       - run:
           name: Install Docker Compose
           command: |
@@ -67,44 +72,31 @@ jobs:
             sudo chmod +x /usr/local/bin/docker-compose
             docker-compose --version
 
-      # build docker image based on build number
+  # Wait for Laravel app + MySQL to be ready
+  wait-for-app:
+    description: "Wait for Laravel + MySQL to be ready"
+    steps:
       - run:
-          name: Build Docker image & determine version
+          name: Wait for Laravel App
           command: |
-            VERSION="v1.$CIRCLE_BUILD_NUM"
-            echo "VERSION=$VERSION" > version.env
-            docker build -t yotta-aksara-energi:$VERSION .
-
-            # mungkin dibutuhkan jika ingin push ke docker hub
-            # docker tag yotta-aksara-energi:$VERSION $DOCKERHUB_REPO:$VERSION
-
-      # run docker compose
-      - run:
-          name: Run tests inside Docker container
-          command: |           
-            if [ ! -f .env ]; then cp .env.example .env; fi
-            VERSION=$(cat version.env | cut -d '=' -f2)
-            docker-compose up -d
-                  
-            # Wait for Laravel app to be ready (HTTP health-check)
             for i in {1..20}; do
               if docker exec yotta-dashboard curl -fs http://localhost:8002 > /dev/null; then
-                echo "✅ App is up!"
+                echo "✅ Laravel app is up!"
                 break
               else
                 echo "⏳ Waiting for app... ($i/20)"
                 sleep 10
               fi
             done
-            # if the app is not up after 200 seconds, exit with error
             if [ $i -eq 20 ]; then
               echo "❌ App did not start in time. Exiting..."
               docker-compose logs
               exit 1
             fi
 
-            # Wait for MySQL before running migrations
-            echo "⏳ Waiting for MySQL to be ready..."
+      - run:
+          name: Wait for MySQL
+          command: |
             for i in {1..20}; do
               if docker exec yotta-dashboard php -r "new mysqli('mysql','yotta','yotta_pass','yotta_db');" 2>/dev/null; then
                 echo "✅ MySQL is ready!"
@@ -114,71 +106,145 @@ jobs:
                 sleep 5
               fi
             done
-
-            # setup laravel
-            if ! docker exec yotta-dashboard php artisan migrate --force; then
-              echo "❌ Migration failed, showing Laravel logs..."
-              docker exec yotta-dashboard cat storage/logs/laravel.log || true
+            if [ $i -eq 20 ]; then
+              echo "❌ MySQL did not start in time."
               exit 1
             fi
 
-            if ! docker exec yotta-dashboard php artisan db:seed --force; then
-              echo "❌ DB seed failed, showing Laravel logs..."
-              docker exec yotta-dashboard cat storage/logs/laravel.log || true
-              exit 1
-            fi
- 
+# =======================
+# Jobs
+# =======================
 
-            # done testing, stop and remove containers
-            echo "✅ Laravel app ready"
-            docker-compose down -v
+# -------------------------------
+# Job 1: Build & Test Docker Image
+# -------------------------------
+jobs:
+  build-and-test:
+    executor: docker-executor
+    steps:
+      - checkout
 
+      # Setup Docker to build images
+      - setup_remote_docker:
+          docker_layer_caching: true
 
-  # # -------------------------------
-  # # Job 2: Deploy ke Staging
-  # # -------------------------------
+      - install-docker-compose
+
+      # -------------------------------
+      # Build Docker image
+      # -------------------------------
+      - run:
+          name: Build Docker Image
+          command: |
+            VERSION="v1.$CIRCLE_BUILD_NUM"
+            echo "VERSION=$VERSION" > version.env
+            docker build -t yotta-aksara-energi:$VERSION .
+
+      # -------------------------------
+      # Run Docker Compose & Health Check
+      # -------------------------------
+      - run:
+          name: Run Docker Compose
+          command: |
+            if [ ! -f .env ]; then cp .env.example .env; fi
+            docker-compose up -d
+
+      - wait-for-app
+
+      # -------------------------------
+      # Laravel Migrations & Seeding
+      # -------------------------------
+      - run:
+          name: Laravel Setup
+          command: |
+            docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+            docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+
+      # -------------------------------
+      # Cleanup containers
+      # -------------------------------
+      - run:
+          name: Cleanup
+          command: docker-compose down -v
+
+# -------------------------------
+# Job 2: Push Docker Image to Docker Hub
+# -------------------------------
+  push-to-dockerhub:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Login to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+      - run:
+          name: Push Docker Image
+          command: |
+            VERSION=$(cat version.env | cut -d '=' -f2)
+            # Push versi unik
+            docker tag yotta-aksara-energi:$VERSION $DOCKERHUB_REPO:$VERSION
+            docker push $DOCKERHUB_REPO:$VERSION
+            # Optional push latest tag
+            docker tag yotta-aksara-energi:$VERSION $DOCKERHUB_REPO:latest
+            docker push $DOCKERHUB_REPO:latest
+
+# -------------------------------
+# Job 3: Deploy to Staging
+# -------------------------------
   deploy-staging:
     docker:
       - image: cimg/base:stable
     steps:
-      - add_ssh_keys # perlu dicari tau kembali
+      - add_ssh_keys
+      - checkout
       - run:
-          name: "Deploy to Staging Server"
+          name: Deploy to Staging
           command: |
-            ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "  # perlukan setup ssh di circleci
+            VERSION=$(cat version.env | cut -d '=' -f2)
+            ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "
               set -e
-              cd $STAGING_PATH && \ # masuk ke direktori project di server diperlukan setup env variable STAGING_PATH di circleci
-              echo '📥 Pulling latest image...' && \
-              docker pull $DOCKERHUB_REPO:latest && \ # perlu push image ke docker hub di job sebelumnya atau buat pipeline terpisah
-              echo '🚀 Restarting container...' && \
-              docker-compose down -v || true && \
-              docker-compose up -d --build && \
-              echo '⏳ Waiting for MySQL...' && \
+              cd $STAGING_PATH
+              docker pull $DOCKERHUB_REPO:$VERSION
+              docker-compose down -v || true
+              docker-compose up -d --build
+              # Health check MySQL
               for i in {1..20}; do
-                if docker exec yotta-dashboard php -r \"new mysqli('mysql','yotta','yotta_pass','yotta_db');\" 2>/dev/null; then
-                  echo '✅ MySQL is ready!'
-                  break
-                else
-                  echo 'Waiting MySQL... (\$i/20)'
-                  sleep 5
-                fi
-              done && \
-              echo '⚙️ Running migrations...' && \
-              docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log || true; exit 1; } && \
-              echo '🌱 Seeding database...' && \
-              docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log || true; exit 1; } && \
-              echo '✅ Deployment completed successfully!'
+                if docker exec yotta-dashboard php -r \"new mysqli('mysql','yotta','yotta_pass','yotta_db');\" 2>/dev/null; then break; fi
+                sleep 5
+              done
+              # Run migrations & seeding
+              docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+              docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
             "
 
+# =======================
+# Workflows
+# =======================
 workflows:
   version: 2
   build-test-deploy:
     jobs:
+      # Step 1: Build & test Docker image
       - build-and-test
-      - deploy-staging:
+
+      # Step 2: Push Docker image to Docker Hub
+      - push-to-dockerhub:
           requires:
             - build-and-test
           filters:
             branches:
-              only: 
-                - ci-cd/deploy  # deploy hanya jika push ke branch develop
+              only:
+                - ci-cd/deploy
+
+      # Step 3: Deploy to staging
+      - deploy-staging:
+          requires:
+            - push-to-dockerhub
+          filters:
+            branches:
+              only:
+                - ci-cd/deploy
