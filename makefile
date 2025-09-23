@@ -58,3 +58,9 @@ y-refresh:
 	php artisan migrate:refresh
 y-seed:
 	php artisan db:seed
+y-laravel-optimize-all:
+	php artisan optimize
+	php artisan cache:clear
+	php artisan config:clear
+	php artisan route:clear
+	php artisan view:clear
