@@ -131,13 +131,13 @@ jobs:
       - install-docker-compose
 
       - run:
-        name: Prepare .env
-        command: |
-          if [ ! -f .env ]; then cp .env.example .env; fi
-          sed -i 's/DB_HOST=.*/DB_HOST=mysql/' .env
-          sed -i 's/DB_DATABASE=.*/DB_DATABASE=yotta_db/' .env
-          sed -i 's/DB_USERNAME=.*/DB_USERNAME=yotta/' .env
-          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=yotta_pass/' .env
+          name: Prepare .env
+          command: |
+            if [ ! -f .env ]; then cp .env.example .env; fi
+            sed -i 's/DB_HOST=.*/DB_HOST=mysql/' .env
+            sed -i 's/DB_DATABASE=.*/DB_DATABASE=yotta_db/' .env
+            sed -i 's/DB_USERNAME=.*/DB_USERNAME=yotta/' .env
+            sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=yotta_pass/' .env
 
       # -------------------------------
       # Build Docker image
@@ -157,6 +157,7 @@ jobs:
           command: |
             if [ ! -f .env ]; then cp .env.example .env; fi
             docker-compose up -d
+
 
       - wait-for-app
 
