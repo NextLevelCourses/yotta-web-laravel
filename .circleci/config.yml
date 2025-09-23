@@ -130,6 +130,15 @@ jobs:
 
       - install-docker-compose
 
+      - run:
+        name: Prepare .env
+        command: |
+          if [ ! -f .env ]; then cp .env.example .env; fi
+          sed -i 's/DB_HOST=.*/DB_HOST=mysql/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=yotta_db/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=yotta/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=yotta_pass/' .env
+
       # -------------------------------
       # Build Docker image
       # -------------------------------
@@ -152,13 +161,17 @@ jobs:
       - wait-for-app
 
       # -------------------------------
-      # Laravel Migrations & Seeding
+      # Generate Laravel APP_KEY & bersihkan cache
       # -------------------------------
       - run:
           name: Laravel Setup
           command: |
+            docker exec yotta-dashboard php artisan key:generate --force
+            docker exec yotta-dashboard php artisan config:clear
+            docker exec yotta-dashboard php artisan cache:clear
             docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
             docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+
 
       # -------------------------------
       # Cleanup containers
@@ -253,4 +266,3 @@ workflows:
             branches:
               only:
                 - ci-cd/deploy
-                
