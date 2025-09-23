@@ -2,21 +2,22 @@
 
 namespace App\Livewire;
 
-use App\Models\SoilTest;
-use Livewire\Component;
-use Kreait\Firebase\Contract\Firestore;
-use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Livewire\Component;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Kreait\Firebase\Contract\Firestore;
 
 class SoilTestLivewire extends Component
 {
-    public $temperature = '--';
-    public $humidity = '--';
-    public $ec = '--';
-    public $ph = '--';
-    public $nitrogen = '--';
-    public $fosfor = '--';
-    public $kalium = '--';
+    public $devices_id = '--',
+        $temperature = '--',
+        $humidity = '--',
+        $ec = '--',
+        $ph = '--',
+        $nitrogen = '--',
+        $fosfor = '--',
+        $kalium = '--';
 
     public function mount()
     {
@@ -26,6 +27,7 @@ class SoilTestLivewire extends Component
     public function handleStoreDataCollection(array $data): array
     {
         return array(
+            'device_id' => $data['Device_ID'] ?? 'Unknown Device',
             'temperature' => $data['temperature'] ?? 0,
             'humidity' => $data['humidity'] ?? 0,
             'ph' => $data['ph'] ?? 0,
@@ -52,6 +54,7 @@ class SoilTestLivewire extends Component
 
             if ($snapshot->exists()) {
                 $data = $snapshot->data();
+                $this->devices_id = $data['Device_ID'] ?? '--';
                 $this->temperature = $data['temperature'] ?? '--';
                 $this->humidity = $data['humidity'] ?? '--';
                 $this->ec = $data['Konduktivitas'] ?? '--';
@@ -59,12 +62,13 @@ class SoilTestLivewire extends Component
                 $this->nitrogen = $data['nitrogen'] ?? '--';
                 $this->fosfor = $data['Fosfor'] ?? '--';
                 $this->kalium = $data['Kalium'] ?? '--';
-                SoilTest::create($this->handleStoreDataCollection($data)); //store data history every 3 seconds
+                DB::table('soil_tests')->insert($this->handleStoreDataCollection($data)); //store data history every 3 seconds
 
                 // Kirim ke JS
                 // $this->dispatch('sensorDataUpdated', $data);
                 // Kirim event ke JavaScript dengan data yang diperbarui
                 $this->dispatch('updateKnobs', [
+                    'device_id' => $this->devices_id,
                     'temperature' => $this->temperature,
                     'humidity' => $this->humidity,
                     'ec' => $this->ec,
@@ -74,11 +78,11 @@ class SoilTestLivewire extends Component
                     'kalium' => $this->kalium,
                 ]);
             } else {
-                $this->temperature = $this->humidity = $this->ec = $this->ph =
+                $this->devices_id = $this->temperature = $this->humidity = $this->ec = $this->ph =
                     $this->nitrogen = $this->fosfor = $this->kalium = 'Not Found';
             }
         } catch (\Throwable $e) {
-            $this->temperature = $this->humidity = $this->ec = $this->ph =
+            $this->devices_id = $this->temperature = $this->humidity = $this->ec = $this->ph =
                 $this->nitrogen = $this->fosfor = $this->kalium = 'Error';
 
             Log::error('Firestore error: ' . $e->getMessage());
