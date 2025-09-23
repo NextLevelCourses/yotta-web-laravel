@@ -128,7 +128,7 @@ workflows:
   version: 2
   build-test-push-deploy:
     jobs:
-      - build-and-test
+      - build-and-test:
         filters:
           branches:
             only: ci-cd/test
