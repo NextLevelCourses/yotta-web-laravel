@@ -98,7 +98,7 @@ commands:
           name: Wait for MySQL
           command: |
             for i in {1..20}; do
-              if docker exec yotta-dashboard php -r "new mysqli('mysql','yotta','yotta_pass','yotta_db');" 2>/dev/null; then
+              if docker exec yotta-mysql mysqladmin ping -uyotta -pyotta_pass --silent; then
                 echo "✅ MySQL is ready!"
                 break
               else
@@ -211,11 +211,16 @@ jobs:
               docker pull $DOCKERHUB_REPO:$VERSION
               docker-compose down -v || true
               docker-compose up -d --build
+
               # Health check MySQL
               for i in {1..20}; do
-                if docker exec yotta-dashboard php -r \"new mysqli('mysql','yotta','yotta_pass','yotta_db');\" 2>/dev/null; then break; fi
+                if docker exec yotta-mysql mysqladmin ping -uyotta -pyotta_pass --silent; then
+                  echo "✅ MySQL is ready!"
+                  break
+                fi
                 sleep 5
               done
+
               # Run migrations & seeding
               docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
               docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
@@ -248,3 +253,4 @@ workflows:
             branches:
               only:
                 - ci-cd/deploy
+                
