@@ -30,6 +30,7 @@ class SoilTestExport implements FromCollection, WithHeadings, WithMapping
     public function map($row): array
     {
         return [
+            $row->device_id ?? 'Unknown Device',
             $row->measured_at ?? '-',
             $row->temperature ? $row->temperature  : '0',
             $row->humidity ? $row->humidity : '0',
@@ -45,6 +46,7 @@ class SoilTestExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
+            'Device ID',
             'Measured At',
             'Temperature (°C)',
             'Humidity (%)',
