@@ -36,6 +36,7 @@ class SoilTestLivewire extends Component
             'fosfor' => $data['Fosfor'] ?? 0,
             'kalium' => $data['Kalium'] ?? 0,
             'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
+            'created_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
         );
     }
 
