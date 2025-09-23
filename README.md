@@ -1,8 +1,8 @@
 
 
-# Yotta Aksara IoT Dashboard
+# Laravel 12 Base Project IOT Documentation : YOTTA AKSARA ENERGI Requirements
 
-[Quick Start](#quick-start-docker) | [Manual Install](#alternative-manual-local-installation) | [Services & Ports](#services-and-ports) | [Troubleshooting](#troubleshooting) | [License](#license)
+[Quick Start](#quick-start-docker) | [Manual Install](#alternative-manual-local-installation) | [Services & Ports](#services-and-ports) | [Troubleshooting](#troubleshooting)
 
 
 An IoT dashboard built with Laravel 12, Livewire, and Vite for Yotta Aksara Energi. This project provides real-time monitoring and management for air quality, soil tests, and user administration, integrating MQTT for device communication.
