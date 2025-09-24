@@ -41,13 +41,6 @@ executors:
     docker:
       - image: cimg/base:stable
 
-# ...existing code...
-
-executors:
-  docker-executor:
-    docker:
-      - image: cimg/base:stable
-
 jobs:
 # ======================= BUILD AND TEST ========================
   build-and-test:
