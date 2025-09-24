@@ -9,7 +9,7 @@ services:
       - "8002:8002"
     depends_on:
       - mysql
-    environment:
+    # environment:
       # APP_NAME: yottaaksara-iot-dahsboard
       # APP_URL: https://dev-yotta.quantummute.com
       # APP_TIMEZONE: Asia/Jakarta
