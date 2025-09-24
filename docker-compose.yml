@@ -13,7 +13,7 @@ services:
       APP_NAME: yottaaksara-iot-dahsboard
       APP_URL: https://dev-yotta.quantummute.com
       APP_TIMEZONE: Asia/Jakarta
-      APP_ENV: local
+      APP_ENV: staging
       APP_DEBUG: true
       DB_HOST: mysql
       DB_PORT: 3306
