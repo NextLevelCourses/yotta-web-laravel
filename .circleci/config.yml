@@ -68,7 +68,7 @@ jobs:
             echo "QUEUE_CONNECTION=${QUEUE_CONNECTION}" >> .env
             echo "APP_TIMEZONE=${APP_TIMEZONE}" >> .env
 
-      run:
+      - run:
           name: Display .env content
           command: cat .env
 
