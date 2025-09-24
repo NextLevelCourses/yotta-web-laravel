@@ -1,269 +1,287 @@
-# # Use the latest 2.1 version of CircleCI pipeline process engine.
-# # See: https://circleci.com/docs/reference/configuration-reference
-# version: 2.1
+version: 2.1
 
-# # Define a job to be invoked later in a workflow.
-# # See: https://circleci.com/docs/guides/orchestrate/jobs-steps/#jobs-overview & https://circleci.com/docs/reference/configuration-reference/#jobs
-# jobs:
-#   say-hello:
-#     # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.
-#     # See: https://circleci.com/docs/guides/execution-managed/executor-intro/ & https://circleci.com/docs/reference/configuration-reference/#executor-job
-#     docker:
-#       # Specify the version you desire here
-#       # See: https://circleci.com/developer/images/image/cimg/base
-#       - image: cimg/base:current
-
-#     # Add steps to the job
-#     # See: https://circleci.com/docs/guides/orchestrate/jobs-steps/#steps-overview & https://circleci.com/docs/reference/configuration-reference/#steps
-#     steps:
-#       # Checkout the code as the first step.
-#       - checkout
-#       - run:
-#           name: "Say hello"
-#           command: "echo Hello, World! dashboard iot"
-
-# # Orchestrate jobs using workflows
-# # See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
-# workflows:
-#   say-hello-workflow: # This is the name of the workflow, feel free to change it to better match your workflow.
-#     # Inside the workflow, you define the jobs you want to run.
-#     jobs:
-#       - say-hello
-
-# CI/CD Configuration for CircleCI Testing
+# ============================================================
+# CircleCI CI/CD Pipeline Configuration for Yotta Aksara Energi
+# ------------------------------------------------------------
+# Executor:
+#   - Menggunakan Docker image cimg/base:stable sebagai lingkungan build.
+#
+# Jobs:
+#   - build-and-test:
+#       - Checkout kode.
+#       - Setup Docker Compose & remote Docker.
+#       - Generate file .env untuk environment build.
+#       - Build image Docker aplikasi Laravel.
+#       - Jalankan docker compose untuk semua service (app, db, dll).
+#       - Setup Laravel (config clear, cache clear, migrate, seed).
+#       - Cleanup container & image setelah selesai.
+#       - Simpan versi image ke workspace.
+#   - push-to-dockerhub:
+#       - Login ke DockerHub.
+#       - Push image hasil build ke DockerHub dengan tag versi dan latest.
+#   - deploy-staging:
+#       - SSH ke server staging.
+#       - Generate .env jika belum ada atau ada key yang kosong.
+#       - Pull image terbaru dari DockerHub.
+#       - Jalankan docker compose up -d --build.
+#       - Jalankan migrate & seed di staging.
+#   - deploy-production:
+#       - SSH ke server production.
+#       - Generate .env jika belum ada atau ada key yang kosong.
+#       - Pull image terbaru dari DockerHub.
+#       - Jalankan docker compose up -d --build.
+#       - Jalankan migrate di production.
+#
+# Workflows:
+#   - build-and-test → approval → push-to-dockerhub → approval → deploy-staging/production (dengan approval manual).
+#   - Pipeline hanya berjalan pada branch ci-cd/test.
+# ============================================================
 
 version: 2.1
 
-# ======================================================
-# CircleCI Environment Variables (Add these in Project Settings)
-# ======================================================
-#
-# 1️⃣ Docker Hub Credentials
-# DOCKERHUB_USERNAME   # Username akun Docker Hub, contoh: mydockeruser
-# DOCKERHUB_PASSWORD   # Password atau Docker Hub token (gunakan secret)
-# DOCKERHUB_REPO       # Repository Docker Hub, contoh: mydockeruser/yotta-aksara-energi
-#
-# 2️⃣ Staging Server Credentials
-# STAGING_USER         # User SSH di server staging, contoh: ubuntu
-# STAGING_HOST         # IP atau domain server staging, contoh: 123.45.67.89
-# STAGING_PATH         # Path project di server staging, contoh: /home/ubuntu/dev-yotta
-
-# =======================
-# Executors
-# =======================
 executors:
   docker-executor:
     docker:
       - image: cimg/base:stable
 
-# =======================
-# Reusable Commands
-# =======================
-commands:
-  # Install Docker Compose
-  install-docker-compose:
-    description: "Install Docker Compose"
-    steps:
-      - run:
-          name: Install Docker Compose
-          command: |
-            sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" \
-              -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
-            docker-compose --version
+# ...existing code...
 
-  # Wait for Laravel app + MySQL to be ready
-  wait-for-app:
-    description: "Wait for Laravel + MySQL to be ready"
-    steps:
-      - run:
-          name: Wait for Laravel App
-          command: |
-            for i in {1..20}; do
-              if docker exec yotta-dashboard curl -fs http://localhost:8002 > /dev/null; then
-                echo "✅ Laravel app is up!"
-                break
-              else
-                echo "⏳ Waiting for app... ($i/20)"
-                sleep 10
-              fi
-            done
-            if [ $i -eq 20 ]; then
-              echo "❌ App did not start in time. Exiting..."
-              docker-compose logs
-              exit 1
-            fi
+executors:
+  docker-executor:
+    docker:
+      - image: cimg/base:stable
 
-      - run:
-          name: Wait for MySQL
-          command: |
-            for i in {1..20}; do
-              if docker exec yotta-mysql mysqladmin ping -uyotta -pyotta_pass --silent; then
-                echo "✅ MySQL is ready!"
-                break
-              else
-                echo "⏳ Waiting for MySQL... ($i/20)"
-                sleep 5
-              fi
-            done
-            if [ $i -eq 20 ]; then
-              echo "❌ MySQL did not start in time."
-              exit 1
-            fi
-
-# =======================
-# Jobs
-# =======================
-
-# -------------------------------
-# Job 1: Build & Test Docker Image
-# -------------------------------
 jobs:
+# ======================= BUILD AND TEST ========================
   build-and-test:
     executor: docker-executor
     steps:
       - checkout
-
-      # Setup Docker to build images
       - setup_remote_docker:
           docker_layer_caching: true
-
-      - install-docker-compose
-
       - run:
-          name: Prepare .env
+          name: Generate local .env for testing
           command: |
-            if [ ! -f .env ]; then cp .env.example .env; fi
-            sed -i 's/DB_HOST=.*/DB_HOST=mysql/' .env
-            sed -i 's/DB_DATABASE=.*/DB_DATABASE=yotta_db/' .env
-            sed -i 's/DB_USERNAME=.*/DB_USERNAME=yotta/' .env
-            sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=yotta_pass/' .env
-
-      # -------------------------------
-      # Build Docker image
-      # -------------------------------
+            echo "APP_NAME=${APP_NAME}" >> .env
+            echo "APP_ENV=${APP_ENV}" >> .env
+            echo "APP_KEY=${APP_KEY}" >> .env
+            echo "APP_DEBUG=${APP_DEBUG}" >> .env
+            echo "APP_URL=${APP_URL}" >> .env
+            echo "DB_CONNECTION=${DB_CONNECTION}" >> .env
+            echo "DB_HOST=${DB_HOST}" >> .env
+            echo "DB_PORT=3306" >> .env
+            echo "DB_DATABASE=${DB_DATABASE}" >> .env
+            echo "DB_USERNAME=${DB_USERNAME}" >> .env
+            echo "DB_PASSWORD=${DB_PASSWORD}" >> .env
+            echo "CACHE_DRIVER=${CACHE_STORE}" >> .env
+            echo "SESSION_DRIVER=${SESSION_DRIVER}" >> .env
+            echo "QUEUE_CONNECTION=${QUEUE_CONNECTION}" >> .env
+            echo "APP_TIMEZONE=${APP_TIMEZONE}" >> .env
       - run:
           name: Build Docker Image
           command: |
-            VERSION="v1.$CIRCLE_BUILD_NUM"
+            VERSION="v1"
             echo "VERSION=$VERSION" > version.env
             docker build -t yotta-aksara-energi:$VERSION .
-
-      # -------------------------------
-      # Run Docker Compose & Health Check
-      # -------------------------------
       - run:
           name: Run Docker Compose
-          command: |
-            if [ ! -f .env ]; then cp .env.example .env; fi
-            docker-compose up -d
-
-
-      - wait-for-app
-
-      # -------------------------------
-      # Generate Laravel APP_KEY & bersihkan cache
-      # -------------------------------
+          command: docker compose up -d
       - run:
           name: Laravel Setup
           command: |
-            docker exec yotta-dashboard php artisan key:generate --force
             docker exec yotta-dashboard php artisan config:clear
             docker exec yotta-dashboard php artisan cache:clear
             docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
             docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
-
-
-      # -------------------------------
-      # Cleanup containers
-      # -------------------------------
       - run:
-          name: Cleanup
-          command: docker-compose down -v
+          name: Test Laravel Endpoint
+          command: |
+            echo "Testing /health endpoint..."
+            for i in {1..5}; do
+              RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health)
+              if [ "$RESPONSE" = "200" ]; then
+                echo "✅ Endpoint /health is OK"
+                break
+              fi
+              echo "Waiting for Laravel to be ready..."
+              sleep 5
+            done
+            if [ "$RESPONSE" != "200" ]; then
+              echo "❌ Endpoint /health did not respond 200"
+              exit 1
+            fi
+      - run:
+          name: Cleanup Docker
+          command: docker compose down --remove-orphans && docker system prune -f
+      - persist_to_workspace:
+          root: .
+          paths:
+            - version.env
 
-# -------------------------------
-# Job 2: Push Docker Image to Docker Hub
-# -------------------------------
+# ====================== PUSH TO DOCKERHUB ========================
   push-to-dockerhub:
     docker:
       - image: cimg/base:stable
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: Login to Docker Hub
-          command: |
-            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          name: Docker Login
+          command: echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
       - run:
-          name: Push Docker Image
+          name: Push Image
           command: |
-            VERSION=$(cat version.env | cut -d '=' -f2)
-            # Push versi unik
+            VERSION=$(cut -d '=' -f2 version.env)
             docker tag yotta-aksara-energi:$VERSION $DOCKERHUB_REPO:$VERSION
             docker push $DOCKERHUB_REPO:$VERSION
-            # Optional push latest tag
             docker tag yotta-aksara-energi:$VERSION $DOCKERHUB_REPO:latest
             docker push $DOCKERHUB_REPO:latest
 
-# -------------------------------
-# Job 3: Deploy to Staging
-# -------------------------------
+# ===================== DEPLOY TO STAGING SERVER ========================
   deploy-staging:
     docker:
       - image: cimg/base:stable
     steps:
       - add_ssh_keys
       - checkout
+      - attach_workspace:
+          at: .
       - run:
           name: Deploy to Staging
           command: |
-            VERSION=$(cat version.env | cut -d '=' -f2)
+            VERSION=$(cut -d '=' -f2 version.env)
             ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "
-              set -e
               cd $STAGING_PATH
+
+              # Generate .env if not exists or missing keys
+              REQUIRED_KEYS=(APP_NAME APP_ENV APP_KEY APP_DEBUG APP_URL DB_CONNECTION DB_DATABASE DB_HOST DB_USERNAME DB_PASSWORD CACHE_DRIVER SESSION_DRIVER QUEUE_CONNECTION APP_TIMEZONE)
+              GENERATE_ENV=false
+
+              if [ ! -f .env ]; then
+                GENERATE_ENV=true
+              else
+                for key in \${REQUIRED_KEYS[@]}; do
+                  if ! grep -q \"^\\$key=\" .env || grep -q \"^\\$key=\$\" .env; then
+                    GENERATE_ENV=true
+                    break
+                  fi
+                done
+              fi
+
+              if [ \"\$GENERATE_ENV\" = true ]; then
+                echo \"APP_NAME=$APP_NAME\" > .env
+                echo \"APP_ENV=$APP_ENV\" >> .env
+                echo \"APP_KEY=$APP_KEY\" >> .env
+                echo \"APP_DEBUG=$APP_DEBUG\" >> .env
+                echo \"APP_URL=$APP_URL\" >> .env
+                echo \"DB_CONNECTION=$DB_CONNECTION\" >> .env
+                echo \"DB_HOST=$DB_HOST\" >> .env
+                echo \"DB_PORT=3306\" >> .env
+                echo \"DB_DATABASE=$DB_DATABASE\" >> .env
+                echo \"DB_USERNAME=$DB_USERNAME\" >> .env
+                echo \"DB_PASSWORD=$DB_PASSWORD\" >> .env
+                echo \"CACHE_DRIVER=$CACHE_STORE\" >> .env
+                echo \"SESSION_DRIVER=$SESSION_DRIVER\" >> .env
+                echo \"QUEUE_CONNECTION=$QUEUE_CONNECTION\" >> .env
+                echo \"APP_TIMEZONE=$APP_TIMEZONE\" >> .env
+              fi
+
               docker pull $DOCKERHUB_REPO:$VERSION
-              docker-compose down -v || true
-              docker-compose up -d --build
-
-              # Health check MySQL
-              for i in {1..20}; do
-                if docker exec yotta-mysql mysqladmin ping -uyotta -pyotta_pass --silent; then
-                  echo "✅ MySQL is ready!"
-                  break
-                fi
-                sleep 5
-              done
-
-              # Run migrations & seeding
+              docker compose down --remove-orphans || true
+              docker compose up -d --build
               docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
               docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
             "
 
-# =======================
-# Workflows
-# =======================
+# ==================== DEPLOY TO PRODUCTION SERVER ========================
+  deploy-production:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - add_ssh_keys
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Deploy to Production
+          command: |
+            VERSION=$(cut -d '=' -f2 version.env)
+            ssh -o StrictHostKeyChecking=no $PROD_USER@$PROD_HOST "
+              cd $PROD_PATH
+
+              # Generate .env if not exists or missing keys
+              REQUIRED_KEYS=(APP_NAME APP_ENV APP_KEY APP_DEBUG APP_URL DB_CONNECTION DB_DATABASE DB_HOST DB_USERNAME DB_PASSWORD CACHE_DRIVER SESSION_DRIVER QUEUE_CONNECTION APP_TIMEZONE)
+              GENERATE_ENV=false
+
+              if [ ! -f .env ]; then
+                GENERATE_ENV=true
+              else
+                for key in \${REQUIRED_KEYS[@]}; do
+                  if ! grep -q \"^\\$key=\" .env || grep -q \"^\\$key=\$\" .env; then
+                    GENERATE_ENV=true
+                    break
+                  fi
+                done
+              fi
+
+              if [ \"\$GENERATE_ENV\" = true ]; then
+                echo \"APP_NAME=$APP_NAME\" > .env
+                echo \"APP_ENV=production\" >> .env
+                echo \"APP_KEY=$APP_KEY\" >> .env
+                echo \"APP_DEBUG=false\" >> .env
+                echo \"APP_URL=$APP_URL\" >> .env
+                echo \"DB_CONNECTION=$DB_CONNECTION\" >> .env
+                echo \"DB_HOST=$DB_HOST\" >> .env
+                echo \"DB_PORT=3306\" >> .env
+                echo \"DB_DATABASE=$DB_DATABASE\" >> .env
+                echo \"DB_USERNAME=$DB_USERNAME\" >> .env
+                echo \"DB_PASSWORD=$DB_PASSWORD\" >> .env
+                echo \"CACHE_DRIVER=$CACHE_STORE\" >> .env
+                echo \"SESSION_DRIVER=$SESSION_DRIVER\" >> .env
+                echo \"QUEUE_CONNECTION=$QUEUE_CONNECTION\" >> .env
+                echo \"APP_TIMEZONE=$APP_TIMEZONE\" >> .env
+              fi
+
+              docker pull $DOCKERHUB_REPO:$VERSION
+              docker compose down --remove-orphans || true
+              docker compose up -d --build
+              docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+            "
+
+# ==================== CI/CD PIPELINE ========================
 workflows:
   version: 2
-  build-test-deploy:
+  ci-cd:
     jobs:
-      # Step 1: Build & test Docker image
-      - build-and-test
-
-      # Step 2: Push Docker image to Docker Hub
-      - push-to-dockerhub:
+      - build-and-test:
+          context: [global, staging]
+          filters:
+            branches:
+              only: ci-cd/test
+      - hold-push:
+          type: approval
           requires:
             - build-and-test
-          filters:
-            branches:
-              only:
-                - ci-cd/deploy
-
-      # Step 3: Deploy to staging
-      - deploy-staging:
+      - push-to-dockerhub:
+          requires:
+            - hold-push
+          context: [global]
+      - hold-staging:
+          type: approval
           requires:
             - push-to-dockerhub
-          filters:
-            branches:
-              only:
-                - ci-cd/deploy
+      - deploy-staging:
+          requires:
+            - hold-staging
+          context: [global, staging]
+      - hold-production:
+          type: approval
+          requires:
+            - push-to-dockerhub
+      - deploy-production:
+          requires:
+            - hold-production
+          context: [global]

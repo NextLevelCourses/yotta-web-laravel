@@ -1,0 +1,188 @@
+# CI/CD Configuration for CircleCI Testing
+
+version: 2.1
+
+# ======================================================
+# CircleCI Environment Variables (Add these in Project Settings)
+# ======================================================
+#
+# 1️⃣ Docker Hub Credentials
+# DOCKERHUB_USERNAME   # Username akun Docker Hub, contoh: mydockeruser
+# DOCKERHUB_PASSWORD   # Password atau Docker Hub token (gunakan secret)
+# DOCKERHUB_REPO       # Repository Docker Hub, contoh: mydockeruser/yotta-aksara-energi
+#
+# 2️⃣ Staging Server Credentials
+# STAGING_USER         # User SSH di server staging, contoh: ubuntu
+# STAGING_HOST         # IP atau domain server staging, contoh: 123.45.67.89
+# STAGING_PATH         # Path project di server staging, contoh: /home/ubuntu/dev-yotta
+
+# =======================
+# Executors
+# =======================
+
+executors:
+  docker-executor:
+    docker:
+      - image: cimg/base:stable  # CircleCI base image (Ubuntu + basic tools)
+
+jobs:
+  build-and-test:
+    executor: docker-executor
+    steps:
+      - checkout  # Clone the source code from repo
+      - setup_remote_docker:
+          docker_layer_caching: true  # Enable remote Docker (required for building images)
+      
+      # Generate .env file for Laravel & Docker
+      - run:
+          name: Generate .env
+          command: |
+            echo "APP_NAME=YottaDashboard" >> .env
+            echo "APP_ENV=staging" >> .env
+            echo "APP_KEY=" >> .env  # should be injected from CircleCI secrets instead of empty
+            echo "APP_DEBUG=true" >> .env
+            echo "APP_URL=http://localhost:8002" >> .env
+            echo "DB_CONNECTION=mysql" >> .env
+            echo "DB_HOST=mysql" >> .env
+            echo "DB_PORT=3306" >> .env
+            echo "DB_DATABASE=yotta_db" >> .env
+            echo "DB_USERNAME=yotta" >> .env
+            echo "DB_PASSWORD=yotta_pass" >> .env
+            echo "CACHE_DRIVER=file" >> .env
+            echo "SESSION_DRIVER=file" >> .env
+            echo "QUEUE_CONNECTION=sync" >> .env
+            echo "APP_TIMEZONE=Asia/Jakarta" >> .env
+
+      # Build Docker image for Laravel app
+      - run:
+          name: Build Docker Image
+          command: |
+            VERSION="v1.$CIRCLE_BUILD_NUM" # tag image with CircleCI build number
+            echo "VERSION=$VERSION" > version.env
+            docker build -t yotta-aksara-energi:$VERSION .
+
+      # Run containers defined in docker-compose.yml
+      - run:
+          name: Run Docker Compose
+          command: docker compose up -d
+
+      # Setup Laravel inside the container
+      - run:
+          name: Laravel Setup
+          command: |
+            # Generating APP_KEY is optional here, better managed via secrets
+            # docker exec yotta-dashboard php artisan key:generate --force
+
+            docker exec yotta-dashboard php artisan config:clear   # clear config cache
+            docker exec yotta-dashboard php artisan cache:clear    # clear application cache
+            docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; } # run migrations
+            docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; } # seed database
+
+      # Cleanup containers and free up resources
+      - run:
+          name: Cleanup
+          command: docker compose down --remove-orphans && docker system prune -f
+
+      # Save version.env to workspace so it can be used by next jobs (push & deploy)
+      - persist_to_workspace:
+          root: .
+          paths:
+            - version.env
+
+  push-to-dockerhub:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .  # load version.env from workspace
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Docker Login
+          command: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+      - run:
+          name: Push Image
+          command: |
+            VERSION=$(cut -d '=' -f2 version.env)
+            docker tag yotta-aksara-energi:$VERSION $DOCKERHUB_REPO:$VERSION  # tag with version
+            docker push $DOCKERHUB_REPO:$VERSION                             # push version
+            docker tag yotta-aksara-energi:$VERSION $DOCKERHUB_REPO:latest  # tag as latest
+            docker push $DOCKERHUB_REPO:latest                              # push latest
+
+  deploy-staging:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - add_ssh_keys  # Add SSH keys to connect to staging server
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Deploy to Staging
+          command: |
+            VERSION=$(cut -d '=' -f2 version.env)
+            ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "
+              cd $STAGING_PATH
+              docker pull $DOCKERHUB_REPO:$VERSION             # pull new image
+              docker compose down --remove-orphans || true     # stop old containers but keep volumes
+              docker compose up -d --build                     # start containers with new build
+              docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+              docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+            "
+
+  deploy-production:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - add_ssh_keys
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Deploy to Production
+          command: |
+            VERSION=$(cut -d '=' -f2 version.env)
+            ssh -o StrictHostKeyChecking=no $PROD_USER@$PROD_HOST "
+              cd $PROD_PATH
+              docker pull $DOCKERHUB_REPO:$VERSION
+              docker compose down --remove-orphans || true
+              docker compose up -d --build
+              docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+            "
+
+workflows:
+  version: 2
+  ci-cd:
+    jobs:
+      - build-and-test:
+          filters:
+            branches:
+              only: ci-cd/test  # only run this workflow on ci-cd/test branch
+
+      - hold-push:   # manual approval before pushing to DockerHub
+          type: approval
+          requires:
+            - build-and-test
+
+      - push-to-dockerhub:
+          requires:
+            - hold-push
+
+      - hold-staging:   # manual approval before deploying to staging
+          type: approval
+          requires:
+            - push-to-dockerhub
+
+      - deploy-staging:
+          requires:
+            - hold-staging
+
+      - hold-production: # manual approval before deploying to production
+          type: approval
+          requires:
+            - push-to-dockerhub
+
+      - deploy-production:
+          requires:
+            - hold-production
