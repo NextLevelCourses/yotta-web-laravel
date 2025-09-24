@@ -52,6 +52,45 @@ jobs:
       - run:
           name: Generate local .env for testing
           command: |
+            # ============= Load Env Vars =================
+            set -euo pipefail
+            #Load env vars from CircleCI project settings
+            : "${APP_NAME:?Need to set APP_NAME}"
+            : "${APP_ENV:?Need to set APP_ENV}"
+            : "${APP_KEY:?Need to set APP_KEY}"
+            : "${APP_DEBUG:?Need to set APP_DEBUG}"
+            : "${APP_URL:?Need to set APP_URL}"
+            : "${APP_TIMEZONE:?Need to set APP_TIMEZONE}"
+            : "${DB_CONNECTION:?Need to set DB_CONNECTION}"
+            : "${DB_HOST:?Need to set DB_HOST}"
+            : "${DB_DATABASE:?Need to set DB_DATABASE}"
+            : "${DB_USERNAME:?Need to set DB_USERNAME}"
+            : "${DB_PASSWORD:?Need to set DB_PASSWORD}"
+            : "${SESSION_DRIVER:?Need to set SESSION_DRIVER}"
+            : "${QUEUE_CONNECTION:?Need to set QUEUE_CONNECTION}"
+
+            # ============= Prepare .env =================
+
+            # Clean existing .env if exists
+            rm -f .env
+
+            # Check and generate .env if not exists or missing keys
+            REQUIRED_KEYS=(APP_NAME APP_ENV APP_KEY APP_DEBUG APP_URL DB_CONNECTION DB_DATABASE DB_HOST DB_USERNAME DB_PASSWORD CACHE_DRIVER SESSION_DRIVER QUEUE_CONNECTION APP_TIMEZONE)
+            GENERATE_ENV=false
+
+            if [ ! -f .env ]; then
+              GENERATE_ENV=true
+            else
+              for key in "${REQUIRED_KEYS[@]}"; do
+                if ! grep -q "^$key=" .env || grep -q "^$key=$" .env; then
+                  GENERATE_ENV=true
+                  break
+                fi
+              done
+            fi
+
+            # ============== Generate .env =================
+
             echo "APP_NAME=${APP_NAME}" >> .env
             echo "APP_ENV=${APP_ENV}" >> .env
             echo "APP_KEY=${APP_KEY}" >> .env
@@ -84,6 +123,27 @@ jobs:
             VERSION=$(cut -d '=' -f2 version.env)
             sed -i "s|image:.*|image: yotta-aksara-energi:$VERSION|" docker-compose.yml
             docker compose up -d
+
+      - run:
+
+          name: Copy .env to container
+          command: |
+            # Wait for the container to be fully up
+            echo "Waiting for yotta-dashboard container to be ready..."
+            for i in {1..10}; do
+              if docker exec yotta-dashboard php artisan --version &> /dev/null; then
+                echo "yotta-dashboard is ready!"
+                break
+              fi
+              echo "Waiting..."
+              sleep 5
+            done
+
+            # Copy .env file into the container
+            echo "Copying .env file into yotta-dashboard container..."
+            docker cp .env yotta-dashboard:/var/www/html/.env
+            docker exec yotta-dashboard cat /var/www/html/.env
+
       - run:
           name: Laravel Setup
           command: |
@@ -94,6 +154,8 @@ jobs:
       - run:
           name: Test Laravel Endpoint
           command: |
+            set -euo pipefail
+            # Test /health endpoint
             echo "Testing /health endpoint..."
             for i in {1..5}; do
               RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health)
