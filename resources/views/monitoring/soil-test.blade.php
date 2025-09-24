@@ -4,7 +4,11 @@
     <div class="container-fluid py-4">
         <div class="d-flex align-items-center justify-content-between mb-4">
             <h5 class="m-0 text-muted">Dashboard / <span class="fw-bold text-primary">Soil Test:
-                </span>{{ $data['device']->device_id }}
+                </span> @empty($data['device']->device_id)
+                    {{ __('Tidak ada device yang terhubung') }}
+                @else
+                    {{ $data['device']->device_id }}
+                @endempty
             </h5>
             <div class="d-flex align-items-center gap-2">
                 @if (Auth::user()->isAdmin())
