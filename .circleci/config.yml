@@ -57,16 +57,21 @@ jobs:
             echo "APP_KEY=${APP_KEY}" >> .env
             echo "APP_DEBUG=${APP_DEBUG}" >> .env
             echo "APP_URL=${APP_URL}" >> .env
+            echo "CACHE_DRIVER=${CACHE_STORE}" >> .env
             echo "DB_CONNECTION=${DB_CONNECTION}" >> .env
             echo "DB_HOST=${DB_HOST}" >> .env
             echo "DB_PORT=3306" >> .env
             echo "DB_DATABASE=${DB_DATABASE}" >> .env
             echo "DB_USERNAME=${DB_USERNAME}" >> .env
             echo "DB_PASSWORD=${DB_PASSWORD}" >> .env
-            echo "CACHE_DRIVER=${CACHE_STORE}" >> .env
             echo "SESSION_DRIVER=${SESSION_DRIVER}" >> .env
             echo "QUEUE_CONNECTION=${QUEUE_CONNECTION}" >> .env
             echo "APP_TIMEZONE=${APP_TIMEZONE}" >> .env
+
+      run:
+          name: Display .env content
+          command: cat .env
+
       - run:
           name: Build Docker Image
           command: |
@@ -74,8 +79,11 @@ jobs:
             echo "VERSION=$VERSION" > version.env
             docker build -t yotta-aksara-energi:$VERSION .
       - run:
-          name: Run Docker Compose
-          command: docker compose up -d
+          name: Run Docker Compose (use built image)
+          command: |
+            VERSION=$(cut -d '=' -f2 version.env)
+            sed -i "s|image:.*|image: yotta-aksara-energi:$VERSION|" docker-compose.yml
+            docker compose up -d
       - run:
           name: Laravel Setup
           command: |

@@ -70,7 +70,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copy project & install dependency
 COPY . .
-RUN if [ ! -f .env ]; then cp .env.example .env; fi
+# RUN if [ ! -f .env ]; then cp .env.example .env; fi
 RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --prefer-dist
 
 
