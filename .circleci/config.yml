@@ -1,5 +1,4 @@
 version: 2.1
-
 # ============================================================
 # CircleCI CI/CD Pipeline Configuration for Yotta Aksara Energi
 # ------------------------------------------------------------
@@ -36,8 +35,6 @@ version: 2.1
 #   - build-and-test → approval → push-to-dockerhub → approval → deploy-staging/production (dengan approval manual).
 #   - Pipeline hanya berjalan pada branch ci-cd/test.
 # ============================================================
-
-version: 2.1
 
 executors:
   docker-executor:
