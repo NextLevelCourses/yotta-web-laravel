@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('soil_tests', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('device_id')->nullable();
+            $table->string('device_id')->nullable();
             $table->float('temperature')->nullable();  // suhu tanah
             $table->float('humidity')->nullable();     // kelembaban
             $table->float('ph')->nullable();           // pH
