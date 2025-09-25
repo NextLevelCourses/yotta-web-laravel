@@ -65,6 +65,7 @@ jobs:
 
 
       - run:
+      # ====================== Laravel Setup & Migration ========================
           name: Laravel Setup & Migration
           command: |
             docker exec yotta-dashboard php artisan config:clear
@@ -80,7 +81,7 @@ jobs:
               if [ "$RESPONSE" = "200" ]; then
                 echo "✅ /health endpoint OK"; break
               fi
-              echo "Waiting for Laravel..."; sleep 5
+              echo "Waiting for Laravel..."; sleep 2
             done
             if [ "$RESPONSE" != "200" ]; then
               echo "❌ /health endpoint failed"; exit 1
