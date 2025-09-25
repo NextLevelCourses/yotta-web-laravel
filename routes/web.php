@@ -9,6 +9,11 @@ use App\Http\Controllers\Monitoring\SolarDomeController;
 use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitoring, bukan Api
 use App\Http\Controllers\Monitoring\GreenhouseController;
 
+// Healthcheck endpoint (tanpa auth)
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok'], 200);
+});
+
 // Halaman utama (cukup satu kali)
 Route::get('/', function () {
     return view('welcome');
