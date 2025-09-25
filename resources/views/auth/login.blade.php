@@ -39,4 +39,23 @@
                 class="text-primary fw-semibold"> Daftar Sekarang </a> </p>
     </div>
 </div>
+{{-- Script toggle password --}}
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggleBtn = document.getElementById("password-addon");
+        const passwordInput = document.querySelector("input[name='password']");
+        
+        toggleBtn.addEventListener("click", function () {
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                this.innerHTML = '<i class="mdi mdi-eye-off-outline"></i>'; // ubah ikon jadi "mata tertutup"
+            } else {
+                passwordInput.type = "password";
+                this.innerHTML = '<i class="mdi mdi-eye-outline"></i>'; // kembali jadi "mata terbuka"
+            }
+        });
+    });
+</script>
 @endsection
+
+

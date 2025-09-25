@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="Dashboard IoT Profesional" name="description" />
     <meta content="Yotta Aksara" name="author" />
-    <!-- App favicon -->
     <link rel="shortcut icon" href="{{ asset('assets/images/YAE_Image.png') }}">
 
     <!-- preloader css -->
@@ -23,14 +22,20 @@
         <div class="container-fluid p-0">
             <div class="row g-0">
                 <div class="col-12">
-                    <div class="auth-bg d-flex align-items-center">
-                         <div class="bg-overlay bg-primary"></div>
-                         <ul class="bg-bubbles">
-                            <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
+                    <div class="auth-bg d-flex align-items-center min-vh-100 position-relative overflow-hidden">
+                        <!-- Overlay -->
+                        <div class="bg-overlay bg-primary position-absolute top-0 start-0 w-100 h-100"></div>
+
+                        <!-- Bubble background -->
+                        <ul class="bg-bubbles position-absolute top-0 start-0 w-100 h-100 m-0 p-0">
+                            <li></li><li></li><li></li><li></li><li></li>
+                            <li></li><li></li><li></li><li></li><li></li>
                         </ul>
-                        <div class="container">
+
+                        <!-- Content -->
+                        <div class="container position-relative">
                             <div class="row justify-content-center text-center">
-                                <div class="col-lg-8">
+                                <div class="col-lg-8 col-md-10">
                                     <!-- Logo -->
                                     <div class="mb-4">
                                         <a href="{{ url('/') }}" class="d-inline-flex align-items-center gap-2">
@@ -40,15 +45,15 @@
                                     </div>
 
                                     <!-- Headline -->
-                                    <h1 class="fw-bold display-5 text-white">
+                                    <h1 class="fw-bold text-white display-6 display-md-5">
                                         Kendalikan IoT Anda dengan Presisi
                                     </h1>
-                                    <p class="text-white-50 fs-5 mt-3">
+                                    <p class="text-white-50 fs-6 fs-md-5 mt-3">
                                         Solusi monitoring & kontrol perangkat IoT yang aman, handal, dan dirancang untuk kebutuhan industri modern.
                                     </p>
 
                                     <!-- Action Buttons -->
-                                    <div class="mt-4 d-flex justify-content-center gap-3">
+                                    <div class="mt-4 d-flex flex-column flex-sm-row justify-content-center gap-3">
                                         @auth
                                             <a href="{{ url('/dashboard') }}" class="btn btn-success btn-lg shadow">
                                                 <i class="mdi mdi-view-dashboard me-1"></i> Masuk ke Dashboard
@@ -65,6 +70,7 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- End Content -->
                     </div>
                 </div>
             </div>
@@ -78,7 +84,6 @@
     <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
     <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
     <script src="{{ asset('assets/libs/feather-icons/feather.min.js') }}"></script>
-    <!-- pace js -->
     <script src="{{ asset('assets/libs/pace-js/pace.min.js') }}"></script>
 </body>
 </html>
