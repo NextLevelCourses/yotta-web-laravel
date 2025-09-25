@@ -41,6 +41,7 @@ jobs:
               echo "$key=$value" >> .env
             done
             cat .env
+            
       - run:
           name: Build Docker Image
           command: |
