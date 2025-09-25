@@ -49,6 +49,18 @@ jobs:
       - run:
           name: Run Docker Compose
           command: docker compose up -d --build
+          
+      # Wait for MySQL to be ready
+      - run:
+          name: Wait for MySQL
+          command: |
+            echo "Waiting for MySQL to be ready..."
+            until docker exec yotta-mysql mysql -u $DB_USERNAME -p$DB_PASSWORD -e "SELECT 1" > /dev/null 2>&1; do
+              echo "MySQL not ready yet..."
+              sleep 2
+            done
+            echo "MySQL is ready!"
+
       - run:
           name: Laravel Setup & Migration
           command: |
