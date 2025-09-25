@@ -13,7 +13,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-
       - run:
           name: Generate .env
           command: |
@@ -25,17 +24,14 @@ jobs:
               echo "$key=$value" >> .env
             done
             cat .env
-
       - run:
           name: Build Docker Image
           command: |
             echo "Building Docker image as latest..."
             docker build -t yotta-dashboard:latest -f dockerfile .
-
       - run:
           name: Run Docker Compose
           command: docker compose up -d --build
-
       - run:
           name: Laravel Setup & Migration
           command: |
@@ -44,7 +40,6 @@ jobs:
             docker exec yotta-dashboard php artisan config:cache
             docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
             docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
-
       - run:
           name: Test Laravel Health Endpoint
           command: |
@@ -58,7 +53,6 @@ jobs:
             if [ "$RESPONSE" != "200" ]; then
               echo "❌ /health endpoint failed"; exit 1
             fi
-
       - run:
           name: Cleanup Docker
           command: docker compose down --remove-orphans && docker system prune -f
@@ -80,59 +74,58 @@ jobs:
             docker tag yotta-dashboard:latest $DOCKERHUB_REPO:latest
             docker push $DOCKERHUB_REPO:latest
 
-# ===================== DEPLOY TO STAGING ========================
-deploy-staging:
-  docker:
-    - image: cimg/base:stable
-  steps:
-    - add_ssh_keys
-    - checkout
-    - run:
-        name: Deploy to Staging
-        command: |
-          ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "
-            cd $STAGING_PATH
-            if [ ! -f .env ]; then cp .env.example .env; fi
-            docker pull $DOCKERHUB_REPO:latest
+  # ===================== DEPLOY TO STAGING ========================
+  deploy-staging:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - add_ssh_keys
+      - checkout
+      - run:
+          name: Deploy to Staging
+          command: |
+            ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "
+              cd $STAGING_PATH
+              if [ ! -f .env ]; then cp .env.example .env; fi
+              docker pull $DOCKERHUB_REPO:latest
 
-            # Stop & remove only yotta-dashboard container
-            docker compose stop dashboard
-            docker compose rm -f dashboard
+              # Stop & remove only yotta-dashboard container
+              docker compose stop dashboard
+              docker compose rm -f dashboard
 
-            # Rebuild & start yotta-dashboard only
-            docker compose up -d dashboard --build
+              # Rebuild & start yotta-dashboard only
+              docker compose up -d dashboard --build
 
-            # Laravel migrations & seed
-            docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
-            docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
-          "
+              # Laravel migrations & seed
+              docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+              docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+            "
 
-# ==================== DEPLOY TO PRODUCTION ========================
-deploy-production:
-  docker:
-    - image: cimg/base:stable
-  steps:
-    - add_ssh_keys
-    - checkout
-    - run:
-        name: Deploy to Production
-        command: |
-          ssh -o StrictHostKeyChecking=no $PROD_USER@$PROD_HOST "
-            cd $PROD_PATH
-            if [ ! -f .env ]; then cp .env.example .env; fi
-            docker pull $DOCKERHUB_REPO:latest
+  # ==================== DEPLOY TO PRODUCTION ========================
+  deploy-production:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - add_ssh_keys
+      - checkout
+      - run:
+          name: Deploy to Production
+          command: |
+            ssh -o StrictHostKeyChecking=no $PROD_USER@$PROD_HOST "
+              cd $PROD_PATH
+              if [ ! -f .env ]; then cp .env.example .env; fi
+              docker pull $DOCKERHUB_REPO:latest
 
-            # Stop & remove only yotta-dashboard container
-            docker compose stop dashboard
-            docker compose rm -f dashboard
+              # Stop & remove only yotta-dashboard container
+              docker compose stop dashboard
+              docker compose rm -f dashboard
 
-            # Rebuild & start yotta-dashboard only
-            docker compose up -d dashboard --build
+              # Rebuild & start yotta-dashboard only
+              docker compose up -d dashboard --build
 
-            # Laravel migrations
-            docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
-          "
-
+              # Laravel migrations
+              docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+            "
 
 # ==================== WORKFLOWS ========================
 workflows:
