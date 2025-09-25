@@ -75,8 +75,8 @@ jobs:
       - run:
           name: Test Laravel Health Endpoint
           command: |
-            for i in {1..5}; do
-              RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health)
+            for i in {1..20}; do
+              RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health || echo "000")
               if [ "$RESPONSE" = "200" ]; then
                 echo "✅ /health endpoint OK"; break
               fi
