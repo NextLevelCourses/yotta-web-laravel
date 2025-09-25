@@ -55,11 +55,13 @@ jobs:
           name: Wait for MySQL
           command: |
             echo "Waiting for MySQL to be ready..."
-            until docker exec yotta-mysql mysql -u $DB_USERNAME -p$DB_PASSWORD -e "SELECT 1" > /dev/null 2>&1; do
+            for i in {1..20}; do
+              docker exec yotta-mysql sh -c 'mysql -u yotta -pyotta_pass -e "SELECT 1;"' && break
               echo "MySQL not ready yet..."
               sleep 2
             done
             echo "MySQL is ready!"
+
 
       - run:
           name: Laravel Setup & Migration
