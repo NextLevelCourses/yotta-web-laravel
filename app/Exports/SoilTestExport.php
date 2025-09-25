@@ -5,8 +5,9 @@ namespace App\Exports;
 use App\Models\SoilTest;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 
-class SoilTestExport implements FromCollection, WithHeadings
+class SoilTestExport implements FromCollection, WithHeadings, WithMapping
 {
     /**
      * @return \Illuminate\Support\Collection
@@ -21,28 +22,31 @@ class SoilTestExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        $data = SoilTest::whereMonth('measured_at', $this->month)
+        return SoilTest::whereMonth('measured_at', $this->month)
             ->whereYear('measured_at', $this->year)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'Measured At' => $item->measured_at ?? '-',
-                    'Temperature (°C)' => $item->temperature ?? 0,
-                    'Humidity (%)' => $item->humidity ?? 0,
-                    'pH' => $item->ph ?? 0,
-                    'EC (µS/cm)' => $item->ec ?? 0,
-                    'Nitrogen (mg/kg)' => $item->nitrogen ?? 0,
-                    'Fosfor (mg/kg)' => $item->fosfor ?? 0,
-                    'kalium (mg/kg)' => $item->kalium ?? 0,
-                    'Status' => $item->status ?? '-',
-                ];
-            });
-        return $data;
+            ->get();
+    }
+
+    public function map($row): array
+    {
+        return [
+            $row->device_id ?? 'Unknown Device',
+            $row->measured_at ?? '-',
+            $row->temperature ? $row->temperature  : '0',
+            $row->humidity ? $row->humidity : '0',
+            $row->ph ? $row->ph : '0',
+            $row->ec ? $row->ec : '0',
+            $row->nitrogen ? $row->nitrogen : '0',
+            $row->fosfor ? $row->fosfor : '0',
+            $row->kalium ? $row->kalium : '0',
+            $row->status ?? '-'
+        ];
     }
 
     public function headings(): array
     {
         return [
+            'Device ID',
             'Measured At',
             'Temperature (°C)',
             'Humidity (%)',
