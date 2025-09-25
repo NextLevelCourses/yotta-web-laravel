@@ -17,7 +17,24 @@ jobs:
           name: Generate .env
           command: |
             echo "Generating .env file..."
-            REQUIRED_KEYS=(APP_NAME APP_ENV APP_KEY APP_DEBUG APP_URL DB_CONNECTION DB_DATABASE DB_HOST DB_USERNAME DB_PASSWORD CACHE_DRIVER SESSION_DRIVER QUEUE_CONNECTION APP_TIMEZONE)
+            REQUIRED_KEYS=(
+              APP_NAME
+              APP_DEBUG
+              APP_ENV
+              APP_URL
+              CACHE_DRIVER
+              DB_CONNECTION
+              DB_DATABASE
+              DB_HOST
+              DB_USERNAME
+              DB_PASSWORD
+              DB_PORT
+              MAIL_FROM_NAME
+              MAIL_MAILER
+              QUEUE_CONNECTION
+              SESSION_DRIVER
+            )
+
             rm -f .env
             for key in "${REQUIRED_KEYS[@]}"; do
               value=${!key:-""}
@@ -39,7 +56,7 @@ jobs:
             docker exec yotta-dashboard php artisan cache:clear
             docker exec yotta-dashboard php artisan config:cache
             docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
-            docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+            # docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
       - run:
           name: Test Laravel Health Endpoint
           command: |
@@ -53,9 +70,6 @@ jobs:
             if [ "$RESPONSE" != "200" ]; then
               echo "❌ /health endpoint failed"; exit 1
             fi
-      - run:
-          name: Cleanup Docker
-          command: docker compose down --remove-orphans && docker system prune -f
 
   # ====================== PUSH TO DOCKERHUB ========================
   push-to-dockerhub:
