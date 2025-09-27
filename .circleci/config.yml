@@ -51,9 +51,9 @@ jobs:
           name: Run Docker Compose
           command: docker compose up -d --build
           
-      # Wait for MySQL to be ready
       - run:
           name: Wait for MySQL
+          # Pastikan MySQL siap
           command: |
             echo "Waiting for MySQL to be ready..."
             for i in {1..20}; do
@@ -63,32 +63,31 @@ jobs:
             done
             echo "MySQL is ready!"
 
-
       - run:
-      # ====================== Laravel Setup & Migration ========================
+      # Jalankan migrasi Laravel dan tangani error dengan menampilkan log
           name: Laravel Setup & Migration
           command: |
             docker exec yotta-dashboard php artisan config:clear
             docker exec yotta-dashboard php artisan cache:clear
             docker exec yotta-dashboard php artisan config:cache
             docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
-            # docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
-
-      # ====================== Test Laravel Health Endpoint ========================
 
       - run:
-          name: Test Laravel Health Endpoint (curl inside container)
+          name: Test Laravel Health Endpoint (curl from host)
+          # Pastikan endpoint /health merespon 200 OK
           command: |
-            for i in {1..20}; do
-              RESPONSE=$(docker exec yotta-dashboard curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health || echo "000") #hit the health endpoint inside Docker container
+            for i in {1..30}; do
+              RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health || echo "000")
               if [ "$RESPONSE" = "200" ]; then
-                echo "✅ /health endpoint OK"; break
+                echo "✅ /health endpoint OK"
+                exit 0
               fi
-              echo "Waiting for Laravel..."; sleep 2
+              echo "Waiting for Laravel... ($RESPONSE)"
+              sleep 3
             done
-            if [ "$RESPONSE" != "200" ]; then
-              echo "❌ /health endpoint failed"; exit 1
-            fi
+            echo "❌ /health endpoint failed"
+            docker logs yotta-dashboard || true
+            exit 1
 
   # ====================== PUSH TO DOCKERHUB ========================
   push-to-dockerhub:
