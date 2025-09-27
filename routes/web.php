@@ -11,8 +11,8 @@ use App\Http\Controllers\Monitoring\GreenhouseController;
 
 // Healthcheck endpoint (tanpa auth)
 Route::get('/health', function () {
-    return response()->json(['status' => 'ok'], 200);
-});
+    return response()->json(['status' => 'ok']);
+})->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
 
 // Halaman utama (cukup satu kali)
 Route::get('/', function () {

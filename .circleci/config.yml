@@ -75,21 +75,30 @@ jobs:
             docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
 
       - run:
-          name: Test Laravel Health Endpoint (curl from host)
-          # Pastikan endpoint /health merespon 200 OK
+          name: Health Check Laravel (tolerant)
           command: |
+            success=false
             for i in {1..30}; do
-              RESPONSE=$(docker exec yotta-dashboard curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8002/health || echo "000")
-              if [ "$RESPONSE" = "200" ]; then
-                echo "✅ /health endpoint OK"
-                exit 0
+              RESPONSE=$(docker exec yotta-dashboard curl -s -w " %{http_code}" http://127.0.0.1:8002/health || echo "000")
+              BODY=$(echo "$RESPONSE" | sed 's/ [0-9]\{3\}$//')
+              CODE=$(echo "$RESPONSE" | grep -oE '[0-9]{3}$')
+
+              if [ "$CODE" = "200" ]; then
+                echo "✅ /health OK on attempt $i (body: $BODY)"
+                success=true
+                break
+              else
+                echo "Waiting for Laravel... ($CODE, body: $BODY)"
+                sleep 3
               fi
-              echo "Waiting for Laravel... ($RESPONSE)"
-              sleep 3
             done
-            echo "❌ /health endpoint failed"
-            docker logs yotta-dashboard || true
-            exit 1
+
+            if [ "$success" = false ]; then
+              echo "❌ Health check failed after 30 attempts"
+              docker logs yotta-dashboard || true
+              docker exec yotta-dashboard tail -n 50 storage/logs/laravel.log || true
+              exit 1
+            fi
 
   # ====================== PUSH TO DOCKERHUB ========================
   push-to-dockerhub:
