@@ -7,14 +7,18 @@ executors:
 
 jobs:
   # ======================= BUILD & TEST ========================
+jobs:
+  # ======================= BUILD & TEST ========================
   build-and-test:
     executor: docker-executor
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+
+      # Generate .env tanpa APP_KEY dulu
       - run:
-          name: Generate .env
+          name: Generate .env (tanpa APP_KEY)
           command: |
             echo "Generating .env file..."
             REQUIRED_KEYS=(
@@ -41,19 +45,22 @@ jobs:
               echo "$key=$value" >> .env
             done
             cat .env
-            
+
+      # Build Docker image
       - run:
           name: Build Docker Image
           command: |
             echo "Building Docker image as latest..."
             docker build -t yotta-dashboard:latest -f dockerfile .
+
+      # Start services
       - run:
           name: Run Docker Compose
           command: docker compose up -d --build
-          
+
+      # Wait until MySQL ready
       - run:
           name: Wait for MySQL
-          # Pastikan MySQL siap
           command: |
             echo "Waiting for MySQL to be ready..."
             for i in {1..20}; do
@@ -61,21 +68,44 @@ jobs:
               echo "MySQL not ready yet..."
               sleep 2
             done
-            echo "MySQL is ready!"
+            echo "✅ MySQL is ready!"
 
+      # Generate APP_KEY and inject into container
       - run:
-      # Jalankan migrasi Laravel dan tangani error dengan menampilkan log
+          name: Generate & Inject APP_KEY
+          command: |
+            echo "Generating Laravel APP_KEY..."
+            KEY=$(docker exec yotta-dashboard php artisan key:generate --show)
+            echo "APP_KEY=$KEY" >> .env
+            echo "✅ APP_KEY injected: $KEY"
+
+            # Copy .env ke container
+            docker cp .env yotta-dashboard:/var/www/.env
+
+            # Clear & cache ulang konfigurasi
+            docker exec yotta-dashboard php artisan config:clear
+            docker exec yotta-dashboard php artisan config:cache
+
+      # Laravel setup & migration
+      - run:
           name: Laravel Setup & Migration
           command: |
-            echo "Generating APP_KEY..."
-            docker exec yotta-dashboard php artisan key:generate --force
+            # Clear caches
             docker exec yotta-dashboard php artisan config:clear
             docker exec yotta-dashboard php artisan cache:clear
+            docker exec yotta-dashboard php artisan route:clear
+            docker exec yotta-dashboard php artisan view:clear
+
+            # Rebuild caches
             docker exec yotta-dashboard php artisan config:cache
             docker exec yotta-dashboard php artisan route:cache
             docker exec yotta-dashboard php artisan view:cache
-            docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
 
+            # Run migrations (with log output if failed)
+            docker exec yotta-dashboard php artisan migrate --force \
+              || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+
+      # Health check
       - run:
           name: Health Check Laravel (tolerant)
           command: |
