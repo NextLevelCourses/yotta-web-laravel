@@ -67,6 +67,8 @@ jobs:
       # Jalankan migrasi Laravel dan tangani error dengan menampilkan log
           name: Laravel Setup & Migration
           command: |
+            echo "Generating APP_KEY..."
+            docker exec yotta-dashboard php artisan key:generate --force
             docker exec yotta-dashboard php artisan config:clear
             docker exec yotta-dashboard php artisan cache:clear
             docker exec yotta-dashboard php artisan config:cache
