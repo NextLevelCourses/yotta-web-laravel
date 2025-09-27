@@ -7,8 +7,6 @@ executors:
 
 jobs:
   # ======================= BUILD & TEST ========================
-jobs:
-  # ======================= BUILD & TEST ========================
   build-and-test:
     executor: docker-executor
     steps:
