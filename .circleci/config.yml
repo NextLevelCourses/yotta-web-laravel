@@ -259,32 +259,74 @@ workflows:
   version: 2
   ci-cd:
     jobs:
+      # ==================== BUILD & TEST (branch only) ====================
       - build-and-test:
           context: [global, staging]
           filters:
             branches:
               only: ci-cd/test
+            tags:
+              ignore: /.*/
+
       - hold-push:
           type: approval
           requires:
             - build-and-test
+          filters:
+            branches:
+              only: ci-cd/test
+            tags:
+              ignore: /.*/
+
+      # ==================== PUSH TO DOCKER HUB (tag only) ====================
       - push-to-dockerhub:
           requires:
             - hold-push
           context: [global]
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+
+      # ==================== DEPLOY TO STAGING (manual) ====================
       - hold-staging:
           type: approval
           requires:
             - push-to-dockerhub
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+
       - deploy-staging:
           requires:
             - hold-staging
           context: [global, staging]
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+
+      # ==================== DEPLOY TO PRODUCTION (manual) ====================
       - hold-production:
           type: approval
           requires:
             - push-to-dockerhub
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+
       - deploy-production:
           requires:
             - hold-production
           context: [global]
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
