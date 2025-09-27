@@ -70,6 +70,8 @@ jobs:
             docker exec yotta-dashboard php artisan config:clear
             docker exec yotta-dashboard php artisan cache:clear
             docker exec yotta-dashboard php artisan config:cache
+            docker exec yotta-dashboard php artisan route:cache
+            docker exec yotta-dashboard php artisan view:cache
             docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
 
       - run:
