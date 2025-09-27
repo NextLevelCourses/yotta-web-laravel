@@ -144,24 +144,28 @@ jobs:
           command: |
             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
+
       - run:
-          name: Extract Git Tag / Branch
+          name: Extract Git Tag and Sanitize
           command: |
-            # Ambil nama branch atau tag
-            if [ -n "$CIRCLE_TAG" ]; then
-              IMAGE_TAG="$CIRCLE_TAG"
-            else
-              IMAGE_TAG="$CIRCLE_BRANCH"
-            fi
+            # Ambil Git tag dari CircleCI
+            IMAGE_TAG="$CIRCLE_TAG"
+            echo "🔹 Original Git tag: $IMAGE_TAG"
+
+            # Sanitize agar valid untuk Docker
+            IMAGE_TAG=$(echo "$IMAGE_TAG" | tr '/:*' '-' | tr '[:upper:]' '[:lower:]')
+            echo "🔹 Sanitized IMAGE_TAG: $IMAGE_TAG"
+
+            # Export ke BASH_ENV supaya step berikutnya bisa pakai
             echo "export IMAGE_TAG=$IMAGE_TAG" >> $BASH_ENV
 
       - run:
           name: Build & Push Docker Image
           command: |
             source $BASH_ENV
-            echo "Building image with tags: $DOCKERHUB_REPO:$IMAGE_TAG and :latest"
+            echo "Building image with tags: $DOCKERHUB_REPO:$IMAGE_TAG and $DOCKERHUB_REPO:latest"
 
-            # Build sekali saja lalu push dengan 2 tag
+            # Build sekaligus push dua tag
             docker build -t $DOCKERHUB_REPO:$IMAGE_TAG -t $DOCKERHUB_REPO:latest -f app/Dockerfile ./app
             docker push $DOCKERHUB_REPO:$IMAGE_TAG
             docker push $DOCKERHUB_REPO:latest
