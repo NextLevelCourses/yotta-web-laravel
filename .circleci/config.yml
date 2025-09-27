@@ -73,11 +73,14 @@ jobs:
             docker exec yotta-dashboard php artisan config:cache
             docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
             # docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+
+      # ====================== Test Laravel Health Endpoint ========================
+
       - run:
-          name: Test Laravel Health Endpoint
+          name: Test Laravel Health Endpoint (curl inside container)
           command: |
             for i in {1..20}; do
-              RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health || echo "000")
+              RESPONSE=$(docker exec yotta-dashboard curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health || echo "000") #hit the health endpoint inside Docker container
               if [ "$RESPONSE" = "200" ]; then
                 echo "✅ /health endpoint OK"; break
               fi
@@ -95,66 +98,160 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+
       - run:
-          name: Docker Login
-          command: echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-      - run:
-          name: Push Image
+          name: Login to Docker Hub
           command: |
-            docker tag yotta-dashboard:latest $DOCKERHUB_REPO:latest
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - run:
+          name: Extract Git Tag / Branch
+          command: |
+            # Ambil nama branch atau tag
+            if [ -n "$CIRCLE_TAG" ]; then
+              IMAGE_TAG="$CIRCLE_TAG"
+            else
+              IMAGE_TAG="$CIRCLE_BRANCH"
+            fi
+            echo "export IMAGE_TAG=$IMAGE_TAG" >> $BASH_ENV
+
+      - run:
+          name: Build & Push Docker Image
+          command: |
+            source $BASH_ENV
+            echo "Building image with tags: $DOCKERHUB_REPO:$IMAGE_TAG and :latest"
+
+            # Build sekali saja lalu push dengan 2 tag
+            docker build -t $DOCKERHUB_REPO:$IMAGE_TAG -t $DOCKERHUB_REPO:latest -f app/Dockerfile ./app
+            docker push $DOCKERHUB_REPO:$IMAGE_TAG
             docker push $DOCKERHUB_REPO:latest
 
   # ===================== DEPLOY TO STAGING ========================
   deploy-staging:
     docker:
       - image: cimg/base:stable
+
     steps:
-      - add_ssh_keys
+      - add_ssh_keys # Menambahkan kunci SSH dari konteks sesuai projek
       - checkout
+
       - run:
           name: Deploy to Staging
           command: |
-            ssh -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "
-              cd $STAGING_PATH
-              if [ ! -f .env ]; then cp .env.example .env; fi
+            ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
+              set -e
+
+              cd /home/ubuntu/dev-yotta
+
+              # Pastikan .env ada
+              if [ ! -f .env ]; then
+                cp .env.example .env
+              fi
+
+              echo '🔄 Pull image terbaru...'
               docker pull $DOCKERHUB_REPO:latest
 
-              # Stop & remove only yotta-dashboard container
-              docker compose stop dashboard
-              docker compose rm -f dashboard
+              echo '🛑 Hentikan container lama...'
+              docker compose stop dashboard || true
+              docker compose rm -f dashboard || true
 
-              # Rebuild & start yotta-dashboard only
-              docker compose up -d dashboard --build
+              echo '🚀 Jalankan container baru...'
+              docker compose up -d dashboard --remove-orphans
 
-              # Laravel migrations & seed
-              docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
-              docker exec yotta-dashboard php artisan db:seed --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+              # Ambil container ID untuk service "dashboard"
+              DASHBOARD_CID=\$(docker compose ps -q dashboard)
+
+              echo '⏳ Tunggu aplikasi siap (health endpoint)...'
+              for i in {1..20}; do
+                STATUS=\$(docker exec \$DASHBOARD_CID curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health || echo 000)
+                if [ \"\$STATUS\" = \"200\" ]; then
+                  echo '✅ Service sehat & siap!'
+                  break
+                fi
+                echo \"Service belum siap (\$STATUS), tunggu 3s...\"
+                sleep 3
+              done
+
+              echo '📦 Jalankan laravel optimize'
+              make dy-laravel-optimize-all || { 
+                echo '❌ Optimize gagal, log terakhir:'
+                docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+                exit 1
+              }
+
+              docker compose exec dashboard php artisan migrate --force || {
+                echo '❌ Migration gagal, log terakhir:'
+                docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+                exit 1
+              }
+
+              docker compose exec dashboard php artisan db:seed --force || {
+                echo '❌ Seeder gagal, log terakhir:'
+                docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+                exit 1
+              }
+
+              echo '✅ Deploy selesai ke STAGING!'
             "
 
-  # ==================== DEPLOY TO PRODUCTION ========================
+# ==================== DEPLOY TO PRODUCTION ========================
   deploy-production:
     docker:
       - image: cimg/base:stable
+
     steps:
       - add_ssh_keys
       - checkout
+
       - run:
           name: Deploy to Production
           command: |
             ssh -o StrictHostKeyChecking=no $PROD_USER@$PROD_HOST "
+              set -e
+
               cd $PROD_PATH
-              if [ ! -f .env ]; then cp .env.example .env; fi
+
+              # Pastikan .env ada
+              if [ ! -f .env ]; then
+                cp .env.example .env
+              fi
+
+              echo '🔄 Pull image terbaru...'
               docker pull $DOCKERHUB_REPO:latest
 
-              # Stop & remove only yotta-dashboard container
-              docker compose stop dashboard
-              docker compose rm -f dashboard
+              echo '🛑 Hentikan container lama...'
+              docker compose stop dashboard || true
+              docker compose rm -f dashboard || true
 
-              # Rebuild & start yotta-dashboard only
-              docker compose up -d dashboard --build
+              echo '🚀 Jalankan container baru...'
+              docker compose up -d dashboard --remove-orphans
 
-              # Laravel migrations
-              docker exec yotta-dashboard php artisan migrate --force || { docker exec yotta-dashboard cat storage/logs/laravel.log; exit 1; }
+              echo '⏳ Tunggu aplikasi siap (health endpoint)...'
+              for i in {1..20}; do
+                STATUS=\$(docker exec yotta-dashboard curl -s -o /dev/null -w "%{http_code}" http://localhost:8002/health || echo 000)
+                if [ \"\$STATUS\" = \"200\" ]; then
+                  echo '✅ Service sehat & siap!'
+                  break
+                fi
+                echo \"Service belum siap (\$STATUS), tunggu 3s...\"
+                sleep 3
+              done
+
+              echo '📦 Jalankan laravel optimize'
+              make dy-laravel-optimize-all || { 
+                echo '❌ optimize gagal, log terakhir:'
+                docker exec yotta-dashboard tail -n 50 storage/logs/laravel.log
+                exit 1
+              }
+
+              echo '📦 Jalankan migration...'
+              docker compose -f docker-compose.yml exec dashboard php artisan migrate || { 
+                echo '❌ Migration gagal, log terakhir:'
+                docker exec yotta-dashboard tail -n 50 storage/logs/laravel.log
+                exit 1
+              }
+
+              echo '✅ Deploy selesai ke PRODUCTION!'
             "
 
 # ==================== WORKFLOWS ========================
