@@ -31,6 +31,12 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
 
+      - run:
+          name: Copy .env
+          command: |
+            [ -f .env ] || cp .env.example .env
+            cat .env
+
       # Run Docker Compose
       - run:
           name: Run Docker Compose
