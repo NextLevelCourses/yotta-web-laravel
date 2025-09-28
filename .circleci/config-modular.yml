@@ -445,7 +445,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - docker-login
-      - push-to-docker
+      - push-to-dockerhub
 
   # Job to deploy to staging server
   Deploy-Staging:
