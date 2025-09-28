@@ -16,7 +16,7 @@ class SoilTestController extends Controller implements SoiltestInterface
     {
         return SoilTest::whereNotNull($param)
             ->orderBy($column, $sort)
-            ->limit(6)
+            ->limit(10)
             ->pluck($param)
             ->toArray();
     }
