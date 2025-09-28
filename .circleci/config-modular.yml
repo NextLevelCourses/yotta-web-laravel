@@ -6,7 +6,7 @@ executors:
       - image: cimg/base:stable
 
 jobs:
-# ============ Build Job ============
+  # ============ Build Job ============
   Build:
     executor: docker-executor
     steps:
@@ -23,7 +23,7 @@ jobs:
             echo "✅ Docker image built successfully."
             docker images -a
 
-# Testing job runs after Build job
+  # Testing job runs after Build job
   Testing:
     executor: docker-executor
     steps:
@@ -53,16 +53,24 @@ jobs:
             echo "✅ Yotta-MySQL is ready!"
 
       # Generate & Inject APP_KEY
-      - command: create-key.yml
-       
+      - run:
+          name: Generate & Inject APP_KEY
+          command: bash commands/create-key.yml
+        
       # Optimize Laravel
-      - command: laravel-optimize.yml
+      - run:
+          name: Optimize Laravel
+          command: bash commands/laravel-optimize.yml
 
       # Run Migrations
-      - command: laravel-migrate.yml
+      - run:
+          name: Run Laravel Migrations
+          command: bash commands/laravel-migrate.yml
 
       # Health Check Laravel
-      - command: health-check.yml
+      - run:
+          name: Laravel Health Check
+          command: bash commands/health-check.yml
 
   # Job to deploy to staging server
   Deploy-Staging:
@@ -70,19 +78,22 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys
-      - command: deploy-staging.yml
-
+      - run:
+          name: Deploy to Staging
+          command: bash commands/deploy-staging.yml
 
   Deploy-Production:
     executor: docker-executor
     steps:
       - checkout
       - add_ssh_keys
-      - command: deploy-prod.yml
+      - run:
+          name: Deploy to Production
+          command: bash commands/deploy-prod.yml
 
 workflows:
   version: 2
-  BuildAndTest:
+  ci-cd:
     jobs:
       - Build
       - Testing:
@@ -93,9 +104,9 @@ workflows:
             - Testing
           filters:
             branches:
-              only: ci-cd/test   # bisa dijalankan saat testing branch
+              only: ci-cd/test
             tags:
-              only: /^v.*/       # tetap bisa jalan jika ada tag
+              only: /^v.*/
       - Deploy-Staging:
           requires:
             - Testing
