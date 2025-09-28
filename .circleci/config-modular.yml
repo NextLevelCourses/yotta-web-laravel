@@ -59,24 +59,12 @@ jobs:
             echo "✅ Yotta-MySQL is ready!"
 
       # Generate & Inject APP_KEY
-      - run:
-          name: Generate & Inject APP_KEY
-          command: bash commands/create-env.yml
-        
-      # Optimize Laravel
-      - run:
-          name: Optimize Laravel
-          command: bash commands/laravel-optimize.yml
+      - create-env 
+      - laravel-optimize
+      - laravel-setup
 
-      # Run Migrations
-      - run:
-          name: Run Laravel Migrations
-          command: bash commands/laravel-setup.yml
-
-      # Health Check Laravel
-      - run:
-          name: Laravel Health Check
-          command: bash commands/health-check.yml
+      # Health Check
+      - health-check
 
   Push-To-Docker:
     executor: docker-executor
@@ -84,9 +72,8 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run:
-          name: DockerHub Login & Push
-          command: bash commands/push-to-docker.yml
+      - docker-login
+      - push-to-docker
 
   # Job to deploy to staging server
   Deploy-Staging:
@@ -94,9 +81,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys
-      - run:
-          name: Deploy to Staging
-          command: bash commands/deploy-staging.yml
+      - deploy-staging
 
   # Job to deploy to production server
   Deploy-Production:
@@ -104,9 +89,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys
-      - run:
-          name: Deploy to Production
-          command: bash commands/deploy-prod.yml
+      - deploy-prod
 
 workflows:
   version: 2
