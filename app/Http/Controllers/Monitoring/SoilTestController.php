@@ -6,10 +6,11 @@ use App\Models\SoilTest;
 use App\Exports\SoilTestExport;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\SoiltestInterface;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-class SoilTestController extends Controller
+class SoilTestController extends Controller implements SoiltestInterface
 {
     public function HandleGetDataGrafikSoilTest(string $param, string $column, string $sort = 'asc'): array
     {
