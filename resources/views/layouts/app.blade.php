@@ -80,8 +80,8 @@
     <script src="{{ asset('assets/libs/chart.js/chart.umd.js') }}"></script>
     <!-- chartjs init -->
     <script src="{{ asset('assets/js/pages/chartjs.init.js') }}"></script>
-     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{{ asset('js/soiltest.linechart.ini.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('assets/js/pages/soiltest.linechart.ini.js') }}"></script>
 
     <!-- Custom Pages -->
     @stack('scripts')
