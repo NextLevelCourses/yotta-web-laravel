@@ -1,0 +1,40 @@
+description: "Health check for Laravel application inside Docker container"
+
+steps:
+  - run:
+      name: Health Check Laravel
+      command: |
+
+        CONTAINER="${CONTAINER_NAME:-yotta-dashboard}" 
+        MAX_RETRIES="${MAX_RETRIES:-30}"
+        SLEEP_INTERVAL="${SLEEP_INTERVAL:-3}"
+        HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:8002/health}"
+
+        echo "🔍 Checking health of container '$CONTAINER' at '$HEALTH_URL'"
+
+        SUCCESS=false
+
+        for i in $(seq 1 $MAX_RETRIES); do
+          RESPONSE=$(docker exec $CONTAINER curl -s -w " %{http_code}" $HEALTH_URL || echo "000")
+          CODE=$(echo "$RESPONSE" | grep -oE '[0-9]{3}$')
+          BODY=$(echo "$RESPONSE" | sed 's/ [0-9]\{3\}$//')
+
+          if [ "$CODE" = "200" ]; then
+            echo "✅ /health OK on attempt $i (body: $BODY)"
+            SUCCESS=true
+            break
+          fi
+
+          echo "⏳ Waiting for Laravel ($CODE), attempt $i/$MAX_RETRIES..."
+          sleep $SLEEP_INTERVAL
+        done
+
+        if [ "$SUCCESS" = false ]; then
+          echo "❌ Health check failed after $MAX_RETRIES attempts!"
+          echo "📋 Showing last container logs for debugging..."
+          docker logs $CONTAINER || true
+          docker exec $CONTAINER tail -n 50 storage/logs/laravel.log || true
+          exit 1
+        fi
+
+        echo "✅ Laravel container '$CONTAINER' is healthy!"

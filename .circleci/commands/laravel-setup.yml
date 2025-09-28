@@ -1,0 +1,25 @@
+description: "Run Laravel Migrations"
+steps:
+  - run:
+      name: Laravel Migrate
+      command: |
+        echo "🗄️ Running Laravel database migrations ..."
+
+        # Cek apakah container ada
+        if ! docker ps --format '{{.Names}}' | grep -q '^yotta-dashboard$'; then
+          echo "❌ Container yotta-dashboard not running."
+          exit 1
+        fi
+
+        # Jalankan migration
+        if docker exec yotta-dashboard php artisan migrate --force; then
+          echo "✅ Laravel migrations completed successfully."
+        else
+          echo "❌ Laravel migrations failed."
+          docker exec yotta-dashboard php artisan migrate:status || echo "⚠️ Could not get migration status."
+          exit 1
+        fi
+
+        # Tampilkan status migration
+        echo "📋 Current migration status:"
+        docker exec yotta-dashboard php artisan migrate:status || echo "⚠️ Failed to fetch migration status."

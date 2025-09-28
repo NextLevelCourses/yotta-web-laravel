@@ -1,0 +1,113 @@
+version: 2.1
+
+executors:
+  docker-executor:
+    docker:
+      - image: cimg/base:stable
+
+jobs:
+# ============ Build Job ============
+  Build:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # Build Docker Image
+      - run:
+          name: Build Docker Image
+          command: |
+            echo "🚀 Building Docker image..."
+            docker build -t yotta-dashboard:latest -f dockerfile .
+            echo "✅ Docker image built successfully."
+            docker images -a
+
+# Testing job runs after Build job
+  Testing:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # Run Docker Compose
+      - run:
+          name: Run Docker Compose
+          command: |
+            echo "🚀 Starting services with Docker Compose..."
+            docker-compose -f docker-compose.yml up -d --build
+            echo "✅ Services started successfully."
+            docker ps -a
+
+      # Wait for Yotta-MySQL to be ready
+      - run:
+          name: Wait for Services to be Ready
+          command: |
+            echo "Waiting for Database to be ready..."
+            for i in {1..20}; do
+              docker exec yotta-mysql sh -c 'mysql -u yotta -pyotta_pass -e "SELECT 1;"' && break
+              echo "MySQL not ready yet..."
+              sleep 2
+            done
+            echo "✅ Yotta-MySQL is ready!"
+
+      # Generate & Inject APP_KEY
+      - command: create-key.yml
+       
+      # Optimize Laravel
+      - command: laravel-optimize.yml
+
+      # Run Migrations
+      - command: laravel-migrate.yml
+
+      # Health Check Laravel
+      - command: health-check.yml
+
+  # Job to deploy to staging server
+  Deploy-Staging:
+    executor: docker-executor
+    steps:
+      - checkout
+      - add_ssh_keys
+      - command: deploy-staging.yml
+
+
+  Deploy-Production:
+    executor: docker-executor
+    steps:
+      - checkout
+      - add_ssh_keys
+      - command: deploy-prod.yml
+
+workflows:
+  version: 2
+  BuildAndTest:
+    jobs:
+      - Build
+      - Testing:
+          requires:
+            - Build
+      - Push-To-Docker:
+          requires:
+            - Testing
+          filters:
+            branches:
+              only: ci-cd/test   # bisa dijalankan saat testing branch
+            tags:
+              only: /^v.*/       # tetap bisa jalan jika ada tag
+      - Deploy-Staging:
+          requires:
+            - Testing
+            - Push-To-Docker
+          filters:
+            branches:
+              only: ci-cd/test
+      - Deploy-Production:
+          requires:
+            - Push-To-Docker
+          filters:
+            branches:
+              only: ci-cd/test
+            tags:
+              only: /^v.*/

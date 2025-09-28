@@ -1,0 +1,38 @@
+description: "Run Laravel Migrations with fallback (Staging only)"
+steps:
+  - run:
+      name: Laravel Migrate with Fallback
+      command: |
+        CONTAINER="${CONTAINER_NAME:-yotta-dashboard}"
+        echo "🗄️ Starting Laravel migrations in container '$CONTAINER' at $(date)"
+
+        if ! docker ps --format '{{.Names}}' | grep -q "^$CONTAINER\$"; then
+          echo "❌ Container $CONTAINER not running."
+          exit 1
+        fi
+
+        echo "➡️ Running migration..."
+        if docker exec $CONTAINER php artisan migrate --force; then
+          echo "✅ Migrations completed successfully at $(date)"
+        else
+          echo "⚠️ Migration failed! Attempting rollback and retry (staging only)..."
+
+          if docker exec $CONTAINER php artisan migrate:rollback --force; then
+            echo "♻️ Rollback successful."
+          else
+            echo "⚠️ Rollback failed!"
+          fi
+
+          echo "🔄 Retrying migration..."
+          if docker exec $CONTAINER php artisan migrate --force; then
+            echo "✅ Migration succeeded after rollback & retry."
+          else
+            echo "❌ Migration still failed after retry!"
+            docker exec $CONTAINER php artisan migrate:status || echo "⚠️ Could not fetch migration status."
+            exit 1
+          fi
+        fi
+
+        echo "📋 Current migration status:"
+        docker exec $CONTAINER php artisan migrate:status || echo "⚠️ Failed to fetch migration status."
+        echo "📝 Laravel migration process completed at $(date)"

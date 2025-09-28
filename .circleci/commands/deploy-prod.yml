@@ -1,0 +1,67 @@
+description: "Deploy Laravel Dashboard to Staging Server"
+
+steps:
+  # Pastikan SSH sudah tersedia
+  - add_ssh_keys
+
+  # Checkout code
+  - checkout
+
+  # Pull, stop, dan jalankan container baru
+  - run:
+      name: Deploy to Staging
+      command: |
+        ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
+          set -e
+          cd /home/ubuntu/dev-yotta
+
+          # Pastikan .env ada
+          if [ ! -f .env ]; then
+            cp .env.example .env
+          fi
+
+          echo '🔄 Pull image terbaru...'
+          docker pull $DOCKERHUB_REPO:latest
+
+          echo '🛑 Hentikan container lama...'
+          docker compose stop dashboard || true
+          docker compose rm -f dashboard || true
+
+          echo '🚀 Jalankan container baru...'
+          docker compose up -d dashboard --remove-orphans
+
+          # Ambil container ID untuk service dashboard
+          DASHBOARD_CID=\$(docker compose ps -q dashboard)
+
+          echo '⏳ Tunggu aplikasi siap (health endpoint)...'
+          for i in {1..20}; do
+            STATUS=\$(docker exec \$DASHBOARD_CID curl -s -o /dev/null -w "%{http_code}" http://0.0.0.0:8002/health || echo 000)
+            if [ \"\$STATUS\" = \"200\" ]; then
+              echo '✅ Service sehat & siap!'
+              break
+            fi
+            echo \"Service belum siap (\$STATUS), tunggu 3s...\"
+            sleep 3
+          done
+
+          echo '📦 Jalankan laravel optimize'
+          make dy-laravel-optimize-all || {
+            echo '❌ Optimize gagal, log terakhir:'
+            docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+            exit 1
+          }
+
+          docker compose exec dashboard php artisan migrate --force || {
+            echo '❌ Migration gagal, log terakhir:'
+            docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+            exit 1
+          }
+
+          docker compose exec dashboard php artisan db:seed --force || {
+            echo '❌ Seeder gagal, log terakhir:'
+            docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+            exit 1
+          }
+
+          echo '✅ Deploy selesai ke STAGING!'
+        "
