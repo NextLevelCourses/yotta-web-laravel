@@ -61,7 +61,7 @@ jobs:
       # Generate & Inject APP_KEY
       - run:
           name: Generate & Inject APP_KEY
-          command: bash commands/create-key.yml
+          command: bash commands/create-env.yml
         
       # Optimize Laravel
       - run:
@@ -71,7 +71,7 @@ jobs:
       # Run Migrations
       - run:
           name: Run Laravel Migrations
-          command: bash commands/laravel-migrate.yml
+          command: bash commands/laravel-setup.yml
 
       # Health Check Laravel
       - run:
@@ -97,6 +97,7 @@ jobs:
       - run:
           name: Deploy to Staging
           command: bash commands/deploy-staging.yml
+          command: bash commands/laravel-optimize.yml
 
   Deploy-Production:
     executor: docker-executor
@@ -106,6 +107,7 @@ jobs:
       - run:
           name: Deploy to Production
           command: bash commands/deploy-prod.yml
+          command: bash commands/laravel-optimize.yml
 
 workflows:
   version: 2
