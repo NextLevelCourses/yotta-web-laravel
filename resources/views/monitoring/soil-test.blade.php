@@ -67,10 +67,7 @@
                 xAxis: {
                     type: 'category',
                     boundaryGap: false,
-                    data: @json($data['labels']),
-                    axisLabel: {
-                        align: 'right' // label rata kanan
-                    }
+                    data: @json($data['labels'])
                 },
                 yAxis: {
                     type: 'value'
