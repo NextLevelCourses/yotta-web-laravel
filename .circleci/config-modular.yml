@@ -72,6 +72,16 @@ jobs:
           name: Laravel Health Check
           command: bash commands/health-check.yml
 
+  Push-To-Docker:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: DockerHub Login & Push
+          command: bash commands/push-to-docker.yml
+
   # Job to deploy to staging server
   Deploy-Staging:
     executor: docker-executor
