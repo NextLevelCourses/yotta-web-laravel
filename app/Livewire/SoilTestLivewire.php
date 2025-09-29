@@ -4,20 +4,41 @@ namespace App\Livewire;
 
 use Carbon\Carbon;
 use Livewire\Component;
+use App\Models\SoilTest;
+use App\SoiltestInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Contract\Firestore;
 
-class SoilTestLivewire extends Component
+class SoilTestLivewire extends Component implements SoiltestInterface
 {
-    public $devices_id = '--',
+    public //data sensor
+        $devices_id = '--',
         $temperature = '--',
         $humidity = '--',
         $ec = '--',
         $ph = '--',
         $nitrogen = '--',
         $fosfor = '--',
-        $kalium = '--';
+        $kalium = '--',
+        //data grafik
+        $labels_charts = [],
+        $temperature_chart = [],
+        $humidity_chart = [],
+        $ec_chart = [],
+        $ph_chart = [],
+        $nitrogen_chart = [],
+        $fosfor_chart = [],
+        $kalium_chart = [];
+
+    public function HandleGetDataGrafikSoilTest(string $param, string $column, string $sort = 'asc'): array
+    {
+        return SoilTest::whereNotNull($param)
+            ->orderBy($column, $sort)
+            ->limit(10)
+            ->pluck($param)
+            ->toArray();
+    }
 
     public function mount()
     {
@@ -52,7 +73,10 @@ class SoilTestLivewire extends Component
                 ->document('latest')
                 ->snapshot();
 
+            //get data label of chart grafik
+            $chart_label = $this->HandleGetDataGrafikSoilTest('measured_at', 'id', 'desc');
 
+            //validate data sensor exists
             if ($snapshot->exists()) {
                 $data = $snapshot->data();
                 $this->devices_id = $data['Device_ID'] ?? '--';
@@ -68,23 +92,50 @@ class SoilTestLivewire extends Component
                 // Kirim ke JS
                 // $this->dispatch('sensorDataUpdated', $data);
                 // Kirim event ke JavaScript dengan data yang diperbarui
-                $this->dispatch('updateKnobs', [
-                    'device_id' => $this->devices_id,
-                    'temperature' => $this->temperature,
-                    'humidity' => $this->humidity,
-                    'ec' => $this->ec,
-                    'ph' => $this->ph,
-                    'nitrogen' => $this->nitrogen,
-                    'fosfor' => $this->fosfor,
-                    'kalium' => $this->kalium,
-                ]);
+                // $this->dispatch('updateKnobs', [
+                //     'device_id' => $this->devices_id,
+                //     'temperature' => $this->temperature,
+                //     'humidity' => $this->humidity,
+                //     'ec' => $this->ec,
+                //     'ph' => $this->ph,
+                //     'nitrogen' => $this->nitrogen,
+                //     'fosfor' => $this->fosfor,
+                //     'kalium' => $this->kalium,
+                // ]);
             } else {
                 $this->devices_id = $this->temperature = $this->humidity = $this->ec = $this->ph =
                     $this->nitrogen = $this->fosfor = $this->kalium = 'Not Found';
             }
+
+            //validate data grafik exists
+            if (!empty($chart_label)) {
+                //label setup
+                $labels = array_map(function ($date) {
+                    if (is_string($date)) return $date;
+                    return $date instanceof \Carbon\Carbon ? $date->format('Y-m-d H:i:s') : (string)$date;
+                }, $chart_label);
+
+                //mapping data via hook livewire
+                $this->dispatch('chartDataSoilTest', data: [
+                    'labels' => $labels,
+                    'temperature' => $this->HandleGetDataGrafikSoilTest('temperature', 'id', 'desc'),
+                    'humidity' => $this->HandleGetDataGrafikSoilTest('humidity', 'id', 'desc'),
+                    'ec' => $this->HandleGetDataGrafikSoilTest('ec', 'id', 'desc'),
+                    'ph' => $this->HandleGetDataGrafikSoilTest('ph', 'id', 'desc'),
+                    'nitrogen' => $this->HandleGetDataGrafikSoilTest('nitrogen', 'id', 'desc'),
+                    'fosfor' => $this->HandleGetDataGrafikSoilTest('fosfor', 'id', 'desc'),
+                    'kalium' => $this->HandleGetDataGrafikSoilTest('kalium', 'id', 'desc')
+                ]);
+            } else {
+                $this->labels_charts = $this->temperature_chart = $this->humidity_chart = $this->ec_chart = $this->ph_chart = $this->nitrogen_chart = $this->fosfor_chart = $this->kalium_chart = [];
+            }
+
+            //catch error if something wrong from data soil test
         } catch (\Throwable $e) {
             $this->devices_id = $this->temperature = $this->humidity = $this->ec = $this->ph =
                 $this->nitrogen = $this->fosfor = $this->kalium = 'Error';
+
+            $this->labels_charts = $this->temperature_chart = $this->humidity_chart = $this->ec_chart = $this->ph_chart = $this->nitrogen_chart = $this->fosfor_chart = $this->kalium_chart = [];
 
             Log::error('Firestore error: ' . $e->getMessage());
         }

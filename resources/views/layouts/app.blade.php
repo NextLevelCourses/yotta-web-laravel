@@ -71,7 +71,6 @@
     <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
     <script src="{{ asset('assets/libs/feather-icons/feather.min.js') }}"></script>
     <script src="{{ asset('assets/libs/pace-js/pace.min.js') }}"></script>
-    <script src="{{ asset('assets/js/app.js') }}"></script>
 
     <!-- Knob + ECharts -->
     <!-- <script src="{{ asset('assets/libs/jquery-knob/jquery.knob.min.js') }}"></script> -->
@@ -81,16 +80,15 @@
     <!-- chartjs init -->
     <script src="{{ asset('assets/js/pages/chartjs.init.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{{ asset('assets/js/pages/soiltest.linechart.ini.js') }}"></script>
+
+    @livewireScripts
+
+    <script>
+        console.log('✅ DOM Loaded. Livewire:', window.Livewire);
+    </script>
 
     <!-- Custom Pages -->
     @stack('scripts')
-
-
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
-
-    @livewireScripts
 </body>
 
 </html>
