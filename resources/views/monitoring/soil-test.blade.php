@@ -27,105 +27,123 @@
         <script src="{{ asset('assets/js/pages/soil-test.js') }}"></script>
 
         <livewire:soil-test-livewire />
-    </div>
 
-    {{-- Card Line Chart --}}
-    <div class="card shadow-sm rounded-3">
-        <div class="card-header bg-primary text-white">
-            <h4 class="card-title mb-0">Soil Test Chart</h4>
-        </div>
-        <div class="card-body">
-            <p class="text-muted">
-                Berikut adalah data simulasi monitoring soil dalam bentuk grafik.
-            </p>
-            <div id="soiltest-chart" style="height: 400px;"></div>
+        <div class="card shadow-sm rounded-3">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">Chart</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Berikut adalah data simulasi monitoring soil dalam bentuk grafik.
+                </p>
+                <div id="soiltest-chart" wire:ignore style="height: 400px;"></div>
+            </div>
         </div>
     </div>
 @endsection
 
 @push('scripts')
     <script type="text/javascript">
-        document.addEventListener("DOMContentLoaded", function() {
-            var chartDom = document.getElementById('soiltest-chart');
-            var myChart = echarts.init(chartDom);
+        document.addEventListener('livewire:init', () => {
+            console.log('✅ Livewire siap:', window.Livewire);
+            let myChart;
 
-            var option = {
-                tooltip: {
-                    trigger: 'axis'
-                },
-                legend: {
-                    data: ['Suhu (°C)', 'Kelembaban (%)', 'EC (µS/cm)', 'pH', 'Nitrogen (mg/kg)',
-                        'Fosfor (mg/kg)', 'Kalium (mg/kg)'
+            Livewire.on('chartDataSoilTest', (payload) => {
+                console.log('📡 Data diterima:', payload);
+                var chartDom = document.getElementById('soiltest-chart');
+                if (!chartDom) return;
+
+                // Reuse chart instance agar tidak crash setiap 3 detik
+                if (!myChart) {
+                    myChart = echarts.init(chartDom);
+                }
+
+                var option = {
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    legend: {
+                        data: [
+                            'Suhu (°C)',
+                            'Kelembaban (%)',
+                            'EC (µS/cm)',
+                            'pH',
+                            'Nitrogen (mg/kg)',
+                            'Fosfor (mg/kg)',
+                            'Kalium (mg/kg)'
+                        ]
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: payload.data.labels
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [{
+                            name: 'Suhu (°C)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.temperature,
+                            color: '#f46a6a'
+                        },
+                        {
+                            name: 'Kelembaban (%)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.humidity,
+                            color: '#50a5f1'
+                        },
+                        {
+                            name: 'EC (µS/cm)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.ec,
+                            color: '#34c38f'
+                        },
+                        {
+                            name: 'pH',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.ph,
+                            color: '#ffcc00'
+                        },
+                        {
+                            name: 'Nitrogen (mg/kg)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.nitrogen,
+                            color: '#9933ff'
+                        },
+                        {
+                            name: 'Fosfor (mg/kg)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.fosfor,
+                            color: '#ff9933'
+                        },
+                        {
+                            name: 'Kalium (mg/kg)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.kalium,
+                            color: '#009999'
+                        }
                     ]
-                },
-                grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '3%',
-                    containLabel: true
-                },
-                xAxis: {
-                    type: 'category',
-                    boundaryGap: false,
-                    data: @json($data['labels'])
-                },
-                yAxis: {
-                    type: 'value'
-                },
-                series: [{
-                        name: 'Suhu (°C)',
-                        type: 'line',
-                        smooth: true,
-                        data: @json($data['temperature']),
-                        color: '#f46a6a'
-                    },
-                    {
-                        name: 'Kelembaban (%)',
-                        type: 'line',
-                        smooth: true,
-                        data: @json($data['humidity']),
-                        color: '#50a5f1'
-                    },
-                    {
-                        name: 'EC (µS/cm)',
-                        type: 'line',
-                        smooth: true,
-                        data: @json($data['ec']),
-                        color: '#34c38f'
-                    },
-                    {
-                        name: 'pH',
-                        type: 'line',
-                        smooth: true,
-                        data: @json($data['ph']),
-                        color: '#ffcc00'
-                    },
-                    {
-                        name: 'Nitrogen (mg/kg)',
-                        type: 'line',
-                        smooth: true,
-                        data: @json($data['nitrogen']),
-                        color: '#9933ff'
-                    },
-                    {
-                        name: 'Fosfor (mg/kg)',
-                        type: 'line',
-                        smooth: true,
-                        data: @json($data['fosfor']),
-                        color: '#ff9933'
-                    },
-                    {
-                        name: 'Kalium (mg/kg)',
-                        type: 'line',
-                        smooth: true,
-                        data: @json($data['kalium']),
-                        color: '#009999'
-                    },
-                ]
-            };
+                };
 
-            myChart.setOption(option);
+                myChart.setOption(option);
+                myChart.resize();
+            });
         });
+
         //export data
         function getEndOfMonth(year, month) {
             return new Date(year, month + 1, 0); // last day of given month
