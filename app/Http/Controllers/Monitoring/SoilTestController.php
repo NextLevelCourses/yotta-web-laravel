@@ -32,7 +32,7 @@ class SoilTestController extends Controller implements SoiltestInterface
         //mapping data to array
         $data = array(
             'labels' => $labels,
-            'device' => SoilTest::whereNotNull('device_id')->first(),
+            'device' => SoilTest::whereNotNull('device_id',) -> orderByDesc('id')->first(),
             'temperature' => $this->HandleGetDataGrafikSoilTest('temperature', 'id', parent::LATEST),
             'humidity' => $this->HandleGetDataGrafikSoilTest('humidity', 'id', parent::LATEST),
             'ec' => $this->HandleGetDataGrafikSoilTest('ec', 'id', parent::LATEST),
