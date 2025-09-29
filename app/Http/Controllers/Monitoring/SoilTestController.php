@@ -6,105 +6,40 @@ use App\Models\SoilTest;
 use App\Exports\SoilTestExport;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
+use App\SoiltestInterface;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-class SoilTestController extends Controller
+class SoilTestController extends Controller implements SoiltestInterface
 {
+    public function HandleGetDataGrafikSoilTest(string $param, string $column, string $sort = 'asc'): array
+    {
+        return SoilTest::whereNotNull($param)
+            ->orderBy($column, $sort)
+            ->limit(10)
+            ->pluck($param)
+            ->toArray();
+    }
+
     public function index()
     {
-        //declare nilai untuk query data monitoring di jam-jam berapa saja
-        $hours = [8, 10, 12, 14, 16, 18];
-
-        //get data temperature every day at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00
-        $temperatures = [];
-        foreach ($hours as $hour) {
-            $temp = DB::table('soil_tests')->whereDate('measured_at', now()->format('Y-m-d')) //ambil data hari ini
-                ->whereRaw('HOUR(measured_at) = ?', [$hour]) //eksekusi query base dari rules jam yang di tentukan
-                ->whereNotNull('temperature')
-                ->orderBy('measured_at')
-                ->value('temperature');
-            $temperatures[] = $temp ?? 0;
-        }
-
-        //get data humadity every day at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00
-        $humaditys = [];
-        foreach ($hours as $hour) {
-            $humadity = DB::table('soil_tests')->whereDate('measured_at', now()->format('Y-m-d')) //ambil data hari ini
-                ->whereRaw('HOUR(measured_at) = ?', [$hour]) //eksekusi query base dari rules jam yang di tentukan
-                ->whereNotNull('humidity')
-                ->orderBy('measured_at')
-                ->value('humidity');
-            $humaditys[] = $humadity ?? 0;
-        }
-
-        //get data ec every day at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00
-        $ecs = [];
-        foreach ($hours as $hour) {
-            $ec = DB::table('soil_tests')->whereDate('measured_at', now()->format('Y-m-d')) //ambil data hari ini
-                ->whereRaw('HOUR(measured_at) = ?', [$hour]) //eksekusi query base dari rules jam yang di tentukan
-                ->whereNotNull('ec')
-                ->orderBy('measured_at')
-                ->value('ec');
-            $ecs[] = $ec ?? 0;
-        }
-
-        //get data ph every day at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00
-        $phs = [];
-        foreach ($hours as $hour) {
-            $ph = DB::table('soil_tests')->whereDate('measured_at', now()->format('Y-m-d')) //ambil data hari ini
-                ->whereRaw('HOUR(measured_at) = ?', [$hour]) //eksekusi query base dari rules jam yang di tentukan
-                ->whereNotNull('ph')
-                ->orderBy('measured_at')
-                ->value('ph');
-            $phs[] = $ph ?? 0;
-        }
-
-        //get data nitrogen every day at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00
-        $nitrogens = [];
-        foreach ($hours as $hour) {
-            $nitrogen = DB::table('soil_tests')->whereDate('measured_at', now()->format('Y-m-d')) //ambil data hari ini
-                ->whereRaw('HOUR(measured_at) = ?', [$hour]) //eksekusi query base dari rules jam yang di tentukan
-                ->whereNotNull('nitrogen')
-                ->orderBy('measured_at')
-                ->value('nitrogen');
-            $nitrogens[] = $nitrogen ?? 0;
-        }
-
-        //get data fosfor every day at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00
-        $fosfors = [];
-        foreach ($hours as $hour) {
-            $fosfor = DB::table('soil_tests')->whereDate('measured_at', now()->format('Y-m-d')) //ambil data hari ini
-                ->whereRaw('HOUR(measured_at) = ?', [$hour]) //eksekusi query base dari rules jam yang di tentukan
-                ->whereNotNull('fosfor')
-                ->orderBy('measured_at')
-                ->value('fosfor');
-            $fosfors[] = $fosfor ?? 0;
-        }
-
-        //get data kalium every day at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00
-        $kaliums = [];
-        foreach ($hours as $hour) {
-            $kalium = DB::table('soil_tests')->whereDate('measured_at', now()->format('Y-m-d')) //ambil data hari ini
-                ->whereRaw('HOUR(measured_at) = ?', [$hour]) //eksekusi query base dari rules jam yang di tentukan
-                ->whereNotNull('kalium')
-                ->orderBy('measured_at')
-                ->value('kalium');
-            $kaliums[] = $kalium ?? 0;
-        }
+        $get_label = $this->HandleGetDataGrafikSoilTest('measured_at', 'id', parent::LATEST);
+        $labels = array_map(function ($date) {
+            if (is_string($date)) return $date;
+            return $date instanceof \Carbon\Carbon ? $date->format('Y-m-d H:i:s') : (string)$date;
+        }, $get_label);
 
         //mapping data to array
         $data = array(
-            'labels' => ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+            'labels' => $labels,
             'device' => SoilTest::whereNotNull('device_id')->first(),
-            'temperature' => $temperatures,
-            'humidity' => $humaditys,
-            'ec' => $ecs,
-            'ph' => $phs,
-            'nitrogen' => $nitrogens,
-            'fosfor' => $fosfors,
-            'kalium' => $kaliums
+            'temperature' => $this->HandleGetDataGrafikSoilTest('temperature', 'id', parent::LATEST),
+            'humidity' => $this->HandleGetDataGrafikSoilTest('humidity', 'id', parent::LATEST),
+            'ec' => $this->HandleGetDataGrafikSoilTest('ec', 'id', parent::LATEST),
+            'ph' => $this->HandleGetDataGrafikSoilTest('ph', 'id', parent::LATEST),
+            'nitrogen' => $this->HandleGetDataGrafikSoilTest('nitrogen', 'id', parent::LATEST),
+            'fosfor' => $this->HandleGetDataGrafikSoilTest('fosfor', 'id', parent::LATEST),
+            'kalium' => $this->HandleGetDataGrafikSoilTest('kalium', 'id', parent::LATEST)
         );
         return view('monitoring.soil-test', compact('data'));
     }

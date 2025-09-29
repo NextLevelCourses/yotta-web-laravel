@@ -7,7 +7,8 @@ use App\Http\Controllers\Monitoring\SoilTestController;
 use App\Http\Controllers\Monitoring\SoilManagController;
 use App\Http\Controllers\Monitoring\SolarDomeController;
 use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitoring, bukan Api
-use App\Http\Controllers\Monitoring\GreenhouseController;
+use App\Http\Controllers\Monitoring\LoraController;
+
 
 // Halaman utama (cukup satu kali)
 Route::get('/', function () {
@@ -47,8 +48,7 @@ Route::prefix('monitoring')->group(function () {
 });
 
 Route::prefix('monitoring')->group(function () {
-    Route::get('/greenhouse', [GreenhouseController::class, 'index'])
-        ->name('monitoring.greenhouse');
+    Route::get('/lora', [LoraController::class, 'index'])->name('monitoring.lora');
 });
 
 // Jangan lupa tambahkan rute untuk admin di sini nanti

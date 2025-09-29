@@ -4,45 +4,62 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use PhpMqtt\Client\MqttClient;
-use App\Models\AirQuality;
-use Illuminate\Support\Facades\Log;
+use PhpMqtt\Client\ConnectionSettings;
+use App\Models\LoRa;
 
 class MqttSubscribe extends Command
 {
     protected $signature = 'mqtt:subscribe';
-    protected $description = 'Subscribe to an MQTT topic and save data to the database';
+    protected $description = 'Subscribe ke broker MQTT TTN dan simpan data ke database';
 
     public function handle()
     {
-        $server   = 'broker.emqx.io';
+        $server   = 'au1.cloud.thethings.network';
         $port     = 1883;
-        $clientId = 'laravel-subscriber-' . uniqid();
-        $topic    = 'tes/topic/sensor'; // HARUS sama dengan Arduino
+        $clientId = 'laravel-client-' . uniqid();
+
+        // Username = Application ID dari TTN
+        $username = 'test101a@ttn';
+        // Password = API Key dari TTN
+        $password = 'NNSXS.JGJGATTX2DUG7RAAJS7O5BJNPQJF2IKCH4QIQYI.PH4WEUHY7SEVU7AEDASWFB2AKFROGBXXEVQBS6X6IVYPNNZGXTBA'; // ganti dengan API key asli
+
+        $connectionSettings = (new ConnectionSettings)
+            ->setUsername($username)
+            ->setPassword($password)
+            ->setKeepAliveInterval(60);
 
         $mqtt = new MqttClient($server, $port, $clientId);
 
-        $mqtt->connect();
-        $this->info("✅ Connected to MQTT Broker: {$server}");
+        $mqtt->connect($connectionSettings, true);
 
+        $this->info("✅ Terhubung ke MQTT broker: {$server}:{$port}");
+
+        // Subscribe ke topik TTN
+        $topic = 'v3/test101a@ttn/devices/+/up'; // format TTN untuk uplink
         $mqtt->subscribe($topic, function (string $topic, string $message) {
-            $this->info("📩 Received on [{$topic}]: {$message}");
+            $this->info("📩 Pesan diterima dari {$topic}: {$message}");
 
-            // Decode pesan JSON dari Arduino
             $data = json_decode($message, true);
 
-            if (is_array($data) && isset($data['temperature']) && isset($data['humidity'])) {
-                AirQuality::create([
-                    'temperature' => $data['temperature'],
-                    'humidity'    => $data['humidity'],
-                    'air_quality' => $data['air_quality'] ?? 0, // default 0 jika tidak ada
+            if ($data && isset($data['uplink_message']['decoded_payload'])) {
+                $payload = $data['uplink_message']['decoded_payload'];
+
+                LoRa::create([
+                    'air_humidity'      => $payload['air_humidity'] ?? null,
+                    'air_temperature'   => $payload['air_temperature'] ?? null,
+                    'nitrogen'          => $payload['nitrogen'] ?? null,
+                    'phosphorus'        => $payload['phosphorus'] ?? null,
+                    'potassium'         => $payload['potassium'] ?? null,
+                    'soil_conductivity' => $payload['soil_conductivity'] ?? null,
+                    'soil_humidity'     => $payload['soil_humidity'] ?? null,
+                    'soil_pH'           => $payload['soil_pH'] ?? null,
+                    'soil_temperature'  => $payload['soil_temperature'] ?? null,
                 ]);
-                $this->info("💾 Data saved: Temp={$data['temperature']}, Hum={$data['humidity']}");
-            } else {
-                Log::warning("⚠️ Invalid MQTT payload: {$message}");
+
+                $this->info("💾 Data LoRa berhasil disimpan ke database.");
             }
         }, 0);
 
-        $this->info("📡 Subscribed to topic: {$topic}");
-        $mqtt->loop(true); // Keep listening
+        $mqtt->loop(true);
     }
 }
