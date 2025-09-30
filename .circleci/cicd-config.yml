@@ -303,7 +303,7 @@ jobs:
 
             # Ambil tag terakhir, fallback ke 'latest' kalau tidak ada
             TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
-            IMAGE_TAG=$(echo ${TAG} | sed 's/^v//' | tr '/:*' '-' | tr '[:upper:]' '[:lower:]')
+            IMAGE_TAG=$(echo ${TAG} | tr '/:*' '-' | tr '[:upper:]' '[:lower:]')
 
             echo "Using Git tag: $TAG"
             echo "Normalized Docker tag: $IMAGE_TAG"
@@ -314,6 +314,9 @@ jobs:
             # Verify image
             docker images -a | grep ${DOCKERHUB_REPO} | grep $IMAGE_TAG && echo "✅ Image exists" || (echo "❌ Image build failed" && exit 1)
 
+            # save IMAGE_TAG ke environment variable for future use
+            echo "export IMAGE_TAG=$IMAGE_TAG" >> $BASH_ENV
+            source $BASH_ENV
     # Push image to Docker Hub
       - run:
           name: Push image to Docker Hub
@@ -335,7 +338,7 @@ jobs:
     # Setup Docker
       - setup_remote_docker:
           docker_layer_caching: true
-          
+
       # Checkout code
       - checkout
 
