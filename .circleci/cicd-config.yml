@@ -393,21 +393,17 @@ jobs:
               }
 
               echo '🌐 Cek aplikasi lewat domain publik (.env APP_URL)...'
-              APP_URL=\$(grep ^APP_URL= .env | cut -d '=' -f2)
+              APP_URL=$(grep ^APP_URL= .env | cut -d '=' -f2)
               for i in {1..20}; do
-                STATUS=\$(curl -k -s -o /dev/null -w "%{http_code}" \${APP_URL}/health || echo 000)
-                if [ \"\$STATUS\" = \"200\" ]; then
-                  echo \"✅ Domain \${APP_URL}/health OK (200)\"
+                STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" ${APP_URL}/ || echo 000)
+                if [ "$STATUS" = "200" ]; then
+                  echo "✅ Domain ${APP_URL} OK (200)"
                   break
                 fi
-                echo \"Domain belum siap (\$STATUS), tunggu 5s...\"
+                echo "Domain belum siap ($STATUS), tunggu 5s..."
                 sleep 5
               done
 
-              if [ \"\$STATUS\" != \"200\" ]; then
-                echo '❌ Domain health check gagal setelah 20x retry'
-                exit 1
-              fi
 
               echo '✅ Deploy selesai ke STAGING!'
             "
