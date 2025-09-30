@@ -126,7 +126,7 @@ commands:
             echo "📝 Laravel migration process completed at $(date)"
     
 # create .env and inject
-  create-and-inject-env:
+  create-env:
     description: "Create Laravel .env file and generate APP_KEY"
     steps:
       - run:
@@ -165,6 +165,16 @@ commands:
               fi
               echo "$key=$value" >> .env
             done
+
+# Generate APP_KEY
+  generate-app-key:
+    description: "Generate Laravel APP_KEY"
+    steps:
+      - run:
+          name: Generate APP_KEY
+          command: |
+            set -e
+            ready=false
 
             # wait for container yotta-dashboard to be ready
             echo "⏳ Waiting for yotta-dashboard container to be ready..."
@@ -215,11 +225,7 @@ jobs:
           docker_layer_caching: true
 
     # Copy .env
-      - run:
-          name: Copy .env
-          command: |
-            [ -f .env ] || cp .env.example .env
-            cat .env
+      - create-env
 
     # Run Docker Compose
       - run:
@@ -243,7 +249,7 @@ jobs:
             echo "✅ YottaMySQL is ready!"
       
     # Generate & Inject APP_KEY
-      - create-and-inject-env
+      - generate-app-key
 
     # Laravel configuration
       - laravel-optimize
@@ -394,11 +400,16 @@ workflows:
   ci-cd:
     jobs:
       - Testing:
+          context:
+            - global
+            - staging
           filters:
             branches:
               only: ci-cd/test
 
       - Push-To-Docker:
+          context:
+            - global
           requires:
             - Testing
           filters:
@@ -406,6 +417,8 @@ workflows:
               only: ci-cd/test
 
       - Deploy-Staging:
+          context:
+            - global
           requires:
             - Push-To-Docker
           filters:
