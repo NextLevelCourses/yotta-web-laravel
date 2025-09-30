@@ -359,14 +359,14 @@ jobs:
               docker pull $DOCKERHUB_REPO:latest
 
               echo '🛑 Hentikan container lama...'
-              docker-compose stop dashboard || true
-              docker-compose rm -f dashboard || true
+              docker compose stop dashboard || true
+              docker compose rm -f dashboard || true
 
               echo '🚀 Jalankan container baru...'
-              docker-compose up -d dashboard --remove-orphans
+              docker compose up -d dashboard --remove-orphans
 
               # Ambil container ID untuk service dashboard
-              DASHBOARD_CID=\$(docker-compose ps -q dashboard)
+              DASHBOARD_CID=\$(docker compose ps -q dashboard)
 
               echo '⏳ Tunggu aplikasi siap (health endpoint)...'
               for i in {1..20}; do
@@ -386,17 +386,28 @@ jobs:
                 exit 1
               }
 
-              docker-compose exec dashboard php artisan migrate --force || {
+              docker compose exec dashboard php artisan migrate --force || {
                 echo '❌ Migration gagal, log terakhir:'
                 docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
                 exit 1
               }
 
-              # docker-compose exec dashboard php artisan db:seed --force || {
-              #   echo '❌ Seeder gagal, log terakhir:'
-              #   docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
-              #   exit 1
-              # }
+              echo '🌐 Cek aplikasi lewat domain publik (.env APP_URL)...'
+              APP_URL=\$(grep ^APP_URL= .env | cut -d '=' -f2)
+              for i in {1..20}; do
+                STATUS=\$(curl -k -s -o /dev/null -w "%{http_code}" \${APP_URL}/health || echo 000)
+                if [ \"\$STATUS\" = \"200\" ]; then
+                  echo \"✅ Domain \${APP_URL}/health OK (200)\"
+                  break
+                fi
+                echo \"Domain belum siap (\$STATUS), tunggu 5s...\"
+                sleep 5
+              done
+
+              if [ \"\$STATUS\" != \"200\" ]; then
+                echo '❌ Domain health check gagal setelah 20x retry'
+                exit 1
+              fi
 
               echo '✅ Deploy selesai ke STAGING!'
             "
