@@ -328,13 +328,14 @@ jobs:
     docker:
       - image: cimg/base:stable
 
-      - setup_remote_docker:
-        docker_layer_caching: true
-
     steps:
-      # Pastikan SSH sudah tersedia
+    # Pastikan SSH sudah tersedia
       - add_ssh_keys
 
+    # Setup Docker
+      - setup_remote_docker:
+          docker_layer_caching: true
+          
       # Checkout code
       - checkout
 
