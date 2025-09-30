@@ -332,17 +332,17 @@ jobs:
       - image: cimg/base:stable
 
     steps:
-    # Pastikan SSH sudah tersedia
+    # Ensure SSH keys are available
       - add_ssh_keys
 
-    # Setup Docker
+    # Setup Docker-in-Docker
       - setup_remote_docker:
           docker_layer_caching: true
 
-      # Checkout code
+    # Checkout code from repository
       - checkout
 
-      # Pull, stop, dan jalankan container baru
+    # Deploy to staging server
       - run:
           name: Deploy to Staging
           command: |
@@ -350,67 +350,67 @@ jobs:
               set -e
               cd /home/ubuntu/dev-yotta
 
-              # Pastikan .env ada
+              # Ensure .env file exists (fallback to .env.example)
               if [ ! -f .env ]; then
                 cp .env.example .env
               fi
 
-              echo '🔄 Pull image terbaru...'
+              echo '🔄 Pulling latest image...'
               docker pull $DOCKERHUB_REPO:latest
 
-              echo '🛑 Hentikan container lama...'
+              echo '🛑 Stopping old container...'
               docker compose stop dashboard || true
               docker compose rm -f dashboard || true
 
-              echo '🚀 Jalankan container baru...'
+              echo '🚀 Starting new container...'
               docker compose up -d dashboard --remove-orphans
 
-              # Ambil container ID untuk service dashboard
+              # Get container ID of the dashboard service
               DASHBOARD_CID=\$(docker compose ps -q dashboard)
 
-              echo '⏳ Tunggu aplikasi siap (health endpoint)...'
+              echo '⏳ Waiting for health endpoint inside container...'
               for i in {1..20}; do
                 STATUS=\$(docker exec \$DASHBOARD_CID curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8002/health || echo 000)
                 if [ \"\$STATUS\" = \"200\" ]; then
-                  echo '✅ Service sehat & siap!'
+                  echo '✅ Service is healthy!'
                   break
                 fi
-                echo \"Service belum siap (\$STATUS), tunggu 3s...\"
+                echo \"Service not ready (\$STATUS), waiting 3s...\"
                 sleep 3
               done
 
-              echo '📦 Jalankan laravel optimize'
+              echo '📦 Running Laravel optimize...'
               make dy-laravel-optimize-all || {
-                echo '❌ Optimize gagal, log terakhir:'
+                echo '❌ Optimize failed, last 50 log lines:'
                 docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
                 exit 1
               }
 
+              echo '🗄️ Running Laravel migrations...'
               docker compose exec dashboard php artisan migrate --force || {
-                echo '❌ Migration gagal, log terakhir:'
+                echo '❌ Migration failed, last 50 log lines:'
                 docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
                 exit 1
               }
 
-              echo '🌐 Cek aplikasi lewat domain publik (.env APP_URL)...'
-              APP_URL=$(grep ^APP_URL= .env | cut -d '=' -f2)
+              echo '🌐 Checking public domain (.env APP_URL)...'
+              APP_URL=\$(grep ^APP_URL= .env | cut -d '=' -f2)
               for i in {1..20}; do
-                STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" ${APP_URL}/ || echo 000)
-                if [ "$STATUS" = "200" ]; then
-                  echo "✅ Domain ${APP_URL} OK (200)"
+                STATUS=\$(curl -k -s -o /dev/null -w "%{http_code}" \${APP_URL}/ || echo 000)
+                if [ \"\$STATUS\" = \"200\" ]; then
+                  echo \"✅ Domain \${APP_URL} OK (200)\"
                   break
                 fi
-                echo "Domain belum siap ($STATUS), tunggu 5s..."
+                echo \"Domain not ready (\$STATUS), waiting 5s...\"
                 sleep 5
               done
 
-
-              echo '✅ Deploy selesai ke STAGING!'
+              echo '✅ Deployment to STAGING completed!'
             "
-
 
 # Deploy to Production Server is similar to deploy-to-staging
 # it will be skipped and adding when production server is ready
+# adding migration rollback for production
 
 workflows:
   version: 2
