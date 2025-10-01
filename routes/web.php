@@ -47,7 +47,10 @@ Route::prefix('monitoring')->group(function () {
 });
 
 Route::prefix('monitoring')->group(function () {
-    Route::get('/lora', [LoraController::class, 'index'])->name('monitoring.lora');
+    Route::prefix('lora')->group(function () {
+        Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
+        Route::get('/export/{date}', [LoraController::class, 'export'])->name('lora-test.export');
+    });
 });
 
 // Jangan lupa tambahkan rute untuk admin di sini nanti

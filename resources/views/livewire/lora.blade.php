@@ -1,8 +1,8 @@
-<div wire:poll.3s="fetchlora">
+<div wire:poll.3s="fetchLora">
     <div class="card shadow-lg rounded-3 border-0">
         <div class="card-header bg-success text-white rounded-top-3">
             <h4 class="card-title mb-0 fw-bold text-center text-md-start">
-                📡 LoRaWAN Sensor Data
+                📡 LoRaWAN Sensor Data : {{ $device_id }}
             </h4>
         </div>
         <div class="card-body p-4">
@@ -13,7 +13,7 @@
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">🌡 Air Temperature</h6>
                         <h4 class="fw-bold text-dark">
-                            {{ $data['air_temperature'] ?? '--' }} °C
+                            {{ $air_temperature }} °C
                         </h4>
                     </div>
                 </div>
@@ -21,7 +21,7 @@
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">💧 Air Humidity</h6>
                         <h4 class="fw-bold text-dark">
-                            {{ $data['air_humidity'] ?? '--' }} %
+                            {{ $air_humidity }} %
                         </h4>
                     </div>
                 </div>
@@ -29,7 +29,7 @@
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">🌱 Soil pH</h6>
                         <h4 class="fw-bold text-dark">
-                            {{ $data['soil_pH'] ?? '--' }}
+                            {{ $soil_pH }}
                         </h4>
                     </div>
                 </div>
@@ -37,7 +37,7 @@
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">🌡 Soil Temp</h6>
                         <h4 class="fw-bold text-dark">
-                            {{ $data['soil_temperature'] ?? '--' }} °C
+                            {{ $soil_temperature }} °C
                         </h4>
                     </div>
                 </div>
@@ -49,7 +49,7 @@
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">⚡ Soil Conductivity</h6>
                         <h4 class="fw-bold text-dark">
-                            {{ $data['soil_conductivity'] ?? '--' }} mS/cm
+                            {{ $soil_conductivity }} mS/cm
                         </h4>
                     </div>
                 </div>
@@ -57,7 +57,7 @@
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">💦 Soil Humidity</h6>
                         <h4 class="fw-bold text-dark">
-                            {{ $data['soil_humidity'] ?? '--' }} %
+                            {{ $soil_humidity }} %
                         </h4>
                     </div>
                 </div>
@@ -65,7 +65,7 @@
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">🟢 Nitrogen</h6>
                         <h4 class="fw-bold text-dark">
-                            {{ $data['nitrogen'] ?? '--' }}
+                            {{ $nitrogen }}
                         </h4>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">🟡 Phosphorus</h6>
                         <h4 class="fw-bold text-dark">
-                            {{ $data['phosphorus'] ?? '--' }}
+                            {{ $phosphorus }}
                         </h4>
                     </div>
                 </div>
@@ -81,7 +81,7 @@
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">🔴 Potassium</h6>
                         <h4 class="fw-bold text-dark">
-                            {{ $data['potassium'] ?? '--' }}
+                            {{ $potassium }}
                         </h4>
                     </div>
                 </div>
@@ -90,8 +90,13 @@
             {{-- Last Updated --}}
             <div class="mt-4 text-center">
                 <small class="text-muted">
-                    ⏱ Last Updated: {{ $data['created_at'] ?? '--' }}
+                    ⏱ Last Updated: {{ $created_at }}
                 </small>
+            </div>
+
+            <div class="text-center mt-4" wire:loading>
+                <div class="spinner-border spinner-border-sm text-primary"></div>
+                <span class="text-muted ms-2">Memperbarui data dari sensor...</span>
             </div>
         </div>
     </div>
