@@ -23,7 +23,7 @@ return new class extends Migration
             $table->float('soil_humidity')->nullable();
             $table->float('soil_pH')->nullable();
             $table->float('soil_temperature')->nullable();
-            $table->timestamp('measured_at')->nullable()->default(now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'));
+            $table->timestamp('measured_at')->nullable();
             $table->timestamps();
         });
     }

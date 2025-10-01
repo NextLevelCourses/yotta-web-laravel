@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Monitoring;
 
 use App\Http\Controllers\Controller;
 use App\LoraInterface;
+use App\Models\LoRa;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -45,16 +47,31 @@ class LoraController extends Controller implements LoraInterface
             return json_decode($json, true);
         }, $jsonObjects, array_keys($jsonObjects));
 
+        //kalo data last(yang paling baru) belum masuk maka ambil data sebelumnya
         if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
-            return array();
+            $oldest = [];
+            for ($i = 0; $i <= 8; $i++) {
+                array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+            }
+            DB::table('loras')->insert($oldest);
+            return $oldest;
         }
 
-        $result = [];
-        for ($i = 0; $i <= 8; $i++) {
-            // array_push($result, array('f_cnt' => $jsonObjects[$i]['result']['uplink_message']['f_cnt']));
-            array_push($result, $jsonObjects[$i]['result']['uplink_message']);
-        }
-        return $result;
+        //ambil last data(data paling update)
+        $latest = array(
+            'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
+            'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
+            'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
+            'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
+            'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
+            'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],
+            'soil_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_humidity'],
+            'soil_pH' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_pH'],
+            'soil_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_temperature'],
+            'measured_at' => now()->format('Y-m-d H:i:s')
+        );
+        LoRa::create($latest);
+        return $latest;
     }
 
     public function HandleGetDataLora()
@@ -93,7 +110,7 @@ class LoraController extends Controller implements LoraInterface
                     ]
                 ]);
                 $raw = $response->getBody()->getContents();
-                return $this->ResponseOk($this->HandleIncludePartOfObjectInsideArray($raw), 'SuccessFully');
+                return $this->ResponseOk($this->HandleIncludePartOfObjectInsideArray($raw), 'SuccessFully Store Data Realtime');
             } catch (\Exception $error) {
                 Log::error($error->getMessage());
                 return $this->ResponseError($error->getMessage(), 500);
