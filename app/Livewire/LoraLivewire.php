@@ -7,7 +7,10 @@ use Livewire\Component;
 
 class LoraLivewire extends Component
 {
-    public function mount() {}
+    public function mount()
+    {
+        $this->fetchLora();
+    }
 
     public function fetchLora() {}
 
