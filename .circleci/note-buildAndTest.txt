@@ -1,0 +1,110 @@
+jobs:
+  Build:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+
+      # Create .env file
+      - command: create-env.yml
+
+      # Build Docker Image
+      - run:
+          name: Build Docker Image
+          command: |
+            echo "🚀 Building Docker image..."
+            docker build -t yotta-dashboard:latest -f dockerfile .
+            echo "✅ Docker image built successfully."
+            docker images -a
+            
+# Testing job runs after Build job
+  Test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+
+      # Set up Docker environment
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # Run Docker Compose
+      - run:
+          name: Run Docker Compose
+          command: |
+            echo "🚀 Starting services with Docker Compose..."
+            docker-compose -f docker-compose.yml up -d --build
+            echo "✅ Services started successfully."
+            docker ps -a
+
+      # Wait for Yotta-MySQL to be ready
+      - run:
+          name: Wait for Services to be Ready
+          command: |
+            echo "Waiting for Database to be ready..."
+            for i in {1..20}; do
+              docker exec yotta-mysql sh -c 'mysql -u yotta -pyotta_pass -e "SELECT 1;"' && break
+              echo "MySQL not ready yet..."
+              sleep 2
+            done
+            echo "✅ Yotta-MySQL is ready!"
+
+      # Generate & Inject APP_KEY
+      - run:
+          name: Generate & Inject APP_KEY
+          command: |
+            set -e
+            echo "Generating Laravel APP_KEY..."
+            KEY=$(docker exec yotta-dashboard php artisan key:generate --show)
+            echo "APP_KEY=$KEY" >> .env
+            echo "✅ APP_KEY injected: $KEY"
+
+            # Copy .env ke container
+            docker cp .env yotta-dashboard:/var/www/.env
+
+            # Clear & cache ulang konfigurasi
+            docker exec yotta-dashboard php artisan config:clear
+            docker exec yotta-dashboard php artisan config:cache
+
+            echo "Cek .env di dalam container:"
+            docker exec yotta-dashboard cat /var/www/.env | sed 's/APP_KEY=.*/APP_KEY=***masked***/' || echo "⚠️ Failed to read .env"
+            echo "✅ Laravel APP_KEY generation and injection complete."
+       
+      # Optimize Laravel
+      - command: laravel-optimize.yml
+
+      # Run Migrations
+      - command: laravel-migrate.yml
+
+      - run:
+          # Health check dengan toleransi kegagalan
+          name: Health Check Laravel (tolerant)
+          command: |
+            success=false
+            for i in {1..30}; do
+              RESPONSE=$(docker exec yotta-dashboard curl -s -w " %{http_code}" http://127.0.0.1:8002/health || echo "000")
+              BODY=$(echo "$RESPONSE" | sed 's/ [0-9]\{3\}$//')
+              CODE=$(echo "$RESPONSE" | grep -oE '[0-9]{3}$')
+
+              if [ "$CODE" = "200" ]; then
+                echo "✅ /health OK on attempt $i (body: $BODY)"
+                success=true
+                break
+              else
+                echo "Waiting for Laravel... ($CODE, body: $BODY)"
+                sleep 3
+              fi
+            done
+
+            if [ "$success" = false ]; then
+              echo "❌ Health check failed after 30 attempts"
+              docker logs yotta-dashboard || true
+              docker exec yotta-dashboard tail -n 50 storage/logs/laravel.log || true
+              exit 1
+            fi
+
+            echo "✅ Build & Test completed successfully!"
+            echo "📋 Recent Laravel migrate status:"
+            docker exec yotta-dashboard php artisan migrate:status || true

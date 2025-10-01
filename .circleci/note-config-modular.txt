@@ -1,0 +1,496 @@
+version: 2.1
+
+# Import reusable commands dari folder commands/
+commands:
+  create-env:
+    description: "Create Laravel .env file and generate APP_KEY"
+    steps:
+      - run:
+          name: Generate .env with APP_KEY
+          command: |
+            set -e
+            echo "⚙️ Generating .env file..."
+
+            # Hapus .env lama kalau ada
+            [ -f .env ] && rm -f .env
+
+            # Daftar variable wajib
+            REQUIRED_KEYS=(
+              APP_NAME
+              APP_DEBUG
+              APP_ENV
+              APP_URL
+              CACHE_DRIVER
+              DB_CONNECTION
+              DB_DATABASE
+              DB_HOST
+              DB_USERNAME
+              DB_PASSWORD
+              DB_PORT
+              MAIL_FROM_NAME
+              MAIL_MAILER
+              QUEUE_CONNECTION
+              SESSION_DRIVER
+            )
+
+            for key in "${REQUIRED_KEYS[@]}"; do
+              value=${!key:-}
+              if [ -z "$value" ]; then
+                echo "❌ Missing required environment variable: $key"
+                exit 1
+              fi
+              echo "$key=$value" >> .env
+            done
+
+            # Generate APP_KEY
+            echo "🔑 Generating Laravel APP_KEY..."
+            KEY=$(docker exec yotta-dashboard php artisan key:generate --show)
+            echo "APP_KEY=$KEY" >> .env
+            echo "✅ APP_KEY generated and injected: $KEY"
+
+            # Copy ke container
+            docker cp .env yotta-dashboard:/var/www/.env
+
+            # Clear & cache konfigurasi
+            docker exec yotta-dashboard php artisan config:clear
+            docker exec yotta-dashboard php artisan config:cache
+
+            # Preview .env di container (mask APP_KEY)
+            docker exec yotta-dashboard cat /var/www/.env | sed 's/APP_KEY=.*/APP_KEY=***masked***/'
+
+            echo "✅ .env fully ready in container"
+
+  deploy-staging:
+    description: "Deploy Laravel Dashboard to Staging Server"
+    steps:
+    - run:
+        name: Deploy to Staging
+        command: |
+          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
+            set -e
+            cd /home/ubuntu/dev-yotta
+
+            # Pastikan .env ada
+            if [ ! -f .env ]; then
+              cp .env.example .env
+            fi
+
+            echo '🔄 Pull image terbaru...'
+            docker pull $DOCKERHUB_REPO:latest
+
+            echo '🛑 Hentikan container lama...'
+            docker compose stop dashboard || true
+            docker compose rm -f dashboard || true
+
+            echo '🚀 Jalankan container baru...'
+            docker compose up -d dashboard --remove-orphans
+
+            # Ambil container ID untuk service dashboard
+            DASHBOARD_CID=\$(docker compose ps -q dashboard)
+
+            echo '⏳ Tunggu aplikasi siap (health endpoint)...'
+            for i in {1..20}; do
+              STATUS=\$(docker exec \$DASHBOARD_CID curl -s -o /dev/null -w "%{http_code}" http://0.0.0.0:8002/health || echo 000)
+              if [ \"\$STATUS\" = \"200\" ]; then
+                echo '✅ Service sehat & siap!'
+                break
+              fi
+              echo \"Service belum siap (\$STATUS), tunggu 3s...\"
+              sleep 3
+            done
+
+            echo '📦 Jalankan laravel optimize'
+            make dy-laravel-optimize-all || {
+              echo '❌ Optimize gagal, log terakhir:'
+              docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+              exit 1
+            }
+
+            docker compose exec dashboard php artisan migrate --force || {
+              echo '❌ Migration gagal, log terakhir:'
+              docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+              exit 1
+            }
+
+            docker compose exec dashboard php artisan db:seed --force || {
+              echo '❌ Seeder gagal, log terakhir:'
+              docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+              exit 1
+            }
+
+            echo '✅ Deploy selesai ke STAGING!'
+          "
+
+  deploy-prod: 
+    description: "Deploy Laravel Dashboard to Production Server"
+    steps:
+      # Pull, stop, dan jalankan container baru
+      - run:
+          name: Deploy to Staging
+          command: |
+            ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP 
+              set -e
+              cd /home/ubuntu/dev-yotta
+
+              # Pastikan .env ada
+              if [ ! -f .env ]; then
+                cp .env.example .env
+              fi
+
+              echo '🔄 Pull image terbaru...'
+              docker pull $DOCKERHUB_REPO:latest
+
+              echo '🛑 Hentikan container lama...'
+              docker compose stop dashboard || true
+              docker compose rm -f dashboard || true
+
+              echo '🚀 Jalankan container baru...'
+              docker compose up -d dashboard --remove-orphans
+
+              # Ambil container ID untuk service dashboard
+              DASHBOARD_CID=\$(docker compose ps -q dashboard)
+
+              echo '⏳ Tunggu aplikasi siap (health endpoint)...'
+              for i in {1..20}; do
+                STATUS=\$(docker exec \$DASHBOARD_CID curl -s -o /dev/null -w "%{http_code}" http://0.0.0.0:8002/health || echo 000)
+                if [ \"\$STATUS\" = \"200\" ]; then
+                  echo '✅ Service sehat & siap!'
+                  break
+                fi
+                echo \"Service belum siap (\$STATUS), tunggu 3s...\"
+                sleep 3
+              done
+
+              echo '📦 Jalankan laravel optimize'
+              make dy-laravel-optimize-all || {
+                echo '❌ Optimize gagal, log terakhir:'
+                docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+                exit 1
+              }
+
+              docker compose exec dashboard php artisan migrate --force || {
+                echo '❌ Migration gagal, log terakhir:'
+                docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+                exit 1
+              }
+
+              docker compose exec dashboard php artisan db:seed --force || {
+                echo '❌ Seeder gagal, log terakhir:'
+                docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log
+                exit 1
+              }
+
+              echo '✅ Deploy selesai ke Production!'
+
+  health-check:
+    description: "Health check for Laravel application inside Docker container"
+    steps:
+      - run:
+          name: Health Check Laravel
+          command: |
+
+            CONTAINER="${CONTAINER_NAME:-yotta-dashboard}" 
+            MAX_RETRIES="${MAX_RETRIES:-30}"
+            SLEEP_INTERVAL="${SLEEP_INTERVAL:-3}"
+            HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:8002/health}"
+
+            echo "🔍 Checking health of container '$CONTAINER' at '$HEALTH_URL'"
+
+            SUCCESS=false
+
+            for i in $(seq 1 $MAX_RETRIES); do
+              RESPONSE=$(docker exec $CONTAINER curl -s -w " %{http_code}" $HEALTH_URL || echo "000")
+              CODE=$(echo "$RESPONSE" | grep -oE '[0-9]{3}$')
+              BODY=$(echo "$RESPONSE" | sed 's/ [0-9]\{3\}$//')
+
+              if [ "$CODE" = "200" ]; then
+                echo "✅ /health OK on attempt $i (body: $BODY)"
+                SUCCESS=true
+                break
+              fi
+
+              echo "⏳ Waiting for Laravel ($CODE), attempt $i/$MAX_RETRIES..."
+              sleep $SLEEP_INTERVAL
+            done
+
+            if [ "$SUCCESS" = false ]; then
+              echo "❌ Health check failed after $MAX_RETRIES attempts!"
+              echo "📋 Showing last container logs for debugging..."
+              docker logs $CONTAINER || true
+              docker exec $CONTAINER tail -n 50 storage/logs/laravel.log || true
+              exit 1
+            fi
+
+            echo "✅ Laravel container '$CONTAINER' is healthy!"
+
+  laravel-migrate-fallback:
+    description: "Run Laravel Migrations with fallback (Staging only)"
+    steps:
+      - run:
+          name: Laravel Migrate with Fallback
+          command: |
+            CONTAINER="${CONTAINER_NAME:-yotta-dashboard}"
+            echo "🗄️ Starting Laravel migrations in container '$CONTAINER' at $(date)"
+
+            if ! docker ps --format '{{.Names}}' | grep -q "^$CONTAINER\$"; then
+              echo "❌ Container $CONTAINER not running."
+              exit 1
+            fi
+
+            echo "➡️ Running migration..."
+            if docker exec $CONTAINER php artisan migrate --force; then
+              echo "✅ Migrations completed successfully at $(date)"
+            else
+              echo "⚠️ Migration failed! Attempting rollback and retry (staging only)..."
+
+              if docker exec $CONTAINER php artisan migrate:rollback --force; then
+                echo "♻️ Rollback successful."
+              else
+                echo "⚠️ Rollback failed!"
+              fi
+
+              echo "🔄 Retrying migration..."
+              if docker exec $CONTAINER php artisan migrate --force; then
+                echo "✅ Migration succeeded after rollback & retry."
+              else
+                echo "❌ Migration still failed after retry!"
+                docker exec $CONTAINER php artisan migrate:status || echo "⚠️ Could not fetch migration status."
+                exit 1
+              fi
+            fi
+
+            echo "📋 Current migration status:"
+            docker exec $CONTAINER php artisan migrate:status || echo "⚠️ Failed to fetch migration status."
+            echo "📝 Laravel migration process completed at $(date)"
+
+  laravel-migrate:
+    description: "Run Laravel Migrations"
+    steps:
+      - run:
+          name: Laravel Migrate
+          command: |
+            echo "🗄️ Running Laravel database migrations ..."
+
+            # Cek apakah container ada
+            if ! docker ps --format '{{.Names}}' | grep -q '^yotta-dashboard$'; then
+              echo "❌ Container yotta-dashboard not running."
+              exit 1
+            fi
+
+            # Jalankan migration
+            if docker exec yotta-dashboard php artisan migrate --force; then
+              echo "✅ Laravel migrations completed successfully."
+            else
+              echo "❌ Laravel migrations failed."
+              docker exec yotta-dashboard php artisan migrate:status || echo "⚠️ Could not get migration status."
+              exit 1
+            fi
+
+            # Tampilkan status migration
+            echo "📋 Current migration status:"
+            docker exec yotta-dashboard php artisan migrate:status || echo "⚠️ Failed to fetch migration status."
+
+  docker-login:
+    description: "Login to Docker Hub"
+    steps:
+      - run:
+          name: DockerHub Login
+          command: |
+            echo "🔐 Logging in to DockerHub ..."
+
+            if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+              echo "❌ DOCKERHUB_USERNAME or DOCKERHUB_TOKEN is not set."
+              exit 1
+            fi
+
+            if echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin; then
+              echo "✅ Successfully logged in to DockerHub as ${DOCKERHUB_USERNAME:0:2}***"
+            else
+              echo "❌ Failed to log in to DockerHub"
+              exit 1
+            fi
+
+  push-to-dockerhub:
+    description: "Build Docker Image and Push to Docker Hub"
+    steps:
+    # Build Docker Image
+    - run:
+        name: Build Docker Image
+        command: |
+          echo "🚀 Building Docker image..."
+          IMAGE_TAG=$(echo ${CIRCLE_TAG} | sed 's/^v//' | tr '/:*' '-' | tr '[:upper:]' '[:lower:]')
+          echo "Using image tag: $IMAGE_TAG"
+          docker build -t ${DOCKERHUB_REPO}:$IMAGE_TAG -t ${DOCKERHUB_REPO}:latest -f dockerfile .
+          echo "✅ Docker image built successfully."
+
+          # Verify image
+          docker images -a | grep ${DOCKERHUB_REPO} | grep $IMAGE_TAG && echo "✅ Image exists" || (echo "❌ Image build failed" && exit 1)
+
+    # Push Docker Image
+    - run:
+        name: Push Docker Image
+        command: |
+          echo "🚀 Pushing Docker image to Docker Hub..."
+          docker push ${DOCKERHUB_REPO}:$IMAGE_TAG
+          docker push ${DOCKERHUB_REPO}:latest
+          echo "✅ Docker image pushed successfully."
+
+  laravel-optimize:
+    description: "Clear & cache config Laravel"
+    steps:
+      - run:
+          name: Laravel Optimize
+          command: |
+            # Clear caches
+            echo "Optimizing Laravel application ..."
+            docker exec yotta-dashboard php artisan config:clear || echo "⚠️ Failed config:clear"
+            docker exec yotta-dashboard php artisan cache:clear || echo "⚠️ Failed cache:clear"
+            docker exec yotta-dashboard php artisan route:clear || echo "⚠️ Failed route:clear"
+            docker exec yotta-dashboard php artisan view:clear || echo "⚠️ Failed view:clear"
+            echo "✅ Laravel optimization complete."
+
+            # Cache again
+            echo "Caching Laravel configuration..."
+            docker exec yotta-dashboard php artisan config:cache || echo "⚠️ Failed config:cache"
+            docker exec yotta-dashboard php artisan route:cache || echo "⚠️ Failed route:cache"
+            docker exec yotta-dashboard php artisan view:cache || echo "⚠️ Failed view:cache"
+            echo "✅ Laravel caching complete."
+
+            # Display current cache status
+            echo "Current Laravel cache status:"
+            docker exec yotta-dashboard php artisan config:cache
+            docker exec yotta-dashboard php artisan route:cache
+            docker exec yotta-dashboard php artisan view:cache
+            echo "✅ Cache status displayed."
+
+            # Display Laravel about information
+            echo "Displaying Laravel about information..."
+            docker exec yotta-dashboard php artisan about || echo "⚠️ Failed to display Laravel about"
+
+            echo "✅ Laravel optimization and caching process completed."
+
+executors:
+  docker-executor:
+    docker:
+      - image: cimg/base:stable
+
+
+jobs:
+  # ============ Build Job ============
+  Build:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # Build Docker Image
+      - run:
+          name: Build Docker Image
+          command: |
+            echo "🚀 Building Docker image..."
+            docker build -t yotta-dashboard:latest -f dockerfile .
+            echo "✅ Docker image built successfully."
+            docker images -a
+
+  # Testing job runs after Build job
+  Testing:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      - run:
+          name: Copy .env
+          command: |
+            [ -f .env ] || cp .env.example .env
+            cat .env
+
+      # Run Docker Compose
+      - run:
+          name: Run Docker Compose
+          command: |
+            echo "🚀 Starting services with Docker Compose..."
+            docker-compose -f docker-compose.yml up -d --build
+            echo "✅ Services started successfully."
+            docker ps -a
+
+      # Wait for Yotta-MySQL to be ready
+      - run:
+          name: Wait for Services to be Ready
+          command: |
+            echo "Waiting for Database to be ready..."
+            for i in {1..20}; do
+              docker exec yotta-mysql sh -c 'mysql -u yotta -pyotta_pass -e "SELECT 1;"' && break
+              echo "MySQL not ready yet..."
+              sleep 2
+            done
+            echo "✅ Yotta-MySQL is ready!"
+
+      # Generate & Inject APP_KEY
+      - create-env
+      
+      # Laravel setup & migration 
+      - laravel-optimize
+      - laravel-migrate
+
+      # Health Check
+      - health-check
+
+  Push-To-Docker:
+    executor: docker-executor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - docker-login
+      - push-to-dockerhub
+
+  # Job to deploy to staging server
+  Deploy-Staging:
+    executor: docker-executor
+    steps:
+      - checkout
+      - add_ssh_keys
+      - deploy-staging
+
+  # Job to deploy to production server
+  Deploy-Production:
+    executor: docker-executor
+    steps:
+      - checkout
+      - add_ssh_keys
+      - deploy-prod
+
+workflows:
+  version: 2
+  ci-cd:
+    jobs:
+      - Build
+      - Testing:
+          requires:
+            - Build
+      - Push-To-Docker:
+          requires:
+            - Testing
+          filters:
+            branches:
+              only: ci-cd/test
+            tags:
+              only: /^v.*/
+      - Deploy-Staging:
+          requires:
+            - Testing
+            - Push-To-Docker
+          filters:
+            branches:
+              only: ci-cd/test
+      - Deploy-Production:
+          requires:
+            - Push-To-Docker
+          filters:
+            branches:
+              only: ci-cd/test
+            tags:
+              only: /^v.*/

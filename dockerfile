@@ -32,7 +32,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY . .
 
 # Copy .env file
-RUN if [ ! -f .env ]; then cp .env.example .env; fi
+# RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
 # Install dependencies
 # RUN composer install --no-interaction --optimize-autoloader --prefer-dist
