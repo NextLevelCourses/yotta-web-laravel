@@ -422,7 +422,9 @@ workflows:
             - staging
           filters:
             branches:
-              only: ci-cd/test
+              only: master        #Runs only when code is merged/pushed to master.
+            tags:
+              ignore: /.*/        # Ignore tags for Testing
 
       - Push-To-Docker:
           context:
@@ -431,7 +433,9 @@ workflows:
             - Testing
           filters:
             branches:
-              only: ci-cd/test
+              only: master        # Must be on master branch
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/   # Run only for version tags (e.g. v1.1.1)
 
       - Deploy-Staging:
           context:
@@ -440,4 +444,6 @@ workflows:
             - Push-To-Docker
           filters:
             branches:
-              only: ci-cd/test
+              only: master        # Must be on master branch
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/   # Run only for version tags (e.g. v1.1.1)
