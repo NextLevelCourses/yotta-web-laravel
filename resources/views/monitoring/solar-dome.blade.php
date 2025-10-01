@@ -2,24 +2,102 @@
 
 @section('content')
 <div class="container-fluid py-4">
-    {{-- Breadcrumbs Minimalis --}}
+
     <div class="d-flex align-items-center justify-content-between mb-4">
-        <h5 class="m-0 text-muted">Monitoring / <span class="fw-bold text-success">Monitoring Greenhouse</span></h5>
-        <div>
-            <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">
-                <i class="fas fa-arrow-left me-1"></i> Kembali
-            </a>
+        <h5 class="m-0 text-muted">Monitoring / 
+            <span class="fw-bold text-success">Solar Dome</span>
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+    @if (Auth::user()->isAdmin())
+        <select class="form-select form-select-sm" name="export-month-select" id="export-month-select"
+            aria-label="Pilih Bulan untuk Ekspor">
+            <option value="" selected disabled>Pilih Bulan</option>
+            @foreach (range(1, 12) as $month)
+                <option value="{{ $month }}">
+                    {{ \Carbon\Carbon::create()->month($month)->translatedFormat('F') }}
+                </option>
+            @endforeach
+        </select>
+
+        <button onclick="exportData()" class="btn btn-sm btn-success d-flex align-items-center">
+            <i class="fas fa-file-export me-1"></i> Export
+        </button>
+    @endif
+
+    <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>
+    </a>
+</div>
+</div>
+
+    {{-- Card Monitoring --}}
+    <div class="card shadow-lg rounded-3 border-0">
+        <div class="card-header bg-success text-white rounded-top-3">
+            <h4 class="card-title mb-0 fw-bold text-center text-md-start">
+                ☀️ Solar Dome Sensor Data (Latest)
+            </h4>
+        </div>
+        <div class="card-body p-4">
+
+            <div id="solar-dome-data" class="row g-4 text-center">
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded shadow-sm">
+                        <h6 class="text-muted">🌡 Dome Temp</h6>
+                        <h4 id="dome_temperature" class="fw-bold text-dark">-- °C</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded shadow-sm">
+                        <h6 class="text-muted">💧 Dome Humidity</h6>
+                        <h4 id="dome_humidity" class="fw-bold text-dark">-- %</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded shadow-sm">
+                        <h6 class="text-muted">☀️ Light Intensity</h6>
+                        <h4 id="light_intensity" class="fw-bold text-dark">-- lux</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded shadow-sm">
+                        <h6 class="text-muted">💦 Water Temp</h6>
+                        <h4 id="water_temperature" class="fw-bold text-dark">-- °C</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 text-center mt-3">
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded shadow-sm">
+                        <h6 class="text-muted">⚡ Panel Voltage</h6>
+                        <h4 id="panel_voltage" class="fw-bold text-dark">-- V</h4>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded shadow-sm">
+                        <h6 class="text-muted">🔋 Power Output</h6>
+                        <h4 id="power_output" class="fw-bold text-dark">-- W</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-center">
+                <small class="text-muted">
+                    ⏱ Last Updated: <span id="updated_at">--</span>
+                </small>
+            </div>
         </div>
     </div>
+</div>
 
-    {{-- Card Monitoring Greenhouse --}}
+    {{-- Card Solar Dome --}}
     <div class="card shadow-sm rounded-3">
         <div class="card-header">
-            <h4 class="card-title mb-0">Monitoring Greenhouse</h4>
+            <h4 class="card-title mb-0">Solar Dome</h4>
         </div>
         <div class="card-body">
             <p class="text-muted">
-                Berikut adalah simulasi data monitoring Greenhouse dalam bentuk grafik line chart.
+                Berikut adalah simulasi data Solar Dome dalam bentuk grafik line chart.
             </p>
             <div id="greenhouse-chart" 
                  data-colors='["#556ee6", "#50a5f1"]' 

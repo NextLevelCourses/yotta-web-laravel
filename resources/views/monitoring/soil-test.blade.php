@@ -3,7 +3,7 @@
 @section('content')
     <div class="container-fluid py-4">
         <div class="d-flex align-items-center justify-content-between mb-4">
-            <h5 class="m-0 text-muted">Dashboard / <span class="fw-bold text-primary">Soil Test:
+            <h5 class="m-0 text-muted">Monitoring / <span class="fw-bold text-primary">Soil Test:
                 </span> @empty($data['device']->device_id)
                     {{ __('Tidak ada device yang terhubung') }}
                 @else
