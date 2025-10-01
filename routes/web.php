@@ -9,7 +9,6 @@ use App\Http\Controllers\Monitoring\SolarDomeController;
 use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitoring, bukan Api
 use App\Http\Controllers\Monitoring\LoraController;
 
-
 // Halaman utama (cukup satu kali)
 Route::get('/', function () {
     return view('welcome');
