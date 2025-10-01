@@ -2,7 +2,7 @@
     <div class="card shadow-lg rounded-3 border-0">
         <div class="card-header bg-primary text-white rounded-top-3">
             <h4 class="card-title mb-0 fw-bold text-center text-md-start">
-                🌍 Soil Quality Monitoring
+                Soil Quality Monitoring
             </h4>
         </div>
         <div class="card-body p-4">
