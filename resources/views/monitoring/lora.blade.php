@@ -33,39 +33,10 @@
 
         <script src="{{ asset('assets/js/pages/soil-test.js') }}"></script>
 
-        <livewire:lora-monitoring />
+        <livewire:lora-livewire />
     </div>
 @endsection
 
 @section('scripts')
-    <script>
-        async function fetchLoRaData() {
-            try {
-                const response = await fetch("{{ url('/api/loras/latest') }}");
-                const result = await response.json();
-
-                if (result.status === "success") {
-                    const data = result.data;
-                    document.getElementById("air_temperature").innerText = data.air_temperature + " °C";
-                    document.getElementById("air_humidity").innerText = data.air_humidity + " %";
-                    document.getElementById("soil_pH").innerText = data.soil_pH;
-                    document.getElementById("soil_temperature").innerText = data.soil_temperature + " °C";
-                    document.getElementById("soil_conductivity").innerText = data.soil_conductivity + " mS/cm";
-                    document.getElementById("soil_humidity").innerText = data.soil_humidity + " %";
-                    document.getElementById("nitrogen").innerText = data.nitrogen;
-                    document.getElementById("phosphorus").innerText = data.phosphorus;
-                    document.getElementById("potassium").innerText = data.potassium;
-                    document.getElementById("updated_at").innerText = data.created_at;
-                } else {
-                    console.log(result.message);
-                }
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
-        }
-
-        // ambil data tiap 5 detik
-        setInterval(fetchLoRaData, 5000);
-        fetchLoRaData();
-    </script>
+    <script type="text-javascript"></script>
 @endsection
