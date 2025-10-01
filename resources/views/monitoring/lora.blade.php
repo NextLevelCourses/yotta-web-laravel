@@ -31,82 +31,9 @@
 
         </div>
 
-        {{-- Card Monitoring --}}
-        <div class="card shadow-lg rounded-3 border-0">
-            <div class="card-header bg-success text-white rounded-top-3">
-                <h4 class="card-title mb-0 fw-bold text-center text-md-start">
-                    LoRaWAN Sensor Data
-                </h4>
-            </div>
-            <div class="card-body p-4">
+        <script src="{{ asset('assets/js/pages/soil-test.js') }}"></script>
 
-                <div id="lora-data" class="row g-4 text-center">
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded shadow-sm">
-                            <h6 class="text-muted">🌡 Air Temperature</h6>
-                            <h4 id="air_temperature" class="fw-bold text-dark">-- °C</h4>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded shadow-sm">
-                            <h6 class="text-muted">💧 Air Humidity</h6>
-                            <h4 id="air_humidity" class="fw-bold text-dark">-- %</h4>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded shadow-sm">
-                            <h6 class="text-muted">🌱 Soil pH</h6>
-                            <h4 id="soil_pH" class="fw-bold text-dark">--</h4>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded shadow-sm">
-                            <h6 class="text-muted">🌡 Soil Temp</h6>
-                            <h4 id="soil_temperature" class="fw-bold text-dark">-- °C</h4>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-4 text-center mt-3">
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded shadow-sm">
-                            <h6 class="text-muted">⚡ Soil Conductivity</h6>
-                            <h4 id="soil_conductivity" class="fw-bold text-dark">-- mS/cm</h4>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="p-3 bg-light rounded shadow-sm">
-                            <h6 class="text-muted">💦 Soil Humidity</h6>
-                            <h4 id="soil_humidity" class="fw-bold text-dark">-- %</h4>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="p-3 bg-light rounded shadow-sm">
-                            <h6 class="text-muted">🟢 Nitrogen</h6>
-                            <h4 id="nitrogen" class="fw-bold text-dark">--</h4>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="p-3 bg-light rounded shadow-sm">
-                            <h6 class="text-muted">🟡 Phosphorus</h6>
-                            <h4 id="phosphorus" class="fw-bold text-dark">--</h4>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="p-3 bg-light rounded shadow-sm">
-                            <h6 class="text-muted">🔴 Potassium</h6>
-                            <h4 id="potassium" class="fw-bold text-dark">--</h4>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-4 text-center">
-                    <small class="text-muted">
-                        ⏱ Last Updated: <span id="updated_at">--</span>
-                    </small>
-                </div>
-            </div>
-        </div>
+        <livewire:lora-monitoring />
     </div>
 @endsection
 
