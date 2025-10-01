@@ -20,7 +20,6 @@ class LoRa extends Model
         'soil_pH',
         'soil_temperature',
         'measured_at',
-        'f_cnt',
         'created_at',
         'updated_at'
     ];
