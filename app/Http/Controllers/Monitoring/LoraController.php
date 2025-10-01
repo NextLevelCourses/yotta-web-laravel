@@ -8,7 +8,6 @@ use App\Models\LoRa;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Symfony\Component\HttpFoundation\JsonResponse;
 
 class LoraController extends Controller implements LoraInterface
 {
