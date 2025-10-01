@@ -9,12 +9,6 @@ use App\Http\Controllers\Monitoring\SolarDomeController;
 use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitoring, bukan Api
 use App\Http\Controllers\Monitoring\LoraController;
 
-
-// Healthcheck endpoint (tanpa auth)
-Route::get('/health', function () {
-    return response()->json(['status' => 'ok']);
-})->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
-
 // Halaman utama (cukup satu kali)
 Route::get('/', function () {
     return view('welcome');
