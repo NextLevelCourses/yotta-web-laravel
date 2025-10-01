@@ -12,20 +12,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('loras', function (Blueprint $table) {
-    $table->id();
-    $table->string('device_id');
-    $table->float('air_humidity')->nullable();
-    $table->float('air_temperature')->nullable();
-    $table->float('nitrogen')->nullable();
-    $table->float('phosphorus')->nullable();
-    $table->float('potassium')->nullable();
-    $table->float('soil_conductivity')->nullable();
-    $table->float('soil_humidity')->nullable();
-    $table->float('soil_pH')->nullable();
-    $table->float('soil_temperature')->nullable();
-    $table->json('raw_payload')->nullable();
-    $table->timestamps();
-});
+            $table->id();
+            $table->string('device_id')->nullable();
+            $table->float('air_humidity')->nullable();
+            $table->float('air_temperature')->nullable();
+            $table->float('nitrogen')->nullable();
+            $table->float('phosphorus')->nullable();
+            $table->float('potassium')->nullable();
+            $table->float('soil_conductivity')->nullable();
+            $table->float('soil_humidity')->nullable();
+            $table->float('soil_pH')->nullable();
+            $table->float('soil_temperature')->nullable();
+            $table->timestamp('measured_at')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**

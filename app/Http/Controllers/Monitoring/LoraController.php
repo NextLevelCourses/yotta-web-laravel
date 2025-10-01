@@ -35,7 +35,7 @@ class LoraController extends Controller implements LoraInterface
         return empty($jsonObject[9]) ? false : true; //targetnya: index terakhir untuk ngambil data paling update
     }
 
-    public function HandleIncludePartOfObjectInsideArray($raw): JsonResponse
+    public function HandleIncludePartOfObjectInsideArray($raw): array
     {
         $jsonObjects = preg_split('/}\s*{/', $raw);
         $jsonObjects = array_map(function ($json, $i) use ($jsonObjects) {
@@ -46,10 +46,15 @@ class LoraController extends Controller implements LoraInterface
         }, $jsonObjects, array_keys($jsonObjects));
 
         if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
-            return $this->ResponseError('Data lorawan is empty', 422);
+            return array();
         }
 
-        return $this->ResponseOk($jsonObjects[9]['result']['uplink_message'], 'Data lorawan berhasil di query');
+        $result = [];
+        for ($i = 0; $i <= 8; $i++) {
+            // array_push($result, array('f_cnt' => $jsonObjects[$i]['result']['uplink_message']['f_cnt']));
+            array_push($result, $jsonObjects[$i]['result']['uplink_message']);
+        }
+        return $result;
     }
 
     public function HandleGetDataLora()
@@ -88,7 +93,7 @@ class LoraController extends Controller implements LoraInterface
                     ]
                 ]);
                 $raw = $response->getBody()->getContents();
-                return $this->HandleIncludePartOfObjectInsideArray($raw);
+                return $this->ResponseOk($this->HandleIncludePartOfObjectInsideArray($raw), 'SuccessFully');
             } catch (\Exception $error) {
                 Log::error($error->getMessage());
                 return $this->ResponseError($error->getMessage(), 500);
