@@ -2,12 +2,15 @@
 
 namespace App\Livewire;
 
+use App\Models\LoRa;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class LoraLivewire extends Component
 {
-    public $air_temperature = '--',
+    public
+        $device_id = '--',
+        $air_temperature = '--',
         $air_humidity = '--',
         $soil_pH = '--',
         $soil_temperature = '--',
@@ -26,15 +29,17 @@ class LoraLivewire extends Component
     public function fetchLora()
     {
         try {
-            $this->air_temperature = 40;
-            $this->air_humidity = 20;
-            $this->soil_pH = 20;
-            $this->soil_temperature = 20;
-            $this->soil_conductivity = 20;
-            $this->soil_humidity = 20;
-            $this->nitrogen = 20;
-            $this->phosphorus = 20;
-            $this->potassium = 250;
+            $lora = LoRa::orderByDesc('id')->first();
+            $this->device_id = $lora->device_id ?? '--';
+            $this->air_temperature = $lora->air_temperature ?? '--';
+            $this->air_humidity = $lora->air_humidity ?? '--';
+            $this->soil_pH = $lora->soil_pH ?? '--';
+            $this->soil_temperature = $lora->soil_temperature ?? '--';
+            $this->soil_conductivity = $lora->soil_conductivity ?? '--';
+            $this->soil_humidity = $lora->soil_humidity ?? '--';
+            $this->nitrogen = $lora->nitrogen ?? '--';
+            $this->phosphorus = $lora->phosphorus ?? '--';
+            $this->potassium = $lora->potassium ?? '--';
             $this->created_at = now();
         } catch (\Exception $error) {
             $this->air_temperature = $this->air_humidity = $this->soil_pH = $this->soil_temperature = $this->soil_conductivity = $this->soil_humidity = $this->nitrogen = $this->phosphorus = $this->potassium = $this->created_at = 'Error';
