@@ -3,30 +3,39 @@
 @section('content')
 <div class="container-fluid py-4">
 
-    {{-- Breadcrumb --}}
     <div class="d-flex align-items-center justify-content-between mb-4">
-        <h5 class="m-0 text-muted">Dashboard / 
-            <span class="fw-bold text-success">Lora Monitoring</span>
+        <h5 class="m-0 text-muted">Monitoring / 
+            <span class="fw-bold text-success">LoRaWAN</span>
         </h5>
         <div class="d-flex align-items-center gap-2">
-                @if (Auth::user()->isAdmin())
-                    <select class="form-select form-select-sm" name="export-month-select" id="export-month-select"
-                        aria-label="Pilih Bulan untuk Ekspor"></select>
-                    <button onclick="exportData()" class="btn btn-sm btn-success d-flex align-items-center">
-                        <i class="fas fa-file-export me-1"></i> Export
-                    </button>
-                @endif
-                <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>
-                </a>
-            </div>
+    @if (Auth::user()->isAdmin())
+        <select class="form-select form-select-sm" name="export-month-select" id="export-month-select"
+            aria-label="Pilih Bulan untuk Ekspor">
+            <option value="" selected disabled>Pilih Bulan</option>
+            @foreach (range(1, 12) as $month)
+                <option value="{{ $month }}">
+                    {{ \Carbon\Carbon::create()->month($month)->translatedFormat('F') }}
+                </option>
+            @endforeach
+        </select>
+
+        <button onclick="exportData()" class="btn btn-sm btn-success d-flex align-items-center">
+            <i class="fas fa-file-export me-1"></i> Export
+        </button>
+    @endif
+
+    <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>
+    </a>
+</div>
+
     </div>
 
     {{-- Card Monitoring --}}
     <div class="card shadow-lg rounded-3 border-0">
         <div class="card-header bg-success text-white rounded-top-3">
             <h4 class="card-title mb-0 fw-bold text-center text-md-start">
-                📡 LoRa Sensor Data (Latest)
+                LoRaWAN Sensor Data
             </h4>
         </div>
         <div class="card-body p-4">
