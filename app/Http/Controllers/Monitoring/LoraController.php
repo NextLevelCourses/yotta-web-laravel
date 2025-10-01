@@ -49,7 +49,7 @@ class LoraController extends Controller implements LoraInterface
             return $this->ResponseError('Data lorawan is empty', 422);
         }
 
-        return $this->ResponseOk($jsonObjects, 'Data lorawan berhasil di query');
+        return $this->ResponseOk($jsonObjects[9]['result']['uplink_message'], 'Data lorawan berhasil di query');
     }
 
     public function HandleGetDataLora()
