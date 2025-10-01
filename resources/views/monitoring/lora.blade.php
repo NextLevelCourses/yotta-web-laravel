@@ -9,14 +9,8 @@
             </h5>
             <div class="d-flex align-items-center gap-2">
                 @if (Auth::user()->isAdmin())
-                    <select class="form-select form-select-sm" name="export-month-select" id="export-month-select"
+                    <select class="form-select form-select-sm" name="export-month" id="export-month"
                         aria-label="Pilih Bulan untuk Ekspor">
-                        <option value="" selected disabled>Pilih Bulan</option>
-                        @foreach (range(1, 12) as $month)
-                            <option value="{{ $month }}">
-                                {{ \Carbon\Carbon::create()->month($month)->translatedFormat('F') }}
-                            </option>
-                        @endforeach
                     </select>
 
                     <button onclick="exportData()" class="btn btn-sm btn-success d-flex align-items-center">
@@ -37,6 +31,44 @@
     </div>
 @endsection
 
-@section('scripts')
-    <script type="text-javascript"></script>
-@endsection
+@push('scripts')
+    <script type="text/javascript">
+        //export data
+        function getEndOfMonth(year, month) {
+            return new Date(year, month + 1, 0); // last day of given month
+        }
+
+        function loadMonths() {
+            const select = document.getElementById("export-month");
+            const now = new Date();
+
+            for (let i = 0; i < 12; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const end = getEndOfMonth(d.getFullYear(), d.getMonth());
+                const option = document.createElement("option");
+
+                option.value = end.toISOString().split("T")[0];
+                option.textContent = d.toLocaleString("default", {
+                    month: "long",
+                    year: "numeric"
+                });
+
+                if (i === 0) {
+                    option.selected = true; // default current month
+                }
+                select.appendChild(option);
+            }
+        }
+
+        function exportData() {
+            const select = document.getElementById("export-month");
+            const selectedValue = select.value;
+            const exportUrl = "{{ route('lora-test.export', ['date' => 'DATE_SELECT']) }}".replace(
+                'DATE_SELECT', selectedValue);
+            window.location.href = exportUrl
+        }
+
+        // Load months on page load
+        loadMonths();
+    </script>
+@endpush

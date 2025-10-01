@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Monitoring;
 
-use App\Http\Controllers\Controller;
-use App\LoraInterface;
+use App\Exports\LoraTestExport;
 use App\Models\LoRa;
+use App\LoraInterface;
 use GuzzleHttp\Client;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
 
 class LoraController extends Controller implements LoraInterface
 {
@@ -123,5 +127,18 @@ class LoraController extends Controller implements LoraInterface
     public function index()
     {
         return view('monitoring.lora');
+    }
+
+    public function export(string $date): BinaryFileResponse|string
+    {
+        try {
+            $month = substr($date, 5, 2); // hasilnya mm (month) only without yyyy or dd
+            $year = substr($date, 0, 4); // hasilnya yyyy (year) only without mm or dd
+            $now = date('Y-m-d');
+            return Excel::download(new LoraTestExport($month, $year), "loratest{$now}.xlsx");
+        } catch (\Exception $e) {
+            Log::error('Export error: ' . $e->getMessage());
+            return 'Error exporting data';
+        }
     }
 }
