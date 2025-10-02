@@ -2,23 +2,23 @@ name: 🚀 Demo Aksara Yotta Deployment
 
 on:
   push:
-    branches: [ master ]   # Deploy only on push to master
+    branches: [master] # Deploy only on push to master
     paths:
-      - 'app/**'
-      - 'bootstrap/**'
-      - 'config/**'
-      - 'database/**'
-      - 'public/**'
-      - 'resources/**'
-      - 'routes/**'
-      - 'storage/**'
-      - 'tests/**'
-      - 'artisan'
-      - 'composer.json'
-      - 'composer.lock'
-      - 'package.json'
-      - 'vite.config.js'
-      - 'README.md'
+      - "app/**"
+      - "bootstrap/**"
+      - "config/**"
+      - "database/**"
+      - "public/**"
+      - "resources/**"
+      - "routes/**"
+      - "storage/**"
+      - "tests/**"
+      - "artisan"
+      - "composer.json"
+      - "composer.lock"
+      - "package.json"
+      - "vite.config.js"
+      - "README.md"
 
 jobs:
   deploy:
@@ -40,7 +40,7 @@ jobs:
         continue-on-error: true
         uses: airvzxf/ftp-deployment-action@latest
         with:
-          server: 46.202.138.81           # Gunakan IP server, jangan pakai ftp://
+          server: 46.202.138.81 # Gunakan IP server, jangan pakai ftp://
           user: u446621527.demoday.aksarayotta.com
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: "/domains/demoday.aksarayotta.com/public_html"
@@ -50,11 +50,11 @@ jobs:
             **/.github*
             **/node_modules/*
             **/tests/*
+            **/public/assets/*
             **/storage/logs/*
             **/storage/framework/cache/*
             **/storage/framework/sessions/*
             **/storage/framework/views/*
-            **/dev-yotta.pem
             **/docker-compose.yml
             **/dockerfile
             **/makefile

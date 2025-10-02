@@ -102,7 +102,7 @@ class LorawanJob implements ShouldQueue, LoraInterface
             $this->HandleValidateDataLoraToken()
         ) {
             try {
-                sleep(10); //hold ten second biar servernya bisa nafas bentar baru jalan lagi
+                sleep(3); //hold 3 second biar servernya bisa nafas bentar baru jalan lagi
                 $client = new Client(['base_uri' => config('lorawan.url')]);
                 $response = $client->request('GET', config('lorawan.endpoint'), [
                     'headers' => [
