@@ -9,6 +9,12 @@ use App\Http\Controllers\Monitoring\SolarDomeController;
 use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitoring, bukan Api
 use App\Http\Controllers\Monitoring\LoraController;
 
+// PENTING!!
+// Rute untuk halaman Health Check for CircleCI
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok']);
+})
+
 // Halaman utama (cukup satu kali)
 Route::get('/', function () {
     return view('welcome');

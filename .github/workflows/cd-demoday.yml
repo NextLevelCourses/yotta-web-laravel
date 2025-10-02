@@ -1,0 +1,104 @@
+name: 🚀 Demo Aksara Yotta Deployment
+
+on:
+  push:
+    branches: [ master ]   # Deploy only on push to master
+    paths:
+      - 'app/**'
+      - 'bootstrap/**'
+      - 'config/**'
+      - 'database/**'
+      - 'public/**'
+      - 'resources/**'
+      - 'routes/**'
+      - 'storage/**'
+      - 'tests/**'
+      - 'artisan'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'package.json'
+      - 'vite.config.js'
+      - 'README.md'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔍 Verify repo contents
+        run: |
+          echo "✅ Repo successfully checked out."
+          ls -lah
+
+      # Step 2: FTP Deployment
+      - name: 📤 Deploy Laravel via FTP
+        id: ftp-deploy
+        continue-on-error: true
+        uses: airvzxf/ftp-deployment-action@latest
+        with:
+          server: 46.202.138.81           # Gunakan IP server, jangan pakai ftp://
+          user: u446621527.demoday.aksarayotta.com
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: "/domains/demoday.aksarayotta.com/public_html"
+
+          exclude: |
+            **/.git*
+            **/.github*
+            **/node_modules/*
+            **/tests/*
+            **/storage/logs/*
+            **/storage/framework/cache/*
+            **/storage/framework/sessions/*
+            **/storage/framework/views/*
+            **/dev-yotta.pem
+            **/docker-compose.yml
+            **/dockerfile
+            **/makefile
+            **/phpunit.xml
+            **/LICENSE
+            **/README.md
+            **/package-lock.json
+
+      - name: ❌ Check FTP result
+        if: steps.ftp-deploy.outcome != 'success'
+        run: |
+          echo "❌ ERROR: FTP login or upload failed. Please check FTP credentials or server availability."
+          exit 1
+
+      - name: ✅ Confirm FTP upload
+        if: steps.ftp-deploy.outcome == 'success'
+        run: echo "✅ FTP upload finished to /domains/demoday.aksarayotta.com/public_html"
+
+      # Step 3: Run Laravel optimization
+      - name: 🛠️ Run Laravel optimization (SSH)
+        if: steps.ftp-deploy.outcome == 'success'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: 46.202.138.81
+          username: u446621527
+          port: 65002
+          password: ${{ secrets.FTP_PASSWORD }}
+          script: |
+            set -x
+            echo "🚀 Connected to server: $(hostname)"
+            cd /domains/demoday.aksarayotta.com/public_html
+
+            echo "🗄️ Running database migrations..."
+            # php artisan migrate --force >> jika diperlukan 
+
+            echo "🧹 Clearing caches..."
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+
+            echo "⚡ Rebuilding caches..."
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "✅ Deployment finished successfully!"
