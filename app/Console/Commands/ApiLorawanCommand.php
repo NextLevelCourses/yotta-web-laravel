@@ -124,6 +124,7 @@ class ApiLorawanCommand extends Command implements LoraInterface
                 ]);
                 $raw = $response->getBody()->getContents();
                 $json_output = json_encode($this->HandleIncludePartOfObjectInsideArray($raw), JSON_PRETTY_PRINT);
+                Log::info($json_output);
                 $this->info($json_output);
             } catch (\Exception $error) {
                 Log::error($error->getMessage());
