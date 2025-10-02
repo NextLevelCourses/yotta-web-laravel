@@ -8,6 +8,7 @@ use App\Http\Controllers\Monitoring\SoilManagController;
 use App\Http\Controllers\Monitoring\SolarDomeController;
 use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitoring, bukan Api
 use App\Http\Controllers\Monitoring\LoraController;
+use App\Jobs\LorawanJob;
 
 // Halaman utama (cukup satu kali)
 Route::get('/', function () {
@@ -48,6 +49,7 @@ Route::prefix('monitoring')->group(function () {
 
 Route::prefix('monitoring')->group(function () {
     Route::prefix('lora')->group(function () {
+        LorawanJob::dispatch();
         Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
         Route::get('/export/{date}', [LoraController::class, 'export'])->name('lora-test.export');
     });
