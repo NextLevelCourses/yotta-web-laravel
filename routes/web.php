@@ -14,7 +14,7 @@ use App\Jobs\LorawanJob;
 // Rute untuk halaman Health Check for CircleCI
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
-})
+});
 
 // Halaman utama (cukup satu kali)
 Route::get('/', function () {
