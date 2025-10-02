@@ -232,7 +232,13 @@ jobs:
           name: Run Docker Compose
           command: |
             echo "🚀 Starting services with Docker Compose..."
-            docker-compose -f docker-compose.yml up -d --build
+            # Run Docker Compose MySQL
+            docker compose up -d --build mysql
+            echo "✅ Services MySQLstarted successfully."
+            docker ps -a
+
+            # Run Docker Compose Dashboard
+            docker compose up -d --build dashboard
             echo "✅ Services started successfully."
             docker ps -a
 
@@ -249,8 +255,15 @@ jobs:
             echo "✅ YottaMySQL is ready!"
       
     # Generate & Inject APP_KEY
+      - run:
+          name: php artisan package:discover
+          command: |
+            echo "⏳ Running php artisan package:discover inside container..."
+            docker exec yotta-dashboard php artisan package:discover
+
       - generate-app-key
 
+      # Kemungkinan besar disini akan gagal karna ENV untuk LoWaRon tidak terdefinisi
     # Laravel configuration
       - laravel-optimize
       - laravel-migrate
@@ -342,7 +355,6 @@ jobs:
     # Checkout code from repository
       - checkout
 
-    # Deploy to staging server
       - run:
           name: Deploy to Staging
           command: |
@@ -350,34 +362,25 @@ jobs:
               set -e
               cd /home/ubuntu/dev-yotta
 
-              # Ensure .env file exists (fallback to .env.example)
-              if [ ! -f .env ]; then
-                cp .env.example .env
-              fi
-
-              echo '🔄 Pulling latest image...'
+              echo '🔄 Pulling latest images...'
               docker pull $DOCKERHUB_REPO:latest
 
-              echo '🛑 Stopping old container...'
-              docker compose stop dashboard || true
-              docker compose rm -f dashboard || true
+              echo '🛑 Stopping old containers...'
+              docker compose stop dashboard mysql || true
+              docker compose rm -f dashboard mysql || true
 
-              echo '🚀 Starting new container...'
+              echo '🚀 Starting MySQL first...'
+              docker compose up -d mysql
+
+              echo '🚀 Starting dashboard...'
               docker compose up -d dashboard --remove-orphans
 
-              # Get container ID of the dashboard service
+              # Copy .env into container if needed
               DASHBOARD_CID=\$(docker compose ps -q dashboard)
+              docker cp ./.env \$DASHBOARD_CID:/var/www/.env || true
 
-              echo '⏳ Waiting for health endpoint inside container...'
-              for i in {1..20}; do
-                STATUS=\$(docker exec \$DASHBOARD_CID curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8002/health || echo 000)
-                if [ \"\$STATUS\" = \"200\" ]; then
-                  echo '✅ Service is healthy!'
-                  break
-                fi
-                echo \"Service not ready (\$STATUS), waiting 3s...\"
-                sleep 3
-              done
+              echo '⏳ Running php artisan package:discover inside container...'
+              docker exec \$DASHBOARD_CID php artisan package:discover
 
               echo '📦 Running Laravel optimize...'
               make dy-laravel-optimize-all || {
@@ -407,6 +410,10 @@ jobs:
 
               echo '✅ Deployment to STAGING completed!'
             "
+
+#tambahkan 
+# --- php artisan package:discover
+# --- jalan database dulu, baru dashboar,  lalu php artisan package:discover, make dy-laravel-optimize
 
 # Deploy to Production Server is similar to deploy-to-staging
 # it will be skipped and adding when production server is ready
@@ -447,3 +454,7 @@ workflows:
               only: master        # Must be on master branch
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+$/   # Run only for version tags (e.g. v1.1.1)
+
+#tambahkan 
+# --- php artisan package:discover
+# --- jalan database dulu, baru dashboar,  lalu php artisan package:discover, make dy-laravel-optimize
