@@ -1,29 +1,19 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Jobs;
+
+use App\LoraInterface;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
 
 use App\Models\LoRa;
-use App\LoraInterface;
 use GuzzleHttp\Client;
-use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class LorawanCommand extends Command implements LoraInterface
+class LorawanJob implements ShouldQueue, LoraInterface
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'run:lorawan';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command description';
+    use Queueable;
 
     public function HandleValidateDataLoraContentType(): bool
     {
@@ -112,6 +102,7 @@ class LorawanCommand extends Command implements LoraInterface
             $this->HandleValidateDataLoraToken()
         ) {
             try {
+                sleep(10); //hold ten second biar servernya bisa nafas bentar baru jalan lagi
                 $client = new Client(['base_uri' => config('lorawan.url')]);
                 $response = $client->request('GET', config('lorawan.endpoint'), [
                     'headers' => [
@@ -125,15 +116,14 @@ class LorawanCommand extends Command implements LoraInterface
                 $raw = $response->getBody()->getContents();
                 $json_output = json_encode($this->HandleIncludePartOfObjectInsideArray($raw), JSON_PRETTY_PRINT);
                 Log::info("Berhasil get data dari lorawan");
-                $this->info("Successfully:");
-                $this->info($json_output);
+                Log::info($json_output);
             } catch (\Exception $error) {
                 Log::error($error->getMessage());
             }
         }
     }
     /**
-     * Execute the console command.
+     * Execute the job.
      */
     public function handle(): void
     {
