@@ -64,3 +64,9 @@ y-laravel-optimize-all:
 	php artisan config:clear
 	php artisan route:clear
 	php artisan view:clear
+y-job-lorawan:
+	php artisan queue:work
+y-lora-console:
+	php artisan run:lorawan
+y-lora-schedule:
+	php artisan schedule:run
