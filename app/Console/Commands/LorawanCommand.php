@@ -9,14 +9,14 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class ApiLorawanCommand extends Command implements LoraInterface
+class LorawanCommand extends Command implements LoraInterface
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'app:lorawan';
+    protected $signature = 'run:lorawan';
 
     /**
      * The console command description.
