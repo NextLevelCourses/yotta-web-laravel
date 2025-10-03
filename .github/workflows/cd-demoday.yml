@@ -50,7 +50,7 @@ jobs:
             **/.github*
             **/node_modules/*
             **/tests/*
-            **/public/assets/*
+            **/public/assets/**
             **/storage/logs/*
             **/storage/framework/cache/*
             **/storage/framework/sessions/*

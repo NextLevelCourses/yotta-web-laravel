@@ -32,11 +32,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY . .
 
 # Copy .env file
-# RUN if [ ! -f .env ]; then cp .env.example .env; fi
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
 # Install dependencies
 # RUN composer install --no-interaction --optimize-autoloader --prefer-dist
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --prefer-dist
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --prefer-dist --no-scripts # for noscripts if build adding when error to build
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www \
@@ -47,3 +47,6 @@ EXPOSE 8002
 
 # Start Laravel's built-in server
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8002"]
+
+# # Generate optimized autoload files
+# RUN php artisan package:discover
