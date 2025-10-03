@@ -2,7 +2,7 @@ version: 2.1
 
 # ======== REUSANBLE COMMANDS ========
 commands:
-# command for docker
+  # command for docker
   docker-login:
     description: "Login ke DockerHub"
     steps:
@@ -34,7 +34,7 @@ commands:
             echo "✅ Docker image built successfully."
             docker images -a
 
-# command for laravel
+  # command for laravel
   laravel-optimize:
     description: "Clear & cache config Laravel"
     steps:
@@ -124,8 +124,8 @@ commands:
             echo "📋 Current migration status:"
             docker exec $CONTAINER php artisan migrate:status || echo "⚠️ Failed to fetch migration status."
             echo "📝 Laravel migration process completed at $(date)"
-    
-# create .env and inject
+
+  # create .env and inject
   create-env:
     description: "Create Laravel .env file and generate APP_KEY"
     steps:
@@ -166,7 +166,7 @@ commands:
               echo "$key=$value" >> .env
             done
 
-# Generate APP_KEY
+  # Generate APP_KEY
   generate-app-key:
     description: "Generate Laravel APP_KEY"
     steps:
@@ -212,10 +212,9 @@ commands:
 
             echo "✅ .env fully ready in container"
 
-
 # Job thing
 jobs:
-# =========== Testing Job ============
+  # =========== Testing Job ============
   Testing:
     docker:
       - image: cimg/base:stable
@@ -224,10 +223,10 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
 
-    # Copy .env
+      # Copy .env
       - create-env
 
-    # Run Docker Compose
+      # Run Docker Compose
       - run:
           name: Run Docker Compose
           command: |
@@ -242,7 +241,7 @@ jobs:
             echo "✅ Services started successfully."
             docker ps -a
 
-    # Wait for Yotta-MySQL to be ready
+      # Wait for Yotta-MySQL to be ready
       - run:
           name: Wait for Services to be Ready
           command: |
@@ -253,8 +252,8 @@ jobs:
               sleep 2
             done
             echo "✅ YottaMySQL is ready!"
-      
-    # Generate & Inject APP_KEY
+
+      # Generate & Inject APP_KEY
       - run:
           name: php artisan package:discover
           command: |
@@ -264,7 +263,7 @@ jobs:
       - generate-app-key
 
       # Kemungkinan besar disini akan gagal karna ENV untuk LoWaRon tidak terdefinisi
-    # Laravel configuration
+      # Laravel configuration
       - laravel-optimize
       - laravel-migrate
 
@@ -294,7 +293,7 @@ jobs:
               exit 1
             fi
 
-# ========== Push to Docker Hub ============
+  # ========== Push to Docker Hub ============
   Push-To-Docker:
     docker:
       - image: cimg/base:stable
@@ -307,7 +306,7 @@ jobs:
       # Login ke Docker Hub
       - docker-login
 
-    # Build image with latest Git tag and latest tag
+      # Build image with latest Git tag and latest tag
       - run:
           name: Build image with latest Git tag and latest
           command: |
@@ -330,7 +329,7 @@ jobs:
             # save IMAGE_TAG ke environment variable for future use
             echo "export IMAGE_TAG=$IMAGE_TAG" >> $BASH_ENV
             source $BASH_ENV
-    # Push image to Docker Hub
+      # Push image to Docker Hub
       - run:
           name: Push image to Docker Hub
           command: |
@@ -339,20 +338,20 @@ jobs:
             docker push ${DOCKERHUB_REPO}:latest
             echo "✅ Docker image pushed successfully."
 
-# ========== Deployment to Staging Server ============
+  # ========== Deployment to Staging Server ============
   Deploy-Staging:
     docker:
       - image: cimg/base:stable
 
     steps:
-    # Ensure SSH keys are available
+      # Ensure SSH keys are available
       - add_ssh_keys
 
-    # Setup Docker-in-Docker
+      # Setup Docker-in-Docker
       - setup_remote_docker:
           docker_layer_caching: true
 
-    # Checkout code from repository
+      # Checkout code from repository
       - checkout
 
       - run:
@@ -411,7 +410,7 @@ jobs:
               echo '✅ Deployment to STAGING completed!'
             "
 
-#tambahkan 
+#tambahkan
 # --- php artisan package:discover
 # --- jalan database dulu, baru dashboar,  lalu php artisan package:discover, make dy-laravel-optimize
 
@@ -429,9 +428,9 @@ workflows:
             - staging
           filters:
             branches:
-              only: master        #Runs only when code is merged/pushed to master.
+              only: master #Runs only when code is merged/pushed to master.
             tags:
-              ignore: /.*/        # Ignore tags for Testing
+              ignore: /.*/ # Ignore tags for Testing
 
       - Push-To-Docker:
           context:
@@ -440,9 +439,9 @@ workflows:
             - Testing
           filters:
             branches:
-              only: master        # Must be on master branch
+              only: master # Must be on master branch
             tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/   # Run only for version tags (e.g. v1.1.1)
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/ # Run only for version tags (e.g. v1.1.1)
 
       - Deploy-Staging:
           context:
@@ -451,10 +450,10 @@ workflows:
             - Push-To-Docker
           filters:
             branches:
-              only: master        # Must be on master branch
+              only: master # Must be on master branch
             tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/   # Run only for version tags (e.g. v1.1.1)
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/ # Run only for version tags (e.g. v1.1.1)
 
-#tambahkan 
+#tambahkan
 # --- php artisan package:discover
 # --- jalan database dulu, baru dashboar,  lalu php artisan package:discover, make dy-laravel-optimize

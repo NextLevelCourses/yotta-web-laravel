@@ -50,6 +50,3 @@ CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8002"]
 
 # # Generate optimized autoload files
 # RUN php artisan package:discover
-
-
-
