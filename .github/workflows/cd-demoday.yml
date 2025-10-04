@@ -4,21 +4,34 @@ on:
   push:
     branches: [master] # Deploy only on push to master
     paths:
+      # === Laravel Core ===
       - "app/**"
       - "bootstrap/**"
       - "config/**"
-      - "database/**"
+      - "routes/**"
+      - "artisan"
+      
+      # === Deployment & Assets ===
       - "public/**"
       - "resources/**"
-      - "routes/**"
       - "storage/**"
-      - "tests/**"
-      - "artisan"
+      
+      # === Database Schema ===
+      - "database/**"
+
+      # === Dependency & Config ===
       - "composer.json"
       - "composer.lock"
+
+      # === Optional JS build config files  ===
       - "package.json"
       - "vite.config.js"
       - "README.md"
+      - "tests/**"
+      - "makefile"
+
+    paths-ignore:
+      - "public/assets/**" # For saving time ignore assets folder
 
 jobs:
   deploy:
@@ -38,30 +51,43 @@ jobs:
       - name: 📤 Deploy Laravel via FTP
         id: ftp-deploy
         continue-on-error: true
-        uses: airvzxf/ftp-deployment-action@latest
+        uses: SamKirkland/FTP-Deploy-Action@4.0.0 # for exclude, reference the action directly from GitHub Issues https://github.com/SamKirkland/FTP-Deploy-Action/issues/157
         with:
           server: 46.202.138.81 # Gunakan IP server, jangan pakai ftp://
-          user: u446621527.demoday.aksarayotta.com
+          username: u446621527.demoday.aksarayotta.com
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: "/domains/demoday.aksarayotta.com/public_html"
 
           exclude: |
+            # === Git & CI files ===
             **/.git*
             **/.github*
-            **/node_modules/*
-            **/tests/*
-            **/public/assets/**
-            **/storage/logs/*
-            **/storage/framework/cache/*
-            **/storage/framework/sessions/*
-            **/storage/framework/views/*
+            **/.gitignore
+            **/.gitattributes
+
+            # === Node & Build Cache ===
+            **/node_modules/**
+            **/package-lock.json
+
+            # === Test & Local Dev ===
+            **/tests/**
+            **/phpunit.xml
             **/docker-compose.yml
             **/dockerfile
             **/makefile
-            **/phpunit.xml
+
+            # === Logs & Temp Cache ===
+            **/storage/logs/**
+            **/storage/framework/cache/**
+            **/storage/framework/sessions/**
+            **/storage/framework/views/**
+
+            # === Assets folder ===
+            **/public/assets/**
+
+            # === Documentation / Non-production ===
             **/LICENSE
             **/README.md
-            **/package-lock.json
 
       - name: ❌ Check FTP result
         if: steps.ftp-deploy.outcome != 'success'
