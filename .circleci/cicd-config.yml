@@ -361,26 +361,28 @@ jobs:
               set -e
               cd /home/ubuntu/dev-yotta
 
+              # 4.1 Pulling latest images
               echo '🔄 Pulling latest images...'
               docker pull $DOCKERHUB_REPO:latest
 
+              # 4.2 Stopping old containers
               echo '🛑 Stopping old containers...'
-              docker compose stop dashboard mysql || true
-              docker compose rm -f dashboard mysql || true
+              docker compose stop dashboard || true
+              docker compose rm -f dashboard || true 
 
-              echo '🚀 Starting MySQL first...'
-              docker compose up -d mysql
-
+              # 4.3 Starting new containers
               echo '🚀 Starting dashboard...'
               docker compose up -d dashboard --remove-orphans
-
-              # Copy .env into container if needed
+              
+              # 4.4 Copy .env into container if needed
               DASHBOARD_CID=\$(docker compose ps -q dashboard)
               docker cp ./.env \$DASHBOARD_CID:/var/www/.env || true
 
+              # 4.5 Running php artisan package:discover
               echo '⏳ Running php artisan package:discover inside container...'
               docker exec \$DASHBOARD_CID php artisan package:discover
 
+              # 4.6 Running Laravel optimize
               echo '📦 Running Laravel optimize...'
               make dy-laravel-optimize-all || {
                 echo '❌ Optimize failed, last 50 log lines:'
@@ -388,6 +390,7 @@ jobs:
                 exit 1
               }
 
+              # 4.7 Running Laravel migrate
               echo '🗄️ Running Laravel migrations...'
               docker compose exec dashboard php artisan migrate --force || {
                 echo '❌ Migration failed, last 50 log lines:'
@@ -395,6 +398,7 @@ jobs:
                 exit 1
               }
 
+              # 4.8 Checking public domain
               echo '🌐 Checking public domain (.env APP_URL)...'
               APP_URL=\$(grep ^APP_URL= .env | cut -d '=' -f2)
               for i in {1..20}; do
@@ -407,6 +411,7 @@ jobs:
                 sleep 5
               done
 
+              # 4.9 Checking public domain
               echo '✅ Deployment to STAGING completed!'
             "
 
