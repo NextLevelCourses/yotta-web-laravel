@@ -30,8 +30,8 @@ on:
       - "tests/**"
       - "makefile"
 
-    paths-ignore:
-      - "public/assets/**" # For saving time ignore assets folder
+    # paths-ignore:
+    #   - "public/assets/**" # For saving time ignore assets folder
 
 jobs:
   deploy:
