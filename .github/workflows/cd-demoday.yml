@@ -2,7 +2,7 @@ name: 🚀 Demo Aksara Yotta Deployment
 
 on:
   push:
-    branches: [ 'master' ] # Deploy only on push to master
+    branches: [ 'main' ] # Deploy only on push to main
     
     paths:
       # === Laravel Core ===
@@ -37,6 +37,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       # Step 1: Checkout repository
@@ -51,14 +52,20 @@ jobs:
       # Step 2: FTP Deployment
       - name: 📤 Deploy Laravel via FTP
         id: ftp-deploy
-        continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@4.0.0 # for exclude, reference the action directly from GitHub Issues https://github.com/SamKirkland/FTP-Deploy-Action/issues/157
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6  #base on https://github.com/SamKirkland/FTP-Deploy-Action 
         with:
-          server: 46.202.138.81 # Gunakan IP server, jangan pakai ftp://
-          username: u446621527.demoday.aksarayotta.com
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: "/domains/demoday.aksarayotta.com/public_html"
-
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          local-dir: ./
+          protocol: ftps # gunakan ftp jika server belum support TLS
+          port: 21
+          log-level: standard
+          security: loose
+          state-name: .ftp-deploy-sync-state.json
+          
+          # exclude workdir paths
           exclude: |
             # === Git & CI files ===
             **/.git*
@@ -98,21 +105,21 @@ jobs:
 
       - name: ✅ Confirm FTP upload
         if: steps.ftp-deploy.outcome == 'success'
-        run: echo "✅ FTP upload finished to /domains/demoday.aksarayotta.com/public_html"
+        run: echo "✅ FTP upload finished to ${{ secrets.FTP_SERVER }}:${{ secrets.FTP_SERVER_DIR }}"
 
       # Step 3: Run Laravel optimization
       - name: 🛠️ Run Laravel optimization (SSH)
         if: steps.ftp-deploy.outcome == 'success'
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: 46.202.138.81
-          username: u446621527
-          port: 65002
-          password: ${{ secrets.FTP_PASSWORD }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          password: ${{ secrets.SSH_PASSWORD }}
           script: |
             set -x
             echo "🚀 Connected to server: $(hostname)"
-            cd /domains/demoday.aksarayotta.com/public_html
+            cd ${{ secrets.FTP_SERVER_DIR }}
 
             echo "🗄️ Running database migrations..."
             # php artisan migrate --force >> jika diperlukan 

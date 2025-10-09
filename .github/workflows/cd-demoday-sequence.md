@@ -8,7 +8,7 @@ sequenceDiagram
     participant SSH as Production Server
 
     Dev->>GH: Push to <code>master</code> branch
-    Note right of GH: Trigger GitHub Action<br>based on `on.push.branches: master`
+    Note right of GH: Trigger GitHub Action<br>based on `on.push.branches: main`
 
     GH->>GH: Checkout repository<br>using actions/checkout@v4
     GH->>GH: Verify repository contents (ls -lah)

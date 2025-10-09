@@ -344,8 +344,10 @@ jobs:
       - image: cimg/base:stable
 
     steps:
-      # Ensure SSH keys are available
-      - add_ssh_keys
+    # Add SSH key for dev-yotta
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:B0nVmApbymFWeHvPvtf1dWL0GFbsKiNrijvoITT7VH0" 
 
       # Setup Docker-in-Docker
       - setup_remote_docker:
@@ -429,33 +431,33 @@ workflows:
     jobs:
       - Testing:
           context:
-            - global
-            - staging
+            - dockerhub
+            - laravel_app
           filters:
             branches:
-              only: master #Runs only when code is merged/pushed to master.
+              only: main #Runs only when code is merged/pushed to main.
             tags:
               ignore: /.*/ # Ignore tags for Testing
 
       - Push-To-Docker:
           context:
-            - global
+            - dockerhub
           requires:
             - Testing
           filters:
             branches:
-              only: master # Must be on master branch
+              only: main # Must be on main branch
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+$/ # Run only for version tags (e.g. v1.1.1)
 
       - Deploy-Staging:
           context:
-            - global
+            - deploy_server
           requires:
             - Push-To-Docker
           filters:
             branches:
-              only: master # Must be on master branch
+              only: main # Must be on main branch
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+$/ # Run only for version tags (e.g. v1.1.1)
 
