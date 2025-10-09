@@ -127,10 +127,10 @@ commands:
 
   # create .env and inject
   create-env:
-    description: "Create Laravel .env file and generate APP_KEY"
+    description: "Generate Laravel .env file (without APP_KEY generation)"
     steps:
       - run:
-          name: Generate .env with APP_KEY
+          name: Generate .env file
           command: |
             set -e
             echo "⚙️ Generating .env file..."
@@ -165,6 +165,8 @@ commands:
               fi
               echo "$key=$value" >> .env
             done
+
+            echo "✅ .env file successfully generated."
 
   # Generate APP_KEY
   generate-app-key:
@@ -453,6 +455,7 @@ workflows:
       - Deploy-Staging:
           context:
             - deploy_server
+            - dockerhub
           requires:
             - Push-To-Docker
           filters:
