@@ -71,4 +71,6 @@
         // Load months on page load
         loadMonths();
     </script>
+
+    
 @endpush
