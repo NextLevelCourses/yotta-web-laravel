@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('loras', function (Blueprint $table) {
             $table->id();
-            $table->string('device_id')->nullable();
             $table->float('air_humidity')->nullable();
             $table->float('air_temperature')->nullable();
             $table->float('nitrogen')->nullable();
