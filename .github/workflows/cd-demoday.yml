@@ -38,6 +38,11 @@ on:
 
 jobs:
   deploy:
+    # ✅ Ensure this job only runs on the main branch from development
+    if: |
+      startsWith(github.event.head_commit.message, 'Merge pull request') &&
+      matches(github.event.head_commit.message, '.*from .*/development')
+
     runs-on: ubuntu-latest
     environment: production
 
@@ -45,6 +50,10 @@ jobs:
       # Step 1: Checkout repository
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
+
+      - name: 📥 Debug message commit
+        run: |
+          echo "📥 Commit message: ${{ github.event.head_commit.message }}"
 
       - name: 🔍 Verify repo contents
         run: |
