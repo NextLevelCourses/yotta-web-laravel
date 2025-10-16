@@ -50,7 +50,6 @@ dy-laravel-optimize-all:
 
 y-start:
 	php artisan serve
-	while true; do php artisan schedule:run; sleep 3; done
 y-migrate:
 	php artisan migrate
 y-rollback:
@@ -69,5 +68,5 @@ y-job-lorawan:
 	php artisan queue:work
 y-lora-console:
 	php artisan run:lorawan
-y-lora-schedule:
-	php artisan schedule:run
+y-lorajob-start:
+	while true; do php artisan schedule:run; sleep 3; done
