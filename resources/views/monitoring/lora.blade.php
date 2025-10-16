@@ -8,7 +8,7 @@
                 <span class="fw-bold text-success">LoRaWAN</span>
             </h5>
             <div class="d-flex align-items-center gap-2">
-                @if (Auth::user()->isAdmin())
+                @if (Auth::check() && Auth::user()->isAdmin())
                     <select class="form-select form-select-sm" name="export-month" id="export-month"
                         aria-label="Pilih Bulan untuk Ekspor">
                     </select>

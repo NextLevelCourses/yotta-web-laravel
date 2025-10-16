@@ -45,20 +45,17 @@ Route::middleware('auth')->group(function () {
             Route::get('/linechart', [SoilTestController::class, 'linechart'])->name('soil-test.linechart');
         });
         Route::get('soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');
+        Route::prefix('lora')->group(function () {
+            LorawanJob::dispatch();
+            Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
+            Route::get('/export/{date}', [LoraController::class, 'export'])->name('lora-test.export');
+        });
     });
 });
 
 Route::prefix('monitoring')->group(function () {
     Route::get('/solar-dome', [SolarDomeController::class, 'index'])
         ->name('monitoring.solar-dome');
-});
-
-Route::prefix('monitoring')->group(function () {
-    Route::prefix('lora')->group(function () {
-        LorawanJob::dispatch();
-        Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
-        Route::get('/export/{date}', [LoraController::class, 'export'])->name('lora-test.export');
-    });
 });
 
 // Jangan lupa tambahkan rute untuk admin di sini nanti
