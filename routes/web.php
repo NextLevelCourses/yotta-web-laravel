@@ -55,7 +55,7 @@ Route::prefix('monitoring')->group(function () {
 
 Route::prefix('monitoring')->group(function () {
     Route::prefix('lora')->group(function () {
-        LorawanJob::dispatch();
+        // LorawanJob::dispatch();
         Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
         Route::get('/export/{date}', [LoraController::class, 'export'])->name('lora-test.export');
     });
