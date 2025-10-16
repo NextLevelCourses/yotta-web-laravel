@@ -1,3 +1,6 @@
+# File: .circleci/cicd-config.yml
+# Configuration file for CircleCI
+
 version: 2.1
 
 # ======== REUSANBLE COMMANDS ========
@@ -437,7 +440,7 @@ workflows:
             - laravel_app
           filters:
             branches:
-              only: main #Runs only when code is merged/pushed to main.
+              only: development #Runs only when code is merged/pushed to development.
             tags:
               ignore: /.*/ # Ignore tags for Testing
 
@@ -448,7 +451,7 @@ workflows:
             - Testing
           filters:
             branches:
-              only: main # Must be on main branch
+              only: development # Must be on development branch
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+$/ # Run only for version tags (e.g. v1.1.1)
 
@@ -460,10 +463,11 @@ workflows:
             - Push-To-Docker
           filters:
             branches:
-              only: main # Must be on main branch
+              only: development # Must be on development branch
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+$/ # Run only for version tags (e.g. v1.1.1)
 
-#tambahkan
+# CATATAN!
+# Untuk urutan kerjannya, harus ada testing terlebih dahulu, baru push ke docker hub, baru deploy ke staging
+# jalan database dulu, baru dashboar,  lalu php artisan package:discover, make dy-laravel-optimize
 # --- php artisan package:discover
-# --- jalan database dulu, baru dashboar,  lalu php artisan package:discover, make dy-laravel-optimize

@@ -1,4 +1,9 @@
-name: 🚀 Demo Aksara Yotta Deployment
+# CI/CD Configuration for Production Server
+# Using FTP Deployment
+
+# File: .github/workflows/cd-demoday.yml
+
+name: 🏗️ Yotta Aksara Production
 
 on:
   push:
@@ -31,11 +36,13 @@ on:
       - "tests/**"
       - "makefile"
 
-    # paths-ignore:
-    #   - "public/assets/**" # For saving time ignore assets folder
-
 jobs:
   deploy:
+    # ✅ Ensure this job only runs on the main branch from development
+    if: |
+      startsWith(github.event.head_commit.message, 'Merge pull request') &&
+      matches(github.event.head_commit.message, '.*from .*/development')
+
     runs-on: ubuntu-latest
     environment: production
 
@@ -43,6 +50,10 @@ jobs:
       # Step 1: Checkout repository
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
+
+      - name: 📥 Debug message commit
+        run: |
+          echo "📥 Commit message: ${{ github.event.head_commit.message }}"
 
       - name: 🔍 Verify repo contents
         run: |
@@ -121,7 +132,7 @@ jobs:
             echo "🚀 Connected to server: $(hostname)"
             cd ${{ secrets.FTP_SERVER_DIR }}
 
-            echo "🗄️ Running database migrations..."
+            # echo "🗄️ Running database migrations..."
             # php artisan migrate --force >> jika diperlukan 
 
             echo "🧹 Clearing caches..."
