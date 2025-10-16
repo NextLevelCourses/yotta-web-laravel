@@ -1,51 +1,38 @@
-# 🌀 CircleCI CI/CD Pipeline – Yotta Dashboard
-
-Diagram berikut menggambarkan urutan proses otomatis dari file `config.yml` di atas menggunakan **Mermaid Sequence Diagram**:
-
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor Dev as Developer
-    participant CI as CircleCI
-    participant Docker as Docker Engine
-    participant Hub as Docker Hub
-    participant Staging as Staging Server
+    sequenceDiagram
+        participant Developer
+        participant CI_System
+        participant DockerHub
+        participant Staging_Server
+        participant MySQL_Container
+        participant Dashboard_Container
 
-    Dev->>CI: Push ke branch `master`
-    Note right of CI: Workflow `ci-cd` dimulai<br>Trigger: push ke branch master
-
-    %% ===== Testing Stage =====
-    CI->>CI: Job `Testing` dimulai
-    CI->>Docker: setup_remote_docker (enable Docker-in-Docker)
-    CI->>CI: Generate `.env` via `create-env`
-    CI->>Docker: docker compose up mysql & dashboard
-    Docker->>Docker: Start containers yotta-mysql & yotta-dashboard
-    CI->>Docker: Wait for MySQL to be ready
-    CI->>Docker: php artisan package:discover
-    CI->>Docker: generate APP_KEY via artisan key:generate
-    CI->>Docker: laravel-optimize (clear & cache configs)
-    CI->>Docker: laravel-migrate (migrate database)
-    Docker->>CI: ✅ Laravel ready
-    CI->>Docker: Health check /health endpoint
-    CI->>Dev: ✅ Job `Testing` selesai sukses
-
-    %% ===== Push-To-Docker Stage =====
-    CI->>CI: Job `Push-To-Docker` dimulai
-    CI->>Hub: docker login (DOCKERHUB_USERNAME + TOKEN)
-    CI->>Docker: Build image tagged with latest Git tag
-    Docker->>Hub: Push image → ${DOCKERHUB_REPO}:<TAG> & latest
-    Hub->>CI: ✅ Push sukses
-    CI->>Dev: ✅ Docker image uploaded
-
-    %% ===== Deploy-Staging Stage =====
-    CI->>Staging: SSH ke server staging
-    Staging->>Staging: docker pull latest image
-    Staging->>Staging: stop/remove old containers
-    Staging->>Staging: docker compose up dashboard
-    Staging->>Staging: copy .env ke container
-    Staging->>Staging: php artisan package:discover
-    Staging->>Staging: make dy-laravel-optimize-all
-    Staging->>Staging: php artisan migrate --force
-    Staging->>Staging: curl ${APP_URL} for health check
-    Staging->>CI: ✅ Deployment to STAGING completed
-    CI->>Dev: 🎉 Pipeline sukses sepenuhnya
+        Developer->>CI_System: Push to 🧩 development branch 
+        CI_System->>CI_System: Checkout code
+        CI_System->>CI_System: Setup remote Docker
+        CI_System->>CI_System: Create .env file
+        CI_System->>MySQL_Container: Start MySQL service (docker-compose)
+        CI_System->>Dashboard_Container: Start Dashboard service (docker-compose)
+        CI_System->>MySQL_Container: Wait MySQL ready
+        CI_System->>Dashboard_Container: Run php artisan package:discover
+        CI_System->>Dashboard_Container: Generate Laravel APP_KEY
+        CI_System->>Dashboard_Container: Laravel optimize (clear & cache)
+        CI_System->>Dashboard_Container: Run Laravel migrations
+        CI_System->>Dashboard_Container: Health check /health endpoint
+        alt Tests successful and tag matches
+            CI_System->>DockerHub: Docker login
+            CI_System->>CI_System: Build Docker image with tag and latest
+            CI_System->>DockerHub: Push Docker image
+            CI_System->>Staging_Server: SSH connect
+            Staging_Server->>DockerHub: Pull latest Docker image
+            Staging_Server->>Staging_Server: Stop old containers
+            Staging_Server->>Staging_Server: Start new dashboard container
+            Staging_Server->>Dashboard_Container: Copy .env to container
+            Staging_Server->>Dashboard_Container: Run php artisan package:discover
+            Staging_Server->>Dashboard_Container: Run Laravel optimize
+            Staging_Server->>Dashboard_Container: Run Laravel migrations
+            Staging_Server->>Staging_Server: Check public domain APP_URL
+            Staging_Server->>CI_System: Deployment success
+        else Tests failed or not version tag
+            CI_System->>Developer: Pipeline failed or stopped
+        end
