@@ -65,6 +65,7 @@ class LoraController extends Controller implements LoraInterface
             'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
             'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
             'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
+            'par_value' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['par_value'],
             'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
             'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
             'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],

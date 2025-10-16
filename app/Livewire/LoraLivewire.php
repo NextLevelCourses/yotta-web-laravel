@@ -17,6 +17,7 @@ class LoraLivewire extends Component
         $soil_conductivity = '--',
         $soil_humidity = '--',
         $nitrogen = '--',
+        $par_value = '--',
         $phosphorus = '--',
         $potassium = '--',
         $created_at = '--';
@@ -38,11 +39,12 @@ class LoraLivewire extends Component
             $this->soil_conductivity = $lora->soil_conductivity ?? '--';
             $this->soil_humidity = $lora->soil_humidity ?? '--';
             $this->nitrogen = $lora->nitrogen ?? '--';
+            $this->par_value = $lora->par_value ?? '--';
             $this->phosphorus = $lora->phosphorus ?? '--';
             $this->potassium = $lora->potassium ?? '--';
             $this->created_at = now();
         } catch (\Exception $error) {
-            $this->air_temperature = $this->air_humidity = $this->soil_pH = $this->soil_temperature = $this->soil_conductivity = $this->soil_humidity = $this->nitrogen = $this->phosphorus = $this->potassium = $this->created_at = 'Error';
+            $this->air_temperature = $this->air_humidity = $this->soil_pH = $this->soil_temperature = $this->soil_conductivity = $this->soil_humidity = $this->nitrogen = $this->par_value = $this->phosphorus = $this->potassium = $this->created_at = 'Error';
             Log::error('Lorawan Error:', $error->getMessage());
         }
     }

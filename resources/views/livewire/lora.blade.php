@@ -44,7 +44,7 @@
                 <div class="col-md-3 col-6">
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">🌞 PAR (Photosynthetic)</h6>
-                        <h4 class="fw-bold text-dark"> µmol/m²·s</h4>
+                        <h4 class="fw-bold text-dark"> {{ $par_value }} µmol/m²·s</h4>
                     </div>
                 </div>
 
@@ -100,15 +100,14 @@
     {{-- Script Chart.js --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('livewire:load', function () {
+        document.addEventListener('livewire:load', function() {
             const ctx = document.getElementById('soilChart').getContext('2d');
 
             const soilChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [
-                        {
+                    datasets: [{
                             label: 'Soil Temp (°C)',
                             data: [],
                             borderColor: '#ff6384',
@@ -136,14 +135,33 @@
                 },
                 options: {
                     responsive: true,
-                    interaction: { mode: 'index', intersect: false },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
                     plugins: {
-                        legend: { position: 'bottom' },
-                        title: { display: true, text: 'Live Soil Data (3s refresh)' },
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Live Soil Data (3s refresh)'
+                        },
                     },
                     scales: {
-                        x: { title: { display: true, text: 'Waktu' } },
-                        y: { title: { display: true, text: 'Nilai' }, beginAtZero: true }
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Waktu'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Nilai'
+                            },
+                            beginAtZero: true
+                        }
                     }
                 }
             });

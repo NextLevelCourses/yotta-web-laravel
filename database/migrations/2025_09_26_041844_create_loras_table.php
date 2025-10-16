@@ -17,6 +17,7 @@ return new class extends Migration
             $table->float('air_humidity')->nullable();
             $table->float('air_temperature')->nullable();
             $table->float('nitrogen')->nullable();
+            $table->float('par_value')->nullable();
             $table->float('phosphorus')->nullable();
             $table->float('potassium')->nullable();
             $table->float('soil_conductivity')->nullable();

@@ -13,6 +13,7 @@ class LoRa extends Model
         'air_humidity',
         'air_temperature',
         'nitrogen',
+        'par_value',
         'phosphorus',
         'potassium',
         'soil_conductivity',
