@@ -37,7 +37,17 @@ class LorawanJob implements ShouldQueue, LoraInterface
 
     public function HandleValidateExistsDataLora($jsonObject): bool
     {
-        return empty($jsonObject[9]) ? false : true; //targetnya: index terakhir untuk ngambil data paling update
+        // Validate that jsonObject is an array and has at least 10 elements
+        if (!is_array($jsonObject) || count($jsonObject) < 10) {
+            return false;
+        }
+        
+        // Validate that the 10th element exists and has the required structure
+        if (empty($jsonObject[9]) || !is_array($jsonObject[9])) {
+            return false;
+        }
+        
+        return isset($jsonObject[9]['result']['uplink_message']['decoded_payload']);
     }
 
     public function HandleIncludePartOfObjectInsideArray($raw): array
@@ -54,9 +64,17 @@ class LorawanJob implements ShouldQueue, LoraInterface
         if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
             $oldest = [];
             for ($i = 0; $i <= 8; $i++) {
+                // Validate structure before accessing nested keys
+                if (!isset($jsonObjects[$i]['result']['uplink_message']['decoded_payload'])) {
+                    Log::warning("Invalid data structure at index {$i}, skipping...");
+                    continue;
+                }
                 array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
             }
-            DB::table('loras')->insert($oldest);
+            
+            if (!empty($oldest)) {
+                DB::table('loras')->insert($oldest);
+            }
             return $oldest;
         }
 
@@ -103,7 +121,10 @@ class LorawanJob implements ShouldQueue, LoraInterface
         ) {
             try {
                 sleep(3); //hold 3 second biar servernya bisa nafas bentar baru jalan lagi
-                $client = new Client(['base_uri' => config('lorawan.url')]);
+                $client = new Client([
+                    'base_uri' => config('lorawan.url'),
+                    'http_errors' => false // Don't throw exceptions on HTTP errors, handle them manually
+                ]);
                 $response = $client->request('GET', config('lorawan.endpoint'), [
                     'headers' => [
                         'Authorization' => config('lorawan.token'),
@@ -113,6 +134,25 @@ class LorawanJob implements ShouldQueue, LoraInterface
                         'last' => '1h'
                     ]
                 ]);
+                
+                // Check HTTP status code before processing
+                $statusCode = $response->getStatusCode();
+                
+                if ($statusCode === 429) {
+                    // Rate limit exceeded
+                    $errorBody = $response->getBody()->getContents();
+                    Log::warning('LoRaWAN API rate limit exceeded (429 Too Many Requests). Skipping this execution.');
+                    Log::warning('Response: ' . $errorBody);
+                    return;
+                } elseif ($statusCode < 200 || $statusCode >= 300) {
+                    // Other HTTP error
+                    $errorBody = $response->getBody()->getContents();
+                    Log::error("LoRaWAN API returned error status {$statusCode}");
+                    Log::error('Response: ' . $errorBody);
+                    return;
+                }
+                
+                // Success - process the response
                 $raw = $response->getBody()->getContents();
                 $json_output = json_encode($this->HandleIncludePartOfObjectInsideArray($raw), JSON_PRETTY_PRINT);
                 Log::info("Berhasil get data dari lorawan");
