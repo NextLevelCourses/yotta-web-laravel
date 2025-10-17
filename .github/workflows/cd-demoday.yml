@@ -41,7 +41,7 @@ jobs:
     # ✅ Ensure this job only runs on the main branch from development
     if: |
       startsWith(github.event.head_commit.message, 'Merge pull request') &&
-      matches(github.event.head_commit.message, '.*from .*/development')
+      contains(github.event.head_commit.message, '/development')
 
     runs-on: ubuntu-latest
     environment: production
@@ -79,8 +79,8 @@ jobs:
           # exclude workdir paths
           exclude: |
             # === Git & CI files ===
-            **/.git*
-            **/.github*
+            # **/.git*
+            # **/.github*
             **/.gitignore
             **/.gitattributes
 
