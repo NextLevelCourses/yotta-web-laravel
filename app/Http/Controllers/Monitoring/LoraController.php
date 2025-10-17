@@ -4,44 +4,15 @@ namespace App\Http\Controllers\Monitoring;
 
 use App\Exports\LoraTestExport;
 use App\Models\LoRa;
-use App\LoraInterface;
-use GuzzleHttp\Client;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-
-class LoraController extends Controller implements LoraInterface
+class LoraController extends Controller
 {
-    public function HandleValidateDataLoraContentType(): bool
-    {
-        return !empty(config('lorawan.accept')) ? true : false;
-    }
-
-    public function HandleValidateDataLoraEndpoint(): bool
-    {
-        return !empty(config('lorawan.endpoint')) ? true : false;
-    }
-
-    public function HandleValidateDataLoraUrl(): bool
-    {
-        return !empty(config('lorawan.url')) ? true : false;
-    }
-
-    public function HandleValidateDataLoraToken(): bool
-    {
-        return !empty(config('lorawan.token')) ? true : false;
-    }
-
-    public function HandleValidateExistsDataLora($jsonObject): bool
-    {
-        return empty($jsonObject[9]) ? false : true; //targetnya: index terakhir untuk ngambil data paling update
-    }
-
-    public function HandleIncludePartOfObjectInsideArray($raw): array|string
+    private function HandleIncludePartOfObjectInsideArray($raw): array|string
     {
         $jsonObjects = preg_split('/}\s*{/', $raw);
         $jsonObjects = array_map(function ($json, $i) use ($jsonObjects) {
@@ -83,46 +54,13 @@ class LoraController extends Controller implements LoraInterface
 
     public function HandleGetDataLora()
     {
-        if (!$this->HandleValidateDataLoraContentType()) {
-            return $this->ResponseError('Content Type Is Null', 422);
-        }
-
-        if (!$this->HandleValidateDataLoraEndpoint()) {
-            return $this->ResponseError('Endpoint Is Null', 422);
-        }
-
-        if (!$this->HandleValidateDataLoraUrl()) {
-            return $this->ResponseError('Base Url Is Null', 422);
-        }
-
-        if (!$this->HandleValidateDataLoraToken()) {
-            return $this->ResponseError('Token Is Null', 422);
-        }
-
-        if (
-            $this->HandleValidateDataLoraContentType() &&
-            $this->HandleValidateDataLoraEndpoint() &&
-            $this->HandleValidateDataLoraUrl() &&
-            $this->HandleValidateDataLoraToken()
-        ) {
-            try {
-                $client = new Client(['base_uri' => config('lorawan.url')]);
-                $response = $client->request('GET', config('lorawan.endpoint'), [
-                    'headers' => [
-                        'Authorization' => config('lorawan.token'),
-                        'Accept'        => config('lorawan.accept'),
-                    ],
-                    'query' => [
-                        'last' => '1h'
-                    ]
-                ]);
-                $raw = $response->getBody()->getContents();
-                return $this->ResponseOk($this->HandleIncludePartOfObjectInsideArray($raw), 'SuccessFully Store Data Realtime');
-            } catch (\Exception $error) {
-                Log::error($error->getMessage());
-                return $this->ResponseError($error->getMessage(), 500);
-            }
-        }
+        $data = $this->HandleIncludePartOfObjectInsideArray($this->HandleGetDataLoraLatest(
+            config('lorawan.url'),
+            config('lorawan.endpoint'),
+            config('lorawan.token'),
+            config('lorawan.accept'),
+        ));
+        return $this->ResponseOk($data, 'Success Get LoRa Data');
     }
     /**
      * Tampilkan halaman monitoring (Blade)
