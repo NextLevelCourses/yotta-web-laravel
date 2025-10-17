@@ -42,7 +42,20 @@ class LorawanJob implements ShouldQueue, LoraInterface
 
     public function HandleIncludePartOfObjectInsideArray($raw): array
     {
+        // Validate input
+        if (empty($raw) || !is_string($raw)) {
+            Log::error("Invalid input to HandleIncludePartOfObjectInsideArray");
+            return [];
+        }
+        
         $jsonObjects = preg_split('/}\s*{/', $raw);
+        
+        // Validate preg_split result
+        if ($jsonObjects === false || empty($jsonObjects)) {
+            Log::error("Failed to split JSON objects");
+            return [];
+        }
+        
         $jsonObjects = array_map(function ($json, $i) use ($jsonObjects) {
             // Re-add curly braces we removed
             if ($i > 0) $json = '{' . $json;
@@ -54,23 +67,53 @@ class LorawanJob implements ShouldQueue, LoraInterface
         if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
             $oldest = [];
             for ($i = 0; $i <= 8; $i++) {
+                // Check if the index exists and has the required structure
+                if (!isset($jsonObjects[$i]['result']['uplink_message']['decoded_payload'])) {
+                    Log::error("Missing required data structure at index $i");
+                    continue;
+                }
                 array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
             }
-            DB::table('loras')->insert($oldest);
+            
+            if (!empty($oldest)) {
+                DB::table('loras')->insert($oldest);
+            }
             return $oldest;
         }
 
+        // Validate that index 9 exists and has required structure before accessing
+        if (!isset($jsonObjects[9]['result']['uplink_message']['decoded_payload'])) {
+            Log::error("Missing required data structure at index 9");
+            return [];
+        }
+        
+        $payload = $jsonObjects[9]['result']['uplink_message']['decoded_payload'];
+        
+        // Validate all required fields exist
+        $requiredFields = [
+            'air_humidity', 'air_temperature', 'nitrogen', 'phosphorus', 
+            'potassium', 'soil_conductivity', 'soil_humidity', 'soil_pH', 
+            'soil_temperature'
+        ];
+        
+        foreach ($requiredFields as $field) {
+            if (!isset($payload[$field])) {
+                Log::error("Missing required field: $field in payload");
+                return [];
+            }
+        }
+        
         //ambil last data(data paling update)
         $latest = array(
-            'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
-            'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
-            'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
-            'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
-            'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
-            'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],
-            'soil_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_humidity'],
-            'soil_pH' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_pH'],
-            'soil_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_temperature'],
+            'air_humidity' => $payload['air_humidity'],
+            'air_temperature' => $payload['air_temperature'],
+            'nitrogen' => $payload['nitrogen'],
+            'phosphorus' => $payload['phosphorus'],
+            'potassium' => $payload['potassium'],
+            'soil_conductivity' => $payload['soil_conductivity'],
+            'soil_humidity' => $payload['soil_humidity'],
+            'soil_pH' => $payload['soil_pH'],
+            'soil_temperature' => $payload['soil_temperature'],
             'measured_at' => now()->format('Y-m-d H:i:s')
         );
         LoRa::create($latest);
@@ -114,11 +157,19 @@ class LorawanJob implements ShouldQueue, LoraInterface
                     ]
                 ]);
                 $raw = $response->getBody()->getContents();
+                
+                // Validate response before processing
+                if (empty($raw)) {
+                    Log::error("Empty response received from LoRaWAN API");
+                    return;
+                }
+                
                 $json_output = json_encode($this->HandleIncludePartOfObjectInsideArray($raw), JSON_PRETTY_PRINT);
                 Log::info("Berhasil get data dari lorawan");
                 Log::info($json_output);
             } catch (\Exception $error) {
                 Log::error($error->getMessage());
+                return; // Stop execution when API call fails
             }
         }
     }
