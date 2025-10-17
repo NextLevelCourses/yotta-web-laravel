@@ -10,7 +10,7 @@ use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitorin
 use App\Http\Controllers\Monitoring\LoraController;
 use App\Jobs\LorawanJob;
 
-// PENTING!! JANGAN DIHAPUS
+// PENTING!!
 // Rute untuk halaman Health Check for CircleCI
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
@@ -55,7 +55,7 @@ Route::prefix('monitoring')->group(function () {
 
 Route::prefix('monitoring')->group(function () {
     Route::prefix('lora')->group(function () {
-        LorawanJob::dispatch();
+        // LorawanJob::dispatch();
         Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
         Route::get('/export/{date}', [LoraController::class, 'export'])->name('lora-test.export');
     });

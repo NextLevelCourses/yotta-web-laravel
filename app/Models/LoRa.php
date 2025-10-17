@@ -9,10 +9,10 @@ class LoRa extends Model
     protected $table = 'loras';
 
     protected $fillable = [
-        'device_id',
         'air_humidity',
         'air_temperature',
         'nitrogen',
+        'par_value',
         'phosphorus',
         'potassium',
         'soil_conductivity',

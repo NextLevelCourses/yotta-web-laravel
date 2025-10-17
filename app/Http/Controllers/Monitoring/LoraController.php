@@ -4,43 +4,15 @@ namespace App\Http\Controllers\Monitoring;
 
 use App\Exports\LoraTestExport;
 use App\Models\LoRa;
-use App\LoraInterface;
-use GuzzleHttp\Client;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-
-class LoraController extends Controller implements LoraInterface
+class LoraController extends Controller
 {
-    public function HandleValidateDataLoraContentType(): bool
-    {
-        return !empty(config('lorawan.accept')) ? true : false;
-    }
-
-    public function HandleValidateDataLoraEndpoint(): bool
-    {
-        return !empty(config('lorawan.endpoint')) ? true : false;
-    }
-
-    public function HandleValidateDataLoraUrl(): bool
-    {
-        return !empty(config('lorawan.url')) ? true : false;
-    }
-
-    public function HandleValidateDataLoraToken(): bool
-    {
-        return !empty(config('lorawan.token')) ? true : false;
-    }
-
-    public function HandleValidateExistsDataLora($jsonObject): bool
-    {
-        return empty($jsonObject[9]) ? false : true; //targetnya: index terakhir untuk ngambil data paling update
-    }
-
-    public function HandleIncludePartOfObjectInsideArray($raw): array
+    private function HandleIncludePartOfObjectInsideArray($raw): array|string
     {
         $jsonObjects = preg_split('/}\s*{/', $raw);
         $jsonObjects = array_map(function ($json, $i) use ($jsonObjects) {
@@ -50,75 +22,45 @@ class LoraController extends Controller implements LoraInterface
             return json_decode($json, true);
         }, $jsonObjects, array_keys($jsonObjects));
 
-        //kalo data last(yang paling baru) belum masuk maka ambil data sebelumnya
-        if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
-            $oldest = [];
-            for ($i = 0; $i <= 8; $i++) {
-                array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+        //ambil data last
+        $latest = '';
+        foreach ($jsonObjects as $key => $value) {
+            if (
+                Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >= Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
+            ) {
+                $latest = $value['result']['uplink_message']['decoded_payload'];
             }
-            DB::table('loras')->insert($oldest);
-            return $oldest;
         }
 
-        //ambil last data(data paling update)
+        //map data
         $latest = array(
-            'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
-            'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
-            'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
-            'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
-            'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
-            'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],
-            'soil_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_humidity'],
-            'soil_pH' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_pH'],
-            'soil_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_temperature'],
-            'measured_at' => now()->format('Y-m-d H:i:s')
+            'air_humidity' => $latest['air_humidity'],
+            'air_temperature' => $latest['air_temperature'],
+            'nitrogen' => $latest['nitrogen'],
+            'par_value' => $latest['par_value'],
+            'phosphorus' => $latest['phosphorus'],
+            'potassium' => $latest['potassium'],
+            'soil_conductivity' => $latest['soil_conductivity'],
+            'soil_humidity' => $latest['soil_humidity'],
+            'soil_pH' => $latest['soil_pH'],
+            'soil_temperature' => $latest['soil_temperature'],
+            'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
         );
-        LoRa::create($latest);
+
+        //store data
+        Lora::create($latest);
         return $latest;
     }
 
     public function HandleGetDataLora()
     {
-        if (!$this->HandleValidateDataLoraContentType()) {
-            return $this->ResponseError('Content Type Is Null', 422);
-        }
-
-        if (!$this->HandleValidateDataLoraEndpoint()) {
-            return $this->ResponseError('Endpoint Is Null', 422);
-        }
-
-        if (!$this->HandleValidateDataLoraUrl()) {
-            return $this->ResponseError('Base Url Is Null', 422);
-        }
-
-        if (!$this->HandleValidateDataLoraToken()) {
-            return $this->ResponseError('Token Is Null', 422);
-        }
-
-        if (
-            $this->HandleValidateDataLoraContentType() &&
-            $this->HandleValidateDataLoraEndpoint() &&
-            $this->HandleValidateDataLoraUrl() &&
-            $this->HandleValidateDataLoraToken()
-        ) {
-            try {
-                $client = new Client(['base_uri' => config('lorawan.url')]);
-                $response = $client->request('GET', config('lorawan.endpoint'), [
-                    'headers' => [
-                        'Authorization' => config('lorawan.token'),
-                        'Accept'        => config('lorawan.accept'),
-                    ],
-                    'query' => [
-                        'last' => '1h'
-                    ]
-                ]);
-                $raw = $response->getBody()->getContents();
-                return $this->ResponseOk($this->HandleIncludePartOfObjectInsideArray($raw), 'SuccessFully Store Data Realtime');
-            } catch (\Exception $error) {
-                Log::error($error->getMessage());
-                return $this->ResponseError($error->getMessage(), 500);
-            }
-        }
+        $data = $this->HandleIncludePartOfObjectInsideArray($this->HandleGetDataLoraLatest(
+            config('lorawan.url'),
+            config('lorawan.endpoint'),
+            config('lorawan.token'),
+            config('lorawan.accept'),
+        ));
+        return $this->ResponseOk($data, 'Success Get LoRa Data');
     }
     /**
      * Tampilkan halaman monitoring (Blade)
