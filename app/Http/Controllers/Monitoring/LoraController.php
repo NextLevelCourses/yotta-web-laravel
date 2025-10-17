@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Monitoring;
 use App\Exports\LoraTestExport;
 use App\Models\LoRa;
 use App\LoraInterface;
+use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
@@ -60,20 +61,17 @@ class LoraController extends Controller implements LoraInterface
             return $oldest;
         }
 
-        //ambil last data(data paling update)
-        $latest = array(
-            'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
-            'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
-            'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
-            'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
-            'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
-            'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],
-            'soil_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_humidity'],
-            'soil_pH' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_pH'],
-            'soil_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_temperature'],
-            'measured_at' => now()->format('Y-m-d H:i:s')
-        );
-        LoRa::create($latest);
+        // Filter messages to get only those from current hour
+        $latest = [];
+        foreach ($jsonObjects as $key => $value) {
+            if (
+                isset($value['result']['uplink_message']['received_at']) &&
+                Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >= Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
+            ) {
+                // Fixed: Extract received_at timestamp, not the entire uplink_message array
+                array_push($latest, Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone')));
+            }
+        }
         return $latest;
     }
 
