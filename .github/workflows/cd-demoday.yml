@@ -43,7 +43,7 @@ on:
       - "makefile"
 
 jobs:
-  dashboard-deploy:
+  web-deploy:
     runs-on: ubuntu-latest
     environment: production
 
