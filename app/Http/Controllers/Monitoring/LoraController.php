@@ -10,6 +10,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 
@@ -40,7 +41,7 @@ class LoraController extends Controller implements LoraInterface
         return empty($jsonObject[9]) ? false : true; //targetnya: index terakhir untuk ngambil data paling update
     }
 
-    public function HandleIncludePartOfObjectInsideArray($raw): array
+    public function HandleIncludePartOfObjectInsideArray($raw): array|string
     {
         $jsonObjects = preg_split('/}\s*{/', $raw);
         $jsonObjects = array_map(function ($json, $i) use ($jsonObjects) {
@@ -51,31 +52,39 @@ class LoraController extends Controller implements LoraInterface
         }, $jsonObjects, array_keys($jsonObjects));
 
         //kalo data last(yang paling baru) belum masuk maka ambil data sebelumnya
-        if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
-            $oldest = [];
-            for ($i = 0; $i <= 8; $i++) {
-                array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+        // if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
+        $oldest = [];
+        // for ($i = 0; $i <= 8; $i++) {
+        //     array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+        // }
+        foreach ($jsonObjects as $key => $value) {
+            if (
+                Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >= Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
+            ) {
+                array_push($oldest, Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H:i:s'));
             }
-            DB::table('loras')->insert($oldest);
-            return $oldest;
         }
+        // DB::table('loras')->insert($oldest);
+        $timestampt = Carbon::parse(max($oldest));
+        return $timestampt;
+        // }
 
         //ambil last data(data paling update)
-        $latest = array(
-            'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
-            'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
-            'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
-            'par_value' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['par_value'],
-            'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
-            'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
-            'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],
-            'soil_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_humidity'],
-            'soil_pH' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_pH'],
-            'soil_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_temperature'],
-            'measured_at' => now()->format('Y-m-d H:i:s')
-        );
-        LoRa::create($latest);
-        return $latest;
+        // $latest = array(
+        //     'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
+        //     'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
+        //     'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
+        //     'par_value' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['par_value'],
+        //     'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
+        //     'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
+        //     'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],
+        //     'soil_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_humidity'],
+        //     'soil_pH' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_pH'],
+        //     'soil_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_temperature'],
+        //     'measured_at' => now()->format('Y-m-d H:i:s')
+        // );
+        // LoRa::create($latest);
+        // return $latest;
     }
 
     public function HandleGetDataLora()
