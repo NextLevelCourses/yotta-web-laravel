@@ -54,10 +54,21 @@ class LorawanJob implements ShouldQueue, LoraInterface
         if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
             $oldest = [];
             for ($i = 0; $i <= 8; $i++) {
-                array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+                // Validate that the required keys exist before accessing
+                if (isset($jsonObjects[$i]['result']['uplink_message']['decoded_payload'])) {
+                    array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+                }
             }
-            DB::table('loras')->insert($oldest);
+            if (!empty($oldest)) {
+                DB::table('loras')->insert($oldest);
+            }
             return $oldest;
+        }
+
+        // Validate that the required keys exist before accessing the latest data
+        if (!isset($jsonObjects[9]['result']['uplink_message']['decoded_payload'])) {
+            Log::warning('Latest data does not contain decoded_payload');
+            return [];
         }
 
         //ambil last data(data paling update)
