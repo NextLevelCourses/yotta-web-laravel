@@ -54,23 +54,56 @@ class LoraController extends Controller implements LoraInterface
         if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
             $oldest = [];
             for ($i = 0; $i <= 8; $i++) {
-                array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+                // Skip records that don't have decoded_payload
+                if (isset($jsonObjects[$i]['result']['uplink_message']['decoded_payload'])) {
+                    array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+                }
             }
-            DB::table('loras')->insert($oldest);
+            if (!empty($oldest)) {
+                DB::table('loras')->insert($oldest);
+            }
             return $oldest;
         }
 
         //ambil last data(data paling update)
+        // Check if decoded_payload exists before accessing it
+        if (!isset($jsonObjects[9]['result']['uplink_message']['decoded_payload'])) {
+            // If decoded_payload is missing, return empty array or try to find a valid record
+            // Look for the most recent record with decoded_payload
+            for ($i = 8; $i >= 0; $i--) {
+                if (isset($jsonObjects[$i]['result']['uplink_message']['decoded_payload'])) {
+                    $decodedPayload = $jsonObjects[$i]['result']['uplink_message']['decoded_payload'];
+                    $latest = array(
+                        'air_humidity' => $decodedPayload['air_humidity'] ?? null,
+                        'air_temperature' => $decodedPayload['air_temperature'] ?? null,
+                        'nitrogen' => $decodedPayload['nitrogen'] ?? null,
+                        'phosphorus' => $decodedPayload['phosphorus'] ?? null,
+                        'potassium' => $decodedPayload['potassium'] ?? null,
+                        'soil_conductivity' => $decodedPayload['soil_conductivity'] ?? null,
+                        'soil_humidity' => $decodedPayload['soil_humidity'] ?? null,
+                        'soil_pH' => $decodedPayload['soil_pH'] ?? null,
+                        'soil_temperature' => $decodedPayload['soil_temperature'] ?? null,
+                        'measured_at' => now()->format('Y-m-d H:i:s')
+                    );
+                    LoRa::create($latest);
+                    return $latest;
+                }
+            }
+            // If no valid record found, return empty array
+            return [];
+        }
+        
+        $decodedPayload = $jsonObjects[9]['result']['uplink_message']['decoded_payload'];
         $latest = array(
-            'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
-            'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
-            'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
-            'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
-            'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
-            'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],
-            'soil_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_humidity'],
-            'soil_pH' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_pH'],
-            'soil_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_temperature'],
+            'air_humidity' => $decodedPayload['air_humidity'] ?? null,
+            'air_temperature' => $decodedPayload['air_temperature'] ?? null,
+            'nitrogen' => $decodedPayload['nitrogen'] ?? null,
+            'phosphorus' => $decodedPayload['phosphorus'] ?? null,
+            'potassium' => $decodedPayload['potassium'] ?? null,
+            'soil_conductivity' => $decodedPayload['soil_conductivity'] ?? null,
+            'soil_humidity' => $decodedPayload['soil_humidity'] ?? null,
+            'soil_pH' => $decodedPayload['soil_pH'] ?? null,
+            'soil_temperature' => $decodedPayload['soil_temperature'] ?? null,
             'measured_at' => now()->format('Y-m-d H:i:s')
         );
         LoRa::create($latest);
