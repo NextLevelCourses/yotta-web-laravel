@@ -51,40 +51,34 @@ class LoraController extends Controller implements LoraInterface
             return json_decode($json, true);
         }, $jsonObjects, array_keys($jsonObjects));
 
-        //kalo data last(yang paling baru) belum masuk maka ambil data sebelumnya
-        // if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
-        $oldest = [];
-        // for ($i = 0; $i <= 8; $i++) {
-        //     array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
-        // }
+        //ambil data last
+        $latest = '';
         foreach ($jsonObjects as $key => $value) {
             if (
                 Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >= Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
             ) {
-                array_push($oldest, Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H:i:s'));
+                $latest = $value['result']['uplink_message']['decoded_payload'];
             }
         }
-        // DB::table('loras')->insert($oldest);
-        $timestampt = Carbon::parse(max($oldest));
-        return $timestampt;
-        // }
 
-        //ambil last data(data paling update)
-        // $latest = array(
-        //     'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
-        //     'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
-        //     'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
-        //     'par_value' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['par_value'],
-        //     'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
-        //     'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
-        //     'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],
-        //     'soil_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_humidity'],
-        //     'soil_pH' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_pH'],
-        //     'soil_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_temperature'],
-        //     'measured_at' => now()->format('Y-m-d H:i:s')
-        // );
-        // LoRa::create($latest);
-        // return $latest;
+        //map data
+        $latest = array(
+            'air_humidity' => $latest['air_humidity'],
+            'air_temperature' => $latest['air_temperature'],
+            'nitrogen' => $latest['nitrogen'],
+            'par_value' => $latest['par_value'],
+            'phosphorus' => $latest['phosphorus'],
+            'potassium' => $latest['potassium'],
+            'soil_conductivity' => $latest['soil_conductivity'],
+            'soil_humidity' => $latest['soil_humidity'],
+            'soil_pH' => $latest['soil_pH'],
+            'soil_temperature' => $latest['soil_temperature'],
+            'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
+        );
+
+        //store data
+        Lora::create($latest);
+        return $latest;
     }
 
     public function HandleGetDataLora()
