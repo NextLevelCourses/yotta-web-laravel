@@ -19,6 +19,7 @@ class LoRa extends Model
         'soil_humidity',
         'soil_pH',
         'soil_temperature',
+        'par_value',
         'measured_at',
         'created_at',
         'updated_at'
