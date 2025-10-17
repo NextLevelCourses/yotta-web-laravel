@@ -1,14 +1,20 @@
-# CI/CD Configuration for Production Server
-# Using FTP Deployment
-
-# File: .github/workflows/cd-demoday.yml
+# ==========================================================
+# 🏗️ Yotta Aksara Production Deployment (via FTP + SSH)
+# CI/CD Pipeline for Laravel Production Server
+# ----------------------------------------------------------
+# Purpose:
+# - Automatically deploy when pushing to the "main" branch
+# - Upload files via FTP (FTPS supported)
+# - Run Laravel optimization commands via SSH
+# ==========================================================
 
 name: 🏗️ Yotta Aksara Production
 
 on:
   push:
-    branches: [ 'main' ] # Deploy only on push to main
-    
+    branches: ["main"] # Trigger deployment only when pushing to the main branch
+
+    # Define which paths trigger deployment
     paths:
       # === Laravel Core ===
       - "app/**"
@@ -16,12 +22,12 @@ on:
       - "config/**"
       - "routes/**"
       - "artisan"
-      
+
       # === Deployment & Assets ===
       - "public/**"
       - "resources/**"
       - "storage/**"
-      
+
       # === Database Schema ===
       - "database/**"
 
@@ -37,12 +43,7 @@ on:
       - "makefile"
 
 jobs:
-  deploy:
-    # ✅ Ensure this job only runs on the main branch from development
-    if: |
-      startsWith(github.event.head_commit.message, 'Merge pull request') &&
-      contains(github.event.head_commit.message, '/development')
-
+  web-deploy:
     runs-on: ubuntu-latest
     environment: production
 
@@ -63,7 +64,7 @@ jobs:
       # Step 2: FTP Deployment
       - name: 📤 Deploy Laravel via FTP
         id: ftp-deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6  #base on https://github.com/SamKirkland/FTP-Deploy-Action 
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6 #base on https://github.com/SamKirkland/FTP-Deploy-Action
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
@@ -75,7 +76,7 @@ jobs:
           log-level: standard
           security: loose
           state-name: .ftp-deploy-sync-state.json
-          
+
           # exclude workdir paths
           exclude: |
             # === Git & CI files ===
