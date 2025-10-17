@@ -23,6 +23,7 @@ return new class extends Migration
             $table->float('soil_humidity')->nullable();
             $table->float('soil_pH')->nullable();
             $table->float('soil_temperature')->nullable();
+            $table->float('par_value')->nullable();
             $table->timestamp('measured_at')->nullable();
             $table->timestamps();
         });
