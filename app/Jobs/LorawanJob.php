@@ -61,7 +61,8 @@ class LorawanJob extends Controller implements ShouldQueue, LoraInterface
 
     private function HandleGetDataLora()
     {
-        sleep(3);
+        //exec hold to handle 429
+        sleep(config('lorawan.hold'));
         $data = $this->HandleIncludePartOfObjectInsideArray($this->HandleGetDataLoraLatest(
             config('lorawan.url'),
             config('lorawan.endpoint'),
