@@ -167,6 +167,22 @@ php artisan view:clear
 php artisan cache:clear
 ```
 
+## Deployment
+
+After deploying new code, especially when routes or blade views are updated, **always clear the view cache** to prevent stale compiled views from causing errors:
+
+```bash
+php artisan view:clear
+```
+
+If using Docker:
+
+```bash
+docker-compose exec dashboard php artisan view:clear
+```
+
+**Important**: Failing to clear the view cache after deployment can result in errors like "Route [X] not defined" if blade views reference updated routes.
+
 ## Frontend Development
 
 For development with hot reload (manual install):
