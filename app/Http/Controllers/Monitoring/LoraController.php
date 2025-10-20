@@ -53,10 +53,19 @@ class LoraController extends Controller implements LoraInterface
         //kalo data last(yang paling baru) belum masuk maka ambil data sebelumnya
         if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
             $oldest = [];
-            for ($i = 0; $i <= 8; $i++) {
-                array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+            // Only iterate over the available objects in the array
+            $count = count($jsonObjects);
+            $maxIndex = min(8, $count - 1); // Take up to index 8, or the last available index
+            
+            for ($i = 0; $i <= $maxIndex; $i++) {
+                if (isset($jsonObjects[$i]['result']['uplink_message']['decoded_payload'])) {
+                    array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
+                }
             }
-            DB::table('loras')->insert($oldest);
+            
+            if (!empty($oldest)) {
+                DB::table('loras')->insert($oldest);
+            }
             return $oldest;
         }
 
