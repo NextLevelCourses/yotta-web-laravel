@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Log;
 
 class LorawanJob extends Controller implements ShouldQueue, LoraInterface
 {
@@ -25,27 +26,31 @@ class LorawanJob extends Controller implements ShouldQueue, LoraInterface
         }, $jsonObjects, array_keys($jsonObjects));
 
         //ambil data last
-        $latest = '';
-        foreach ($jsonObjects as $key => $value) {
-            if (
-                Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >= Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
-            ) {
-                $latest = $value['result']['uplink_message']['decoded_payload'];
+        $data = '';
+        foreach ($jsonObjects as $value) {
+            if (!empty($value)) {
+                if (
+                    Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >= Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
+                ) {
+                    $data = $value['result']['uplink_message']['decoded_payload'];
+                }
+            } else {
+                return 0;
             }
         }
 
         //map data
         $latest = array(
-            'air_humidity' => $latest['air_humidity'],
-            'air_temperature' => $latest['air_temperature'],
-            'nitrogen' => $latest['nitrogen'],
-            'par_value' => $latest['par_value'],
-            'phosphorus' => $latest['phosphorus'],
-            'potassium' => $latest['potassium'],
-            'soil_conductivity' => $latest['soil_conductivity'],
-            'soil_humidity' => $latest['soil_humidity'],
-            'soil_pH' => $latest['soil_pH'],
-            'soil_temperature' => $latest['soil_temperature'],
+            'air_humidity' => $data['air_humidity'],
+            'air_temperature' => $data['air_temperature'],
+            'nitrogen' => $data['nitrogen'],
+            'par_value' => $data['par_value'],
+            'phosphorus' => $data['phosphorus'],
+            'potassium' => $data['potassium'],
+            'soil_conductivity' => $data['soil_conductivity'],
+            'soil_humidity' => $data['soil_humidity'],
+            'soil_pH' => $data['soil_pH'],
+            'soil_temperature' => $data['soil_temperature'],
             'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
         );
 
@@ -63,7 +68,14 @@ class LorawanJob extends Controller implements ShouldQueue, LoraInterface
             config('lorawan.token'),
             config('lorawan.accept'),
         ));
-        return $this->ResponseOk($data, 'Success Get LoRa Data');
+
+        //cek data null or another error
+        if (!empty($data) && $data != 0) {
+            Log::info('LorawanJob: Success fetch data');
+            Log::info($data);
+        } else {
+            Log::info('LorawanJob: Failed fetch data');
+        }
     }
 
 
