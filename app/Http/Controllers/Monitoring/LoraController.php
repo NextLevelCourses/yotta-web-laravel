@@ -37,16 +37,16 @@ class LoraController extends Controller
         }
 
         $latest = array(
-            'air_humidity' => $data['air_humidity'],
-            'air_temperature' => $data['air_temperature'],
-            'nitrogen' => $data['nitrogen'],
-            'par_value' => $data['par_value'],
-            'phosphorus' => $data['phosphorus'],
-            'potassium' => $data['potassium'],
-            'soil_conductivity' => $data['soil_conductivity'],
-            'soil_humidity' => $data['soil_humidity'],
-            'soil_pH' => $data['soil_pH'],
-            'soil_temperature' => $data['soil_temperature'],
+            'air_humidity' => $data['air_humidity'] ?? 0,
+            'air_temperature' => $data['air_temperature'] ?? 0,
+            'nitrogen' => $data['nitrogen'] ?? 0,
+            'par_value' => $data['par_value'] ?? 0,
+            'phosphorus' => $data['phosphorus'] ?? 0,
+            'potassium' => $data['potassium'] ?? 0,
+            'soil_conductivity' => $data['soil_conductivity'] ?? 0,
+            'soil_humidity' => $data['soil_humidity'] ?? 0,
+            'soil_pH' => $data['soil_pH'] ?? 0,
+            'soil_temperature' => $data['soil_temperature'] ?? 0,
             'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
         );
 
