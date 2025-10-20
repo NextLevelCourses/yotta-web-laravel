@@ -37,7 +37,27 @@ class LoraController extends Controller implements LoraInterface
 
     public function HandleValidateExistsDataLora($jsonObject): bool
     {
-        return empty($jsonObject[9]) ? false : true; //targetnya: index terakhir untuk ngambil data paling update
+        // Check if index 9 exists
+        if (empty($jsonObject[9])) {
+            return false;
+        }
+        
+        // Validate that $jsonObject[9] is an array
+        if (!is_array($jsonObject[9])) {
+            return false;
+        }
+        
+        // Validate the nested structure exists
+        if (!isset($jsonObject[9]['result']['uplink_message']['decoded_payload'])) {
+            return false;
+        }
+        
+        // Validate that decoded_payload is an array
+        if (!is_array($jsonObject[9]['result']['uplink_message']['decoded_payload'])) {
+            return false;
+        }
+        
+        return true;
     }
 
     public function HandleIncludePartOfObjectInsideArray($raw): array
@@ -47,30 +67,74 @@ class LoraController extends Controller implements LoraInterface
             // Re-add curly braces we removed
             if ($i > 0) $json = '{' . $json;
             if ($i < count($jsonObjects) - 1) $json .= '}';
-            return json_decode($json, true);
+            $decoded = json_decode($json, true);
+            
+            // Validate that json_decode succeeded and returned an array
+            if ($decoded === null || !is_array($decoded)) {
+                Log::warning('Failed to decode JSON object at index ' . $i);
+                return null;
+            }
+            
+            return $decoded;
         }, $jsonObjects, array_keys($jsonObjects));
+        
+        // Filter out any null values from failed json_decode
+        $jsonObjects = array_filter($jsonObjects, function($obj) {
+            return $obj !== null;
+        });
+        
+        // Re-index the array after filtering
+        $jsonObjects = array_values($jsonObjects);
 
         //kalo data last(yang paling baru) belum masuk maka ambil data sebelumnya
         if (!$this->HandleValidateExistsDataLora($jsonObjects)) {
             $oldest = [];
             for ($i = 0; $i <= 8; $i++) {
+                // Validate that the object exists and has the required structure
+                if (!isset($jsonObjects[$i]) || !is_array($jsonObjects[$i])) {
+                    Log::warning("Invalid or missing object at index $i");
+                    continue;
+                }
+                
+                if (!isset($jsonObjects[$i]['result']['uplink_message']['decoded_payload'])) {
+                    Log::warning("Missing decoded_payload at index $i");
+                    continue;
+                }
+                
+                if (!is_array($jsonObjects[$i]['result']['uplink_message']['decoded_payload'])) {
+                    Log::warning("decoded_payload is not an array at index $i");
+                    continue;
+                }
+                
                 array_push($oldest, $jsonObjects[$i]['result']['uplink_message']['decoded_payload']);
             }
-            DB::table('loras')->insert($oldest);
+            
+            if (!empty($oldest)) {
+                DB::table('loras')->insert($oldest);
+            }
             return $oldest;
         }
 
         //ambil last data(data paling update)
+        // Additional safety check before accessing nested keys
+        if (!isset($jsonObjects[9]['result']['uplink_message']['decoded_payload']) || 
+            !is_array($jsonObjects[9]['result']['uplink_message']['decoded_payload'])) {
+            Log::error('Invalid structure for latest data at index 9');
+            throw new \Exception('Invalid LoRa data structure');
+        }
+        
+        $payload = $jsonObjects[9]['result']['uplink_message']['decoded_payload'];
+        
         $latest = array(
-            'air_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_humidity'],
-            'air_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['air_temperature'],
-            'nitrogen' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['nitrogen'],
-            'phosphorus' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['phosphorus'],
-            'potassium' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['potassium'],
-            'soil_conductivity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_conductivity'],
-            'soil_humidity' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_humidity'],
-            'soil_pH' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_pH'],
-            'soil_temperature' => $jsonObjects[9]['result']['uplink_message']['decoded_payload']['soil_temperature'],
+            'air_humidity' => $payload['air_humidity'] ?? null,
+            'air_temperature' => $payload['air_temperature'] ?? null,
+            'nitrogen' => $payload['nitrogen'] ?? null,
+            'phosphorus' => $payload['phosphorus'] ?? null,
+            'potassium' => $payload['potassium'] ?? null,
+            'soil_conductivity' => $payload['soil_conductivity'] ?? null,
+            'soil_humidity' => $payload['soil_humidity'] ?? null,
+            'soil_pH' => $payload['soil_pH'] ?? null,
+            'soil_temperature' => $payload['soil_temperature'] ?? null,
             'measured_at' => now()->format('Y-m-d H:i:s')
         );
         LoRa::create($latest);
