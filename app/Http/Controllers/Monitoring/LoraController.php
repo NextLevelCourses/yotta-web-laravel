@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LoraController extends Controller
 {
-    private function HandleIncludePartOfObjectInsideArray($raw): array|string
+    private function HandleIncludePartOfObjectInsideArray($raw): array|string|int
     {
         $jsonObjects = preg_split('/}\s*{/', $raw);
         $jsonObjects = array_map(function ($json, $i) use ($jsonObjects) {
@@ -23,27 +23,30 @@ class LoraController extends Controller
         }, $jsonObjects, array_keys($jsonObjects));
 
         //ambil data last
-        $latest = '';
-        foreach ($jsonObjects as $key => $value) {
-            if (
-                Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >= Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
-            ) {
-                $latest = $value['result']['uplink_message']['decoded_payload'];
+        $data = '';
+        foreach ($jsonObjects as $value) {
+            if (!empty($value)) {
+                if (
+                    Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >= Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
+                ) {
+                    $data = $value['result']['uplink_message']['decoded_payload'];
+                }
+            } else {
+                return 0;
             }
         }
 
-        //map data
         $latest = array(
-            'air_humidity' => $latest['air_humidity'],
-            'air_temperature' => $latest['air_temperature'],
-            'nitrogen' => $latest['nitrogen'],
-            'par_value' => $latest['par_value'],
-            'phosphorus' => $latest['phosphorus'],
-            'potassium' => $latest['potassium'],
-            'soil_conductivity' => $latest['soil_conductivity'],
-            'soil_humidity' => $latest['soil_humidity'],
-            'soil_pH' => $latest['soil_pH'],
-            'soil_temperature' => $latest['soil_temperature'],
+            'air_humidity' => $data['air_humidity'],
+            'air_temperature' => $data['air_temperature'],
+            'nitrogen' => $data['nitrogen'],
+            'par_value' => $data['par_value'],
+            'phosphorus' => $data['phosphorus'],
+            'potassium' => $data['potassium'],
+            'soil_conductivity' => $data['soil_conductivity'],
+            'soil_humidity' => $data['soil_humidity'],
+            'soil_pH' => $data['soil_pH'],
+            'soil_temperature' => $data['soil_temperature'],
             'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
         );
 
@@ -60,7 +63,12 @@ class LoraController extends Controller
             config('lorawan.token'),
             config('lorawan.accept'),
         ));
-        return $this->ResponseOk($data, 'Success Get LoRa Data');
+
+        if (!empty($data) && $data != 0) {
+            return $this->ResponseOk($data, 'Success fetch data');
+        } else {
+            return $this->ResponseError('Failed fetch data', 422);
+        }
     }
     /**
      * Tampilkan halaman monitoring (Blade)
