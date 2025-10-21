@@ -17,7 +17,7 @@ class LorawanJob extends Controller implements ShouldQueue
         try {
             //exec hold to handle 429
             sleep(config('lorawan.hold'));
-            $data = $this->HandleIncludePartOfObjectInsideArray($this->HandleGetApiLora(
+            $data = $this->HandleLoraIncludePartOfObjectInsideArray($this->HandleLoraGetApi(
                 config('lorawan.url'),
                 config('lorawan.endpoint'),
                 config('lorawan.token'),
@@ -29,7 +29,7 @@ class LorawanJob extends Controller implements ShouldQueue
                 Log::info('LorawanJob: Success fetch data');
                 Log::info($data);
             } else {
-                Log::info('LorawanJob: Failed fetch data');
+                Log::info('LorawanJob - Failed fetch data:' . $data);
             }
         } catch (\Exception $e) {
             Log::error('LorawanJob: Internal error - ' . $e->getMessage());

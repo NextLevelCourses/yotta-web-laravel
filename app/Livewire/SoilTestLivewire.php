@@ -2,15 +2,15 @@
 
 namespace App\Livewire;
 
+use App\GrafikInterface;
 use Carbon\Carbon;
 use Livewire\Component;
 use App\Models\SoilTest;
-use App\SoiltestInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Contract\Firestore;
 
-class SoilTestLivewire extends Component implements SoiltestInterface
+class SoilTestLivewire extends Component implements GrafikInterface
 {
     public //data sensor
         $devices_id = '--',
@@ -31,7 +31,7 @@ class SoilTestLivewire extends Component implements SoiltestInterface
         $fosfor_chart = [],
         $kalium_chart = [];
 
-    public function HandleGetDataGrafikSoilTest(string $param, string $column, string $sort = 'asc'): array
+    public function HandleGetDataGrafik(string $param, string $column, string $sort = 'asc'): array
     {
         return SoilTest::whereNotNull($param)
             ->orderBy($column, $sort)

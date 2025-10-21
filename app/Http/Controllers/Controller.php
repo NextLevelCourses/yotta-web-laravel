@@ -14,27 +14,27 @@ class Controller implements LoraInterface
     const LATEST = 'desc';
     const OLDEST = 'asc';
 
-    public function HandleValidateDataLoraContentType(): bool
+    public function HandleLoraValidateDataContentType(): bool
     {
         return !empty(config('lorawan.accept')) ? true : false;
     }
 
-    public function HandleValidateDataLoraEndpoint(): bool
+    public function HandleLoraValidateDataEndpoint(): bool
     {
         return !empty(config('lorawan.endpoint')) ? true : false;
     }
 
-    public function HandleValidateDataLoraUrl(): bool
+    public function HandleLoraValidateDataUrl(): bool
     {
         return !empty(config('lorawan.url')) ? true : false;
     }
 
-    public function HandleValidateDataLoraToken(): bool
+    public function HandleLoraValidateDataToken(): bool
     {
         return !empty(config('lorawan.token')) ? true : false;
     }
 
-    public function HandleIncludePartOfObjectInsideArray($raw): array|string|int
+    public function HandleLoraIncludePartOfObjectInsideArray($raw): array|string|int
     {
         $jsonObjects = preg_split('/}\s*{/', $raw);
         $jsonObjects = array_map(function ($json, $i) use ($jsonObjects) {
@@ -82,7 +82,7 @@ class Controller implements LoraInterface
                 'measured_at' => Carbon::parse(collect($data)->sortByDesc('f_cnt')->first()['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H:i:s') ?? '-',
             );
             //store data latest
-            Lora::create($latest);
+            LoRa::create($latest);
         }
 
         //return data
@@ -90,34 +90,34 @@ class Controller implements LoraInterface
         return collect($data)->sortByDesc('f_cnt')->first() ?? [];
     }
 
-    public function HandleGetApiLora(
+    public function HandleLoraGetApi(
         string $url,
         string $endpoint,
         string $authorization,
         string $accept,
         string $lastData = '1h'
     ) {
-        if (!$this->HandleValidateDataLoraContentType()) {
+        if (!$this->HandleLoraValidateDataContentType()) {
             return $this->ResponseError('Content Type Is Null', 422);
         }
 
-        if (!$this->HandleValidateDataLoraEndpoint()) {
+        if (!$this->HandleLoraValidateDataEndpoint()) {
             return $this->ResponseError('Endpoint Is Null', 422);
         }
 
-        if (!$this->HandleValidateDataLoraUrl()) {
+        if (!$this->HandleLoraValidateDataUrl()) {
             return $this->ResponseError('Base Url Is Null', 422);
         }
 
-        if (!$this->HandleValidateDataLoraToken()) {
+        if (!$this->HandleLoraValidateDataToken()) {
             return $this->ResponseError('Token Is Null', 422);
         }
 
         if (
-            $this->HandleValidateDataLoraContentType() &&
-            $this->HandleValidateDataLoraEndpoint() &&
-            $this->HandleValidateDataLoraUrl() &&
-            $this->HandleValidateDataLoraToken()
+            $this->HandleLoraValidateDataContentType() &&
+            $this->HandleLoraValidateDataEndpoint() &&
+            $this->HandleLoraValidateDataUrl() &&
+            $this->HandleLoraValidateDataToken()
         ) {
             try {
                 $client = new Client(['base_uri' => $url]);

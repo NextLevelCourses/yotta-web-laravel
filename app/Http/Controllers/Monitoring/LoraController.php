@@ -14,7 +14,7 @@ class LoraController extends Controller
     public function HandleGetDataLora()
     {
         try {
-            $data = $this->HandleIncludePartOfObjectInsideArray($this->HandleGetApiLora(
+            $data = $this->HandleLoraIncludePartOfObjectInsideArray($this->HandleLoraGetApi(
                 config('lorawan.url'),
                 config('lorawan.endpoint'),
                 config('lorawan.token'),
@@ -22,12 +22,14 @@ class LoraController extends Controller
             ));
 
             if (!empty($data) && $data != 0) {
+                Log::info('Lorawan: Success fetch data');
                 return $this->ResponseOk($data, 'Success fetch data');
             } else {
+                Log::info('Lorawan:' . $data);
                 return $this->ResponseError('Failed fetch data', 422);
             }
         } catch (\Exception $e) {
-            Log::error('Fetch Lora data error: ' . $e->getMessage());
+            Log::error('Lorawan Internal Error - ' . $e->getMessage());
             return $this->ResponseError('Error sistem internal', 500);
         }
     }
