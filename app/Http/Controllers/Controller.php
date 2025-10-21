@@ -44,8 +44,10 @@ class Controller implements LoraInterface
             return json_decode($json, true);
         }, $jsonObjects, array_keys($jsonObjects));
 
-        //ambil semua data
+        //simpan semua data base on timestampt filter on collection
         $data = [];
+
+        //looping semua object josn yang tersimpan di dalam array
         foreach ($jsonObjects as $value) {
             //validate data lora nya exists or null (note: pastikan data dalam bentuk array)
             if (
@@ -79,7 +81,6 @@ class Controller implements LoraInterface
                 'soil_temperature' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['soil_temperature'] ?? 0,
                 'measured_at' => Carbon::parse(collect($data)->sortByDesc('f_cnt')->first()['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H:i:s') ?? '-',
             );
-
             //store data latest
             Lora::create($latest);
         }
