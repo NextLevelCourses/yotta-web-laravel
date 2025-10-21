@@ -54,7 +54,7 @@ class LoraController extends Controller
             'soil_humidity' => max($data)['decoded_payload']['soil_humidity'] ?? 0,
             'soil_pH' => max($data)['decoded_payload']['soil_pH'] ?? 0,
             'soil_temperature' => max($data)['decoded_payload']['soil_temperature'] ?? 0,
-            'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
+            'measured_at' => Carbon::parse(max($data)['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H:i:s') ?? '-',
         );
 
         //store data latest
