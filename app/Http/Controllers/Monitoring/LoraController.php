@@ -23,52 +23,65 @@ class LoraController extends Controller
             return json_decode($json, true);
         }, $jsonObjects, array_keys($jsonObjects));
 
-        //ambil data last
-        $data = '';
+        //ambil semua data
+        $data = [];
         foreach ($jsonObjects as $value) {
-            if (!empty($value)) {
+            //validate data lora nya exists or null (note: pastikan data dalam bentuk array)
+            if (
+                !empty($value) &&
+                is_array($value)
+            ) {
                 if (
-                    Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >= Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
+                    Carbon::parse($value['result']['uplink_message']['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H') >=
+                    Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H')
                 ) {
-                    $data = $value['result']['uplink_message']['decoded_payload'];
+                    array_push($data, $value['result']['uplink_message']);
                 }
             } else {
                 return 0;
             }
         }
 
+        //map data latest(data paling terbaru saja) supaya realtime alias datanya sesuai dengan apa yang ada di thingsboard
         $latest = array(
-            'air_humidity' => $data['air_humidity'] ?? 0,
-            'air_temperature' => $data['air_temperature'] ?? 0,
-            'nitrogen' => $data['nitrogen'] ?? 0,
-            'par_value' => $data['par_value'] ?? 0,
-            'phosphorus' => $data['phosphorus'] ?? 0,
-            'potassium' => $data['potassium'] ?? 0,
-            'soil_conductivity' => $data['soil_conductivity'] ?? 0,
-            'soil_humidity' => $data['soil_humidity'] ?? 0,
-            'soil_pH' => $data['soil_pH'] ?? 0,
-            'soil_temperature' => $data['soil_temperature'] ?? 0,
+            'air_humidity' => max($data)['decoded_payload']['air_humidity'] ?? 0,
+            'air_temperature' => max($data)['decoded_payload']['air_temperature'] ?? 0,
+            'nitrogen' => max($data)['decoded_payload']['nitrogen'] ?? 0,
+            'par_value' => max($data)['decoded_payload']['par_value'] ?? 0,
+            'phosphorus' => max($data)['decoded_payload']['phosphorus'] ?? 0,
+            'potassium' => max($data)['decoded_payload']['potassium'] ?? 0,
+            'soil_conductivity' => max($data)['decoded_payload']['soil_conductivity'] ?? 0,
+            'soil_humidity' => max($data)['decoded_payload']['soil_humidity'] ?? 0,
+            'soil_pH' => max($data)['decoded_payload']['soil_pH'] ?? 0,
+            'soil_temperature' => max($data)['decoded_payload']['soil_temperature'] ?? 0,
             'measured_at' => Carbon::now()->timezone(config('app.timezone'))->format('Y-m-d H:i:s'),
         );
 
-        //store data
+        //store data latest
         Lora::create($latest);
-        return $latest;
+
+        //return data
+        return max($data);
     }
 
     public function HandleGetDataLora()
     {
-        $data = $this->HandleIncludePartOfObjectInsideArray($this->HandleGetDataLoraLatest(
-            config('lorawan.url'),
-            config('lorawan.endpoint'),
-            config('lorawan.token'),
-            config('lorawan.accept'),
-        ));
+        try {
+            $data = $this->HandleIncludePartOfObjectInsideArray($this->HandleGetDataLoraLatest(
+                config('lorawan.url'),
+                config('lorawan.endpoint'),
+                config('lorawan.token'),
+                config('lorawan.accept'),
+            ));
 
-        if (!empty($data) && $data != 0) {
-            return $this->ResponseOk($data, 'Success fetch data');
-        } else {
-            return $this->ResponseError('Failed fetch data', 422);
+            if (!empty($data) && $data != 0) {
+                return $this->ResponseOk($data, 'Success fetch data');
+            } else {
+                return $this->ResponseError('Failed fetch data', 422);
+            }
+        } catch (\Exception $e) {
+            Log::error('Fetch Lora data error: ' . $e->getMessage());
+            return $this->ResponseError('Error sistem internal', 500);
         }
     }
     /**
