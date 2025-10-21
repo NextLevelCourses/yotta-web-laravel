@@ -16,6 +16,9 @@ on:
     
     # Define which paths trigger deployment
     paths:
+      # === Git & CI files ===
+      - ".github/workflows/cd-demoday.yml"
+      
       # === Laravel Core ===
       - "app/**"
       - "bootstrap/**"
