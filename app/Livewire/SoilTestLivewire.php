@@ -74,7 +74,7 @@ class SoilTestLivewire extends Component implements GrafikInterface
                 ->snapshot();
 
             //get data label of chart grafik
-            $chart_label = $this->HandleGetDataGrafikSoilTest('measured_at', 'id', 'desc');
+            $chart_label = $this->HandleGetDataGrafik('measured_at', 'id', 'desc');
 
             //validate data sensor exists
             if ($snapshot->exists()) {
@@ -104,13 +104,13 @@ class SoilTestLivewire extends Component implements GrafikInterface
                 //mapping data via hook livewire
                 $this->dispatch('chartDataSoilTest', data: [
                     'labels' => $labels,
-                    'temperature' => $this->HandleGetDataGrafikSoilTest('temperature', 'id', 'desc'),
-                    'humidity' => $this->HandleGetDataGrafikSoilTest('humidity', 'id', 'desc'),
-                    'ec' => $this->HandleGetDataGrafikSoilTest('ec', 'id', 'desc'),
-                    'ph' => $this->HandleGetDataGrafikSoilTest('ph', 'id', 'desc'),
-                    'nitrogen' => $this->HandleGetDataGrafikSoilTest('nitrogen', 'id', 'desc'),
-                    'fosfor' => $this->HandleGetDataGrafikSoilTest('fosfor', 'id', 'desc'),
-                    'kalium' => $this->HandleGetDataGrafikSoilTest('kalium', 'id', 'desc')
+                    'temperature' => $this->HandleGetDataGrafik('temperature', 'id', 'desc'),
+                    'humidity' => $this->HandleGetDataGrafik('humidity', 'id', 'desc'),
+                    'ec' => $this->HandleGetDataGrafik('ec', 'id', 'desc'),
+                    'ph' => $this->HandleGetDataGrafik('ph', 'id', 'desc'),
+                    'nitrogen' => $this->HandleGetDataGrafik('nitrogen', 'id', 'desc'),
+                    'fosfor' => $this->HandleGetDataGrafik('fosfor', 'id', 'desc'),
+                    'kalium' => $this->HandleGetDataGrafik('kalium', 'id', 'desc')
                 ]);
             } else {
                 $this->labels_charts = $this->temperature_chart = $this->humidity_chart = $this->ec_chart = $this->ph_chart = $this->nitrogen_chart = $this->fosfor_chart = $this->kalium_chart = [];
