@@ -76,7 +76,7 @@
             {{-- DEVICE INFO --}}
             <div class="mt-4 text-center">
                 <small class="text-muted">
-                    ⏱ Last Updated: {{ $created_at }}
+                    ⏱ Last Updated: {{ $measured_at }}
                 </small>
             </div>
 

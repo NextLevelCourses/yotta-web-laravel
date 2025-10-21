@@ -21,7 +21,7 @@ class LoraLivewire extends Component implements GrafikInterface
         $par_value = '--',
         $phosphorus = '--',
         $potassium = '--',
-        $created_at = '--';
+        $measured_at = '--';
 
     public function HandleGetDataGrafik(string $param, string $column, string $sort = 'asc'): array
     {
@@ -54,7 +54,7 @@ class LoraLivewire extends Component implements GrafikInterface
             $this->par_value = $lora->par_value ?? '--';
             $this->phosphorus = $lora->phosphorus ?? '--';
             $this->potassium = $lora->potassium ?? '--';
-            $this->created_at = now();
+            $this->measured_at = $lora->measured_at ?? '--';
 
             //chart init
             $chart = $this->HandleGetDataGrafik('measured_at', 'id', 'desc');
@@ -70,7 +70,7 @@ class LoraLivewire extends Component implements GrafikInterface
 
             //catch error
         } catch (\Exception $error) {
-            $this->air_temperature = $this->air_humidity = $this->soil_pH = $this->soil_temperature = $this->soil_conductivity = $this->soil_humidity = $this->nitrogen = $this->par_value = $this->phosphorus = $this->potassium = $this->created_at = 'Error';
+            $this->air_temperature = $this->air_humidity = $this->soil_pH = $this->soil_temperature = $this->soil_conductivity = $this->soil_humidity = $this->nitrogen = $this->par_value = $this->phosphorus = $this->potassium = $this->measured_at = 'Error';
             Log::error('Lorawan Error:', $error->getMessage());
         }
     }
