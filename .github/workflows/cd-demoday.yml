@@ -12,10 +12,13 @@ name: 🏗️ Yotta Aksara Production
 
 on:
   push:
-    branches: ["main"] # Trigger deployment only when pushing to the main branch
-
+    branches: [ 'main' ] # Trigger deployment only when pushing to the main branch
+    
     # Define which paths trigger deployment
     paths:
+      # === Git & CI files ===
+      - ".github/workflows/cd-demoday.yml"
+      
       # === Laravel Core ===
       - "app/**"
       - "bootstrap/**"
@@ -43,7 +46,7 @@ on:
       - "makefile"
 
 jobs:
-  web-deploy:
+  dashboard-deploy:
     runs-on: ubuntu-latest
     environment: production
 
