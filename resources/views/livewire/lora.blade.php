@@ -1,4 +1,4 @@
-<div wire:poll.3s="fetchLora">
+<div wire:poll.60s="fetchLora">
     <div class="card shadow-lg rounded-3 border-0">
         <div class="card-header bg-success text-white rounded-top-3">
             <h4 class="card-title mb-0 fw-bold text-center text-md-start">
