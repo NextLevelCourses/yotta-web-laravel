@@ -41,7 +41,7 @@ Route::middleware('auth')->group(function () {
         Route::get('air-quality', [AirQualityController::class, 'index'])->name('air-quality');
         Route::prefix('soil-test')->group(function () {
             Route::get('/', [SoilTestController::class, 'index'])->name('soil-test');
-            Route::get('/export/{date}', [SoilTestController::class, 'export'])->name('soil-test.export');
+            Route::get('/export/{date}', [SoilTestController::class, 'ExportByExcel'])->name('soil-test.export');
             Route::get('/linechart', [SoilTestController::class, 'linechart'])->name('soil-test.linechart');
         });
         Route::get('soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');
@@ -57,7 +57,7 @@ Route::prefix('monitoring')->group(function () {
     Route::prefix('lora')->group(function () {
         // LorawanJob::dispatch();
         Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
-        Route::get('/export/{date}', [LoraController::class, 'export'])->name('lora-test.export');
+        Route::get('/export/{date}', [LoraController::class, 'ExportByExcel'])->name('lora-test.export');
     });
 });
 

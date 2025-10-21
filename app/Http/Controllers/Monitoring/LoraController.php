@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Monitoring;
 
+use App\ExportDataInterface;
 use App\Exports\LoraTestExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
@@ -9,7 +10,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-class LoraController extends Controller
+class LoraController extends Controller implements ExportDataInterface
 {
     public function HandleGetDataLora()
     {
@@ -42,7 +43,11 @@ class LoraController extends Controller
         return Auth::check() ? view('monitoring.lora') : redirect()->route('login')->with('error', 'Anda perlu login,silahkan login!');
     }
 
-    public function export(string $date): BinaryFileResponse|string
+    /**
+     * @param string $date
+     * @return BinaryFileResponse|string
+     */
+    public function ExportByExcel(string $date): BinaryFileResponse|string
     {
         try {
             $month = substr($date, 5, 2); // hasilnya mm (month) only without yyyy or dd

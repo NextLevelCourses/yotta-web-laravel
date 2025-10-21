@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Monitoring;
 
+use App\ExportDataInterface;
 use App\Models\SoilTest;
 use App\Exports\SoilTestExport;
 use Illuminate\Support\Facades\Log;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-class SoilTestController extends Controller
+class SoilTestController extends Controller implements ExportDataInterface
 {
 
     public function index()
@@ -19,7 +20,11 @@ class SoilTestController extends Controller
         return Auth::check() ? view('monitoring.soil-test', compact('device')) : redirect()->route('login')->with('error', 'Anda perlu login,silahkan login!');
     }
 
-    public function export(string $date): BinaryFileResponse|string
+    /**
+     * @param string $date
+     * @return BinaryFileResponse|string
+     */
+    public function ExportByExcel(string $date): BinaryFileResponse|string
     {
         try {
             $month = substr($date, 5, 2); // hasilnya mm (month) only without yyyy or dd
