@@ -25,7 +25,7 @@ class LoraController extends Controller
                 Log::info('Lorawan: Success fetch data');
                 return $this->ResponseOk($data, 'Success fetch data');
             } else {
-                Log::info('Lorawan:' . $data);
+                Log::info('Lorawan - Failed fetch data:' . $data);
                 return $this->ResponseError('Failed fetch data', 422);
             }
         } catch (\Exception $e) {
