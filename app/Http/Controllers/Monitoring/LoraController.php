@@ -8,6 +8,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LoraController extends Controller
@@ -76,7 +77,7 @@ class LoraController extends Controller
 
     public function index()
     {
-        return view('monitoring.lora');
+        return Auth::check() ? view('monitoring.lora') : redirect()->route('login')->with('error', 'Anda perlu login,silahkan login!');
     }
 
     public function export(string $date): BinaryFileResponse|string

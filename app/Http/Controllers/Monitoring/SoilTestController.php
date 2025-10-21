@@ -6,42 +6,17 @@ use App\Models\SoilTest;
 use App\Exports\SoilTestExport;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\SoiltestInterface;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-class SoilTestController extends Controller implements SoiltestInterface
+class SoilTestController extends Controller
 {
-    public function HandleGetDataGrafikSoilTest(string $param, string $column, string $sort = 'asc'): array
-    {
-        return SoilTest::whereNotNull($param)
-            ->orderBy($column, $sort)
-            ->limit(10)
-            ->pluck($param)
-            ->toArray();
-    }
 
     public function index()
     {
-        $get_label = $this->HandleGetDataGrafikSoilTest('measured_at', 'id', parent::LATEST);
-        $labels = array_map(function ($date) {
-            if (is_string($date)) return $date;
-            return $date instanceof \Carbon\Carbon ? $date->format('Y-m-d H:i:s') : (string)$date;
-        }, $get_label);
-
-        //mapping data to array
-        $data = array(
-            'labels' => $labels,
-            'device' => SoilTest::whereNotNull('device_id',)->orderByDesc('id')->first(),
-            'temperature' => $this->HandleGetDataGrafikSoilTest('temperature', 'id', parent::LATEST),
-            'humidity' => $this->HandleGetDataGrafikSoilTest('humidity', 'id', parent::LATEST),
-            'ec' => $this->HandleGetDataGrafikSoilTest('ec', 'id', parent::LATEST),
-            'ph' => $this->HandleGetDataGrafikSoilTest('ph', 'id', parent::LATEST),
-            'nitrogen' => $this->HandleGetDataGrafikSoilTest('nitrogen', 'id', parent::LATEST),
-            'fosfor' => $this->HandleGetDataGrafikSoilTest('fosfor', 'id', parent::LATEST),
-            'kalium' => $this->HandleGetDataGrafikSoilTest('kalium', 'id', parent::LATEST)
-        );
-        return view('monitoring.soil-test', compact('data'));
+        $device = SoilTest::latest()->first();
+        return Auth::check() ? view('monitoring.soil-test', compact('device')) : redirect()->route('login')->with('error', 'Anda perlu login,silahkan login!');
     }
 
     public function export(string $date): BinaryFileResponse|string

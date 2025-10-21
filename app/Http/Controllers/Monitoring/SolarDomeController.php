@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Monitoring;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class SolarDomeController extends Controller
 {
@@ -19,6 +19,6 @@ class SolarDomeController extends Controller
             'humidity' => [75, 70, 68, 65, 72, 78],
         ];
 
-        return view('monitoring.solar-dome', compact('dummyData'));
+        return Auth::check() ? view('monitoring.solar-dome', compact('dummyData')) : redirect()->route('login')->with('error', 'Anda perlu login,silahkan login!');
     }
 }

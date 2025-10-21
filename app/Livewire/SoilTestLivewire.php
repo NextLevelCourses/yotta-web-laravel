@@ -88,20 +88,6 @@ class SoilTestLivewire extends Component implements SoiltestInterface
                 $this->fosfor = $data['Fosfor'] ?? '--';
                 $this->kalium = $data['Kalium'] ?? '--';
                 DB::table('soil_tests')->insert($this->handleStoreDataCollection($data)); //store data history every 3 seconds
-
-                // Kirim ke JS
-                // $this->dispatch('sensorDataUpdated', $data);
-                // Kirim event ke JavaScript dengan data yang diperbarui
-                // $this->dispatch('updateKnobs', [
-                //     'device_id' => $this->devices_id,
-                //     'temperature' => $this->temperature,
-                //     'humidity' => $this->humidity,
-                //     'ec' => $this->ec,
-                //     'ph' => $this->ph,
-                //     'nitrogen' => $this->nitrogen,
-                //     'fosfor' => $this->fosfor,
-                //     'kalium' => $this->kalium,
-                // ]);
             } else {
                 $this->devices_id = $this->temperature = $this->humidity = $this->ec = $this->ph =
                     $this->nitrogen = $this->fosfor = $this->kalium = 'Not Found';
