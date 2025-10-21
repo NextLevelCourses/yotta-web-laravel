@@ -25,12 +25,12 @@ on:
       - "config/**"
       - "routes/**"
       - "artisan"
-      
+
       # === Deployment & Assets ===
       - "public/**"
       - "resources/**"
       - "storage/**"
-      
+
       # === Database Schema ===
       - "database/**"
 
@@ -67,7 +67,7 @@ jobs:
       # Step 2: FTP Deployment
       - name: 📤 Deploy Laravel via FTP
         id: ftp-deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6  #base on https://github.com/SamKirkland/FTP-Deploy-Action 
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6 #base on https://github.com/SamKirkland/FTP-Deploy-Action
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
@@ -79,7 +79,7 @@ jobs:
           log-level: standard
           security: loose
           state-name: .ftp-deploy-sync-state.json
-          
+
           # exclude workdir paths
           exclude: |
             # === Git & CI files ===
