@@ -191,6 +191,15 @@
                 select.appendChild(option);
             }
         }
+
+        function exportData() {
+            const select = document.getElementById("export-month-select");
+            const selectedValue = select.value;
+            const exportUrl = "{{ route('lora-test.export', ['date' => 'DATE_SELECT']) }}".replace(
+                'DATE_SELECT', selectedValue);
+            window.location.href = exportUrl
+        }
+
         loadMonths();
     </script>
 @endpush

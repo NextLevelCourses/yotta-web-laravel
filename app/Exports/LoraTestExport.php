@@ -29,7 +29,6 @@ class LoraTestExport implements FromCollection, WithHeadings, WithMapping
     public function map($row): array
     {
         return [
-            $row->device_id ?? 'Unknown Device',
             $row->measured_at ?? '-',
             $row->air_humidity ? $row->air_humidity  : '0',
             $row->air_temperature ? $row->air_temperature : '0',
@@ -46,7 +45,6 @@ class LoraTestExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            'Device ID',
             'Measured At',
             'Air Humidity (%)',
             'Air Temperature (°C)',
