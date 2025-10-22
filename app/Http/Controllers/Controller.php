@@ -69,25 +69,25 @@ class Controller implements LoraInterface
         if (!empty($data)) {
             // //map data latest(data paling terbaru saja) supaya realtime alias datanya sesuai dengan apa yang ada di thingsboard
             $latest = array(
-                'air_humidity' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['air_humidity'] ?? 0,
-                'air_temperature' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['air_temperature'] ?? 0,
-                'nitrogen' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['nitrogen'] ?? 0,
-                'par_value' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['par_value'] ?? 0,
-                'phosphorus' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['phosphorus'] ?? 0,
-                'potassium' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['potassium'] ?? 0,
-                'soil_conductivity' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['soil_conductivity'] ?? 0,
-                'soil_humidity' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['soil_humidity'] ?? 0,
-                'soil_pH' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['soil_pH'] ?? 0,
-                'soil_temperature' => collect($data)->sortByDesc('f_cnt')->first()['decoded_payload']['soil_temperature'] ?? 0,
-                'measured_at' => Carbon::parse(collect($data)->sortByDesc('f_cnt')->first()['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H:i:s') ?? '-',
+                'air_humidity' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['air_humidity'] ?? 0,
+                'air_temperature' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['air_temperature'] ?? 0,
+                'nitrogen' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['nitrogen'] ?? 0,
+                'par_value' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['par_value'] ?? 0,
+                'phosphorus' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['phosphorus'] ?? 0,
+                'potassium' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['potassium'] ?? 0,
+                'soil_conductivity' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['soil_conductivity'] ?? 0,
+                'soil_humidity' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['soil_humidity'] ?? 0,
+                'soil_pH' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['soil_pH'] ?? 0,
+                'soil_temperature' => collect($data)->sortByDesc('received_at')->first()['decoded_payload']['soil_temperature'] ?? 0,
+                'measured_at' => Carbon::parse(collect($data)->sortByDesc('received_at')->first()['received_at'])->timezone(config('app.timezone'))->format('Y-m-d H:i:s') ?? '-',
             );
             //store data latest
             LoRa::create($latest);
         }
 
         //return data
-        Log::info(collect($data)->sortByDesc('f_cnt')->first() ?? []);
-        return collect($data)->sortByDesc('f_cnt')->first() ?? [];
+        Log::info(collect($data)->sortByDesc('received_at')->first() ?? []);
+        return collect($data)->sortByDesc('received_at')->first() ?? [];
     }
 
     public function HandleLoraGetApi(
