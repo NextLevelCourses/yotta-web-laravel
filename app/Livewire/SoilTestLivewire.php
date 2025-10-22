@@ -2,15 +2,15 @@
 
 namespace App\Livewire;
 
+use App\GrafikInterface;
 use Carbon\Carbon;
 use Livewire\Component;
 use App\Models\SoilTest;
-use App\SoiltestInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Contract\Firestore;
 
-class SoilTestLivewire extends Component implements SoiltestInterface
+class SoilTestLivewire extends Component implements GrafikInterface
 {
     public //data sensor
         $devices_id = '--',
@@ -31,7 +31,7 @@ class SoilTestLivewire extends Component implements SoiltestInterface
         $fosfor_chart = [],
         $kalium_chart = [];
 
-    public function HandleGetDataGrafikSoilTest(string $param, string $column, string $sort = 'asc'): array
+    public function HandleGetDataGrafik(string $param, string $column, string $sort = 'asc'): array
     {
         return SoilTest::whereNotNull($param)
             ->orderBy($column, $sort)
@@ -74,7 +74,7 @@ class SoilTestLivewire extends Component implements SoiltestInterface
                 ->snapshot();
 
             //get data label of chart grafik
-            $chart_label = $this->HandleGetDataGrafikSoilTest('measured_at', 'id', 'desc');
+            $chart_label = $this->HandleGetDataGrafik('measured_at', 'id', 'desc');
 
             //validate data sensor exists
             if ($snapshot->exists()) {
@@ -88,20 +88,6 @@ class SoilTestLivewire extends Component implements SoiltestInterface
                 $this->fosfor = $data['Fosfor'] ?? '--';
                 $this->kalium = $data['Kalium'] ?? '--';
                 DB::table('soil_tests')->insert($this->handleStoreDataCollection($data)); //store data history every 3 seconds
-
-                // Kirim ke JS
-                // $this->dispatch('sensorDataUpdated', $data);
-                // Kirim event ke JavaScript dengan data yang diperbarui
-                // $this->dispatch('updateKnobs', [
-                //     'device_id' => $this->devices_id,
-                //     'temperature' => $this->temperature,
-                //     'humidity' => $this->humidity,
-                //     'ec' => $this->ec,
-                //     'ph' => $this->ph,
-                //     'nitrogen' => $this->nitrogen,
-                //     'fosfor' => $this->fosfor,
-                //     'kalium' => $this->kalium,
-                // ]);
             } else {
                 $this->devices_id = $this->temperature = $this->humidity = $this->ec = $this->ph =
                     $this->nitrogen = $this->fosfor = $this->kalium = 'Not Found';
@@ -118,13 +104,13 @@ class SoilTestLivewire extends Component implements SoiltestInterface
                 //mapping data via hook livewire
                 $this->dispatch('chartDataSoilTest', data: [
                     'labels' => $labels,
-                    'temperature' => $this->HandleGetDataGrafikSoilTest('temperature', 'id', 'desc'),
-                    'humidity' => $this->HandleGetDataGrafikSoilTest('humidity', 'id', 'desc'),
-                    'ec' => $this->HandleGetDataGrafikSoilTest('ec', 'id', 'desc'),
-                    'ph' => $this->HandleGetDataGrafikSoilTest('ph', 'id', 'desc'),
-                    'nitrogen' => $this->HandleGetDataGrafikSoilTest('nitrogen', 'id', 'desc'),
-                    'fosfor' => $this->HandleGetDataGrafikSoilTest('fosfor', 'id', 'desc'),
-                    'kalium' => $this->HandleGetDataGrafikSoilTest('kalium', 'id', 'desc')
+                    'temperature' => $this->HandleGetDataGrafik('temperature', 'id', 'desc'),
+                    'humidity' => $this->HandleGetDataGrafik('humidity', 'id', 'desc'),
+                    'ec' => $this->HandleGetDataGrafik('ec', 'id', 'desc'),
+                    'ph' => $this->HandleGetDataGrafik('ph', 'id', 'desc'),
+                    'nitrogen' => $this->HandleGetDataGrafik('nitrogen', 'id', 'desc'),
+                    'fosfor' => $this->HandleGetDataGrafik('fosfor', 'id', 'desc'),
+                    'kalium' => $this->HandleGetDataGrafik('kalium', 'id', 'desc')
                 ]);
             } else {
                 $this->labels_charts = $this->temperature_chart = $this->humidity_chart = $this->ec_chart = $this->ph_chart = $this->nitrogen_chart = $this->fosfor_chart = $this->kalium_chart = [];
