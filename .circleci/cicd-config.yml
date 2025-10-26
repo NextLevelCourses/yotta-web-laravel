@@ -350,24 +350,21 @@ jobs:
               TIMESTAMP=\$(date '+%Y%m%d-%H%M%S')
               LOG_PATH=\$LOG_DIR/deploy-staging-\$TIMESTAMP.log
 
-              # Create base directory if not exists
-              if [ ! -d \"\$BASE_DIR\" ]; then
-                echo '📁 Creating base directory: \$BASE_DIR'
-                mkdir -p \"\$BASE_DIR\"
-              fi
-
-              cd \$BASE_DIR
+              # Ensure base dir and permissions
+              sudo mkdir -p \$BASE_DIR \$LOG_DIR
+              sudo chown -R ubuntu:ubuntu \$BASE_DIR
+              sudo chmod -R 775 \$BASE_DIR
 
               mkdir -p \$LOG_DIR
               touch \$LOG_PATH
 
-              # 🔐 BONUS — Log Rotation (hapus log >14 hari)
+              # 🔐 Log Rotation (hapus log >14 hari)
               find \$LOG_DIR -type f -mtime +14 -exec rm -f {} \; || true
 
               echo '🧾 Logging deployment output to: \$LOG_PATH' | tee -a \$LOG_PATH
 
               # ======================================================
-              # 🧱 PREPARE SERVER DIRECTORIES (for first-time setup)
+              # 🧱 PREPARE SERVER DIRECTORIES
               # ======================================================
               echo '📁 Preparing required directories...' | tee -a \$LOG_PATH
 
@@ -393,8 +390,11 @@ jobs:
                 fi
               done
 
-              touch \$BASE_DIR/html/storage/logs/laravel.log
-              touch \$BASE_DIR/html/storage/logs/queue.log
+              # Fix ownership & permissions for Laravel folders
+              echo '🔒 Fixing Laravel folder permissions...' | tee -a \$LOG_PATH
+              sudo chown -R ubuntu:www-data \$BASE_DIR/html/storage \$BASE_DIR/html/bootstrap/cache
+              sudo chmod -R 775 \$BASE_DIR/html/storage \$BASE_DIR/html/bootstrap/cache
+
               echo '✅ All required directories ready.' | tee -a \$LOG_PATH
 
               # ======================================================
@@ -438,7 +438,10 @@ jobs:
               echo '🧠 Checking for pending migrations...' | tee -a \$LOG_PATH
 
               FS_MIGRATIONS=\$(docker exec \$DASHBOARD_CID ls -1 database/migrations | sort)
-              DB_MIGRATIONS=\$(docker exec \$DASHBOARD_CID php artisan migrate:status --no-interaction | grep 'Yes' | awk '{print \$NF}' | sort)
+              DB_MIGRATIONS=\$(docker exec \$DASHBOARD_CID php artisan migrate:status --no-interaction \
+                | grep '\[.*Ran.*\]' \
+                | awk '{print \$1}' \
+                | sort || true)
 
               DIFFERENCE=\$(comm -23 <(echo \"\$FS_MIGRATIONS\") <(echo \"\$DB_MIGRATIONS\") || true)
 
@@ -446,6 +449,7 @@ jobs:
                 echo '🆕 Found new migrations:' | tee -a \$LOG_PATH
                 echo \"\$DIFFERENCE\" | tee -a \$LOG_PATH
                 echo '➡️ Running php artisan migrate --force ...' | tee -a \$LOG_PATH
+
                 if docker exec \$DASHBOARD_CID php artisan migrate --force | tee -a \$LOG_PATH; then
                   echo '✅ Migrations applied successfully.' | tee -a \$LOG_PATH
                 else
@@ -453,7 +457,7 @@ jobs:
                   docker exec \$DASHBOARD_CID php artisan migrate:rollback --force | tee -a \$LOG_PATH || true
                   docker exec \$DASHBOARD_CID php artisan migrate --force | tee -a \$LOG_PATH || {
                     echo '❌ Migration retry failed. Check logs.' | tee -a \$LOG_PATH
-                    docker exec \$DASHBOARD_CID tail -n 50 storage/logs/laravel.log | tee -a \$LOG_PATH
+                    docker exec \$DASHBOARD_CID tail -n 50 /var/www/storage/logs/laravel.log | tee -a \$LOG_PATH
                     exit 1
                   }
                 fi
@@ -468,7 +472,7 @@ jobs:
               PUBLIC_IP=\$(curl -s https://api.ipify.org || echo '127.0.0.1')
               HOSTNAME=\$(hostname)
 
-              docker exec \$DASHBOARD_CID sh -c \"=
+              docker exec \$DASHBOARD_CID sh -c \"
                 sed -i 's|APP_URL=.*|APP_URL=https://\$PUBLIC_IP|g' /var/www/.env
                 sed -i 's|APP_NAME=.*|APP_NAME=YOTTA-\$(echo \$HOSTNAME | tr '[:lower:]' '[:upper:]')|g' /var/www/.env
                 php artisan config:clear
@@ -481,7 +485,7 @@ jobs:
               # 🩺 HEALTH CHECK
               # ======================================================
               echo '🌐 Performing health check...' | tee -a \$LOG_PATH
-              APP_URL=\$(grep ^APP_URL= .env | cut -d '=' -f2)
+              APP_URL=\$(docker exec \$DASHBOARD_CID sh -c \"grep ^APP_URL= /var/www/.env | cut -d '=' -f2\")
               for i in {1..20}; do
                 STATUS=\$(curl -k -s -o /dev/null -w '%{http_code}' \${APP_URL}/health || echo 000)
                 if [ \"\$STATUS\" = \"200\" ]; then
@@ -494,6 +498,7 @@ jobs:
 
               echo '✅ Deployment to STAGING completed successfully!' | tee -a \$LOG_PATH
             "
+
 
 # ================================================================
 # 🔄 WORKFLOW PIPELINE ORDER
