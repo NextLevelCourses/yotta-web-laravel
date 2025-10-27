@@ -549,10 +549,11 @@ jobs:
               echo '🔍 Adjusting .env automatically for current server...' | tee -a \$LOG_PATH
               PUBLIC_IP=\$(curl -s https://api.ipify.org || echo '127.0.0.1')
               HOSTNAME=\$(hostname)
+              UPPER_HOSTNAME=\$(echo \$HOSTNAME | tr '[:lower:]' '[:upper:]')
 
               docker exec \$DASHBOARD_CID sh -c \"
                 sed -i 's|APP_URL=.*|APP_URL=https://\$PUBLIC_IP|g' /var/www/.env
-                sed -i \"s|APP_NAME=.*|APP_NAME=YOTTA-$(echo \$HOSTNAME | tr '[:lower:]' '[:upper:]')|g\" /var/www/.env
+                sed -i 's|APP_NAME=.*|APP_NAME=YOTTA-\$UPPER_HOSTNAME|g' /var/www/.env
                 php artisan config:clear
                 php artisan config:cache
               \" | tee -a \$LOG_PATH
