@@ -340,246 +340,222 @@ jobs:
       - run:
           name: Deploy to Staging (Auto Smart Deploy + Logging)
           command: |
-            ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
+            ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP 'bash -s' <<'"EOF"'
               set -e
-              
               # ======================================================
               # 📜 LOGGING SETUP
               # ======================================================
               BASE_DIR=/home/ubuntu/dev-yotta
-              LOG_DIR=\$BASE_DIR/LogsCICDStaging
-              TIMESTAMP=\$(date '+%Y%m%d-%H%M%S')
-              LOG_PATH=\$LOG_DIR/deploy-staging-\$TIMESTAMP.log
+              LOG_DIR=$BASE_DIR/LogsCICDStaging
+              TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+              LOG_PATH=$LOG_DIR/deploy-staging-$TIMESTAMP.log
 
               # Ensure base dir and permissions
-              sudo mkdir -p \$BASE_DIR \$LOG_DIR
-              sudo chown -R ubuntu:ubuntu \$BASE_DIR
-              sudo chmod -R 775 \$BASE_DIR
+              sudo mkdir -p $BASE_DIR $LOG_DIR
+              sudo chown -R ubuntu:ubuntu $BASE_DIR
+              sudo chmod -R 775 $BASE_DIR
 
-              mkdir -p \$LOG_DIR
-              touch \$LOG_PATH
+              mkdir -p $LOG_DIR
+              touch $LOG_PATH
 
               # 🔐 Log Rotation (hapus log >14 hari)
-              find \$LOG_DIR -type f -mtime +14 -exec rm -f {} \; || true
+              find $LOG_DIR -type f -mtime +14 -exec rm -f {} \; || true
 
-              echo '🧾 Logging deployment output to: \$LOG_PATH' | tee -a \$LOG_PATH
+              echo "🧾 Logging deployment output to: $LOG_PATH" | tee -a $LOG_PATH
 
               # ======================================================
               # 🧱 PREPARE SERVER DIRECTORIES
               # ======================================================
-              echo '📁 Preparing required directories...' | tee -a \$LOG_PATH
+              echo "📁 Preparing required directories..." | tee -a $LOG_PATH
 
               REQUIRED_DIRS=(
-                \"\$BASE_DIR/html\"
-                \"\$BASE_DIR/html/bootstrap/cache\"
-                \"\$BASE_DIR/html/storage/app\"
-                \"\$BASE_DIR/html/storage/framework/cache/data\"
-                \"\$BASE_DIR/html/storage/framework/cache/laravel-excel\"
-                \"\$BASE_DIR/html/storage/framework/sessions\"
-                \"\$BASE_DIR/html/storage/framework/views\"
-                \"\$BASE_DIR/html/storage/logs\"
-                \"\$BASE_DIR/storage\"
-                \"\$BASE_DIR/LogsCICDStaging\"
+                "$BASE_DIR/html"
+                "$BASE_DIR/html/bootstrap/cache"
+                "$BASE_DIR/html/storage/app"
+                "$BASE_DIR/html/storage/framework/cache/data"
+                "$BASE_DIR/html/storage/framework/cache/laravel-excel"
+                "$BASE_DIR/html/storage/framework/sessions"
+                "$BASE_DIR/html/storage/framework/views"
+                "$BASE_DIR/html/storage/logs"
+                "$BASE_DIR/storage"
+                "$BASE_DIR/LogsCICDStaging"
               )
 
-              for dir in \${REQUIRED_DIRS[@]}; do
-                if [ ! -d \"\$dir\" ]; then
-                  echo \"📂 Creating missing directory: \$dir\" | tee -a \$LOG_PATH
-                  mkdir -p \"\$dir\"
+              for dir in "${REQUIRED_DIRS[@]}"; do
+                if [ ! -d "$dir" ]; then
+                  echo "📂 Creating missing directory: $dir" | tee -a $LOG_PATH
+                  mkdir -p "$dir"
                 else
-                  echo \"✅ Directory exists: \$dir\" | tee -a \$LOG_PATH
+                  echo "✅ Directory exists: $dir" | tee -a $LOG_PATH
                 fi
               done
 
               # Fix ownership & permissions for Laravel folders
-              echo '🔒 Fixing Laravel folder permissions...' | tee -a \$LOG_PATH
-              sudo chown -R ubuntu:www-data \$BASE_DIR/html/storage \$BASE_DIR/html/bootstrap/cache
-              sudo chmod -R 775 \$BASE_DIR/html/storage \$BASE_DIR/html/bootstrap/cache
+              echo "🔒 Fixing Laravel folder permissions..." | tee -a $LOG_PATH
+              sudo chown -R ubuntu:www-data $BASE_DIR/html/storage $BASE_DIR/html/bootstrap/cache
+              sudo chmod -R 775 $BASE_DIR/html/storage $BASE_DIR/html/bootstrap/cache
 
-              echo '✅ All required directories ready.' | tee -a \$LOG_PATH
+              echo "✅ All required directories ready." | tee -a $LOG_PATH
 
-              cd \$BASE_DIR
-              echo '📂 Moving to base directory: \$BASE_DIR'
+              cd $BASE_DIR
+              echo "📂 Moving to base directory: $BASE_DIR"
 
               # ======================================================
               # 🧠 CHECK RUNNING CONTAINERS
               # ======================================================
-              echo '🔍 Checking existing Docker services...' | tee -a \$LOG_PATH
-              RUNNING_SERVICES=\$(docker compose ps --services --status running 2>/dev/null || true)
+              echo "🔍 Checking existing Docker services..." | tee -a $LOG_PATH
+              RUNNING_SERVICES=$(docker compose ps --services --status running 2>/dev/null || true)
 
-              if [ -n \"\$RUNNING_SERVICES\" ]; then
-                echo '🔄 Existing docker environment detected — proceeding with rolling update.' | tee -a \$LOG_PATH 
+              if [ -n "$RUNNING_SERVICES" ]; then
+                echo "🔄 Existing docker environment detected — proceeding with rolling update." | tee -a $LOG_PATH 
 
-                if echo \"\$RUNNING_SERVICES\" | grep -q 'dashboard'; then
-                  echo '🔄 Updating dashboard container...' | tee -a \$LOG_PATH
+                if echo "$RUNNING_SERVICES" | grep -q 'dashboard'; then
+                  echo "🔄 Updating dashboard container..." | tee -a $LOG_PATH
 
-                  # ✅ FIX: pull latest image
-                  echo "ℹ️ Using Docker image: $DOCKERHUB_REPO:latest" | tee -a \$LOG_PATH
-                  docker pull $DOCKERHUB_REPO:latest | tee -a \$LOG_PATH
-                  docker compose stop dashboard | tee -a \$LOG_PATH
-                  docker compose rm -f dashboard | tee -a \$LOG_PATH
-          
-                  # ✅ FIX: restart dashboard properly after pull
-                  echo '🚀 Starting dashboard container with new image...' | tee -a \$LOG_PATH
-                  docker compose up -d dashboard --remove-orphans | tee -a \$LOG_PATH
+                  echo "ℹ️ Using Docker image: $DOCKERHUB_REPO:latest" | tee -a $LOG_PATH
+                  docker pull $DOCKERHUB_REPO:latest | tee -a $LOG_PATH
+                  docker compose stop dashboard | tee -a $LOG_PATH
+                  docker compose rm -f dashboard | tee -a $LOG_PATH
 
-                  # Wait a bit for container to initialize
-                  echo '⏳ Waiting for dashboard to initialize...' | tee -a \$LOG_PATH
-                  for i in {1..15}; do
-                    DASHBOARD_CID=\$(docker compose ps -q dashboard)
-                    if [ -n "\$DASHBOARD_CID" ]; then
-                      STATUS=\$(docker inspect -f '{{.State.Status}}' \$DASHBOARD_CID 2>/dev/null || echo "none")
+                  echo "🚀 Starting dashboard container with new image..." | tee -a $LOG_PATH
+                  docker compose up -d dashboard --remove-orphans | tee -a $LOG_PATH
 
-                      if [ "\$STATUS" = "running" ]; then
-                        echo "✅ Dashboard container is running (CID: \$DASHBOARD_CID)" | tee -a \$LOG_PATH
+                  echo "⏳ Waiting for dashboard to initialize..." | tee -a $LOG_PATH
+                  for i in $(seq 1 15); do
+                    DASHBOARD_CID=$(docker compose ps -q dashboard)
+                    if [ -n "$DASHBOARD_CID" ]; then
+                      STATUS=$(docker inspect -f '{{.State.Status}}' $DASHBOARD_CID 2>/dev/null || echo "none")
+                      if [ "$STATUS" = "running" ]; then
+                        echo "✅ Dashboard container is running (CID: $DASHBOARD_CID)" | tee -a $LOG_PATH
                         break
                       fi
-
-                      echo "⏳ Dashboard status: \$STATUS (attempt \$i)" | tee -a \$LOG_PATH
+                      echo "⏳ Dashboard status: $STATUS (attempt $i)" | tee -a $LOG_PATH
                     else
-                      echo "⏳ Dashboard container not detected yet (attempt \$i)" | tee -a \$LOG_PATH
+                      echo "⏳ Dashboard container not detected yet (attempt $i)" | tee -a $LOG_PATH
                     fi
                     sleep 4
                   done
 
-                  if [ "\$STATUS" != "running" ]; then
-                    echo "❌ Dashboard failed to start after multiple checks." | tee -a \$LOG_PATH
-                    docker compose logs dashboard | tail -n 50 | tee -a \$LOG_PATH
+                  if [ "$STATUS" != "running" ]; then
+                    echo "❌ Dashboard failed to start after multiple checks." | tee -a $LOG_PATH
+                    docker compose logs dashboard | tail -n 50 | tee -a $LOG_PATH
                     exit 1
-                  fi
-
-                  # ✅ FIX: verify container started
-                  DASHBOARD_CID=\$(docker compose ps -q dashboard)
-                  if [ -z "$DASHBOARD_CID" ]; then
-                    echo "❌ Dashboard failed to start properly — aborting!" | tee -a \$LOG_PATH
-                    docker compose logs dashboard | tail -n 20 | tee -a \$LOG_PATH
-                    exit 1
-                  else
-                    echo "✅ Dashboard container restarted successfully." | tee -a \$LOG_PATH
                   fi
                 fi
 
               else
-                echo '🆕 Fresh environment detected — running full setup...' | tee -a \$LOG_PATH
+                echo "🆕 Fresh environment detected — running full setup..." | tee -a $LOG_PATH
 
-                # ======================================================
-                # 🧩 PREPARE BASE STRUCTURE (Makefile & Docker Compose)
-                # ======================================================
-                echo '📄 Copying Makefile and docker-compose.yml from repo...' | tee -a \$LOG_PATH
-                mkdir -p \$BASE_DIR
-                cp makefile \$BASE_DIR/makefile
-                cp docker-compose.yml \$BASE_DIR/docker-compose.yml
+                echo "📄 Copying Makefile and docker-compose.yml from repo..." | tee -a $LOG_PATH
+                mkdir -p $BASE_DIR
+                cp makefile $BASE_DIR/makefile
+                cp docker-compose.yml $BASE_DIR/docker-compose.yml
 
-                echo '✅ Base infrastructure files copied.' | tee -a \$LOG_PATH
+                echo "✅ Base infrastructure files copied." | tee -a $LOG_PATH
 
-                # ======================================================
-                # 🗄️ START MYSQL FIRST
-                # ======================================================
-                echo '🐬 Starting MySQL service...' | tee -a \$LOG_PATH
+                echo "🐬 Starting MySQL service..." | tee -a $LOG_PATH
                 docker compose down --remove-orphans || true
-                docker compose up -d mysql | tee -a \$LOG_PATH
+                docker compose up -d mysql | tee -a $LOG_PATH
 
-                echo '⏳ Waiting for MySQL to initialize...' | tee -a \$LOG_PATH
-                for i in {1..20}; do
-                  if docker exec \$(docker compose ps -q mysql) mysqladmin ping -h localhost --silent; then
-                    echo '✅ MySQL is ready.' | tee -a \$LOG_PATH
+                echo "⏳ Waiting for MySQL to initialize..." | tee -a $LOG_PATH
+                for i in $(seq 1 20); do
+                  if docker exec $(docker compose ps -q mysql) mysqladmin ping -h localhost --silent; then
+                    echo "✅ MySQL is ready." | tee -a $LOG_PATH
                     break
                   fi
-                  echo '⏳ Waiting MySQL...' | tee -a \$LOG_PATH
+                  echo "⏳ Waiting MySQL..." | tee -a $LOG_PATH
                   sleep 5
                 done
 
-                # ======================================================
-                # 🧱 THEN START DASHBOARD SERVICE
-                # ======================================================
-                echo '🚀 Starting dashboard service after MySQL is ready...' | tee -a \$LOG_PATH
-                docker compose up -d dashboard --remove-orphans | tee -a \$LOG_PATH
+                echo "🚀 Starting dashboard service after MySQL is ready..." | tee -a $LOG_PATH
+                docker compose up -d dashboard --remove-orphans | tee -a $LOG_PATH
               fi
 
               # ======================================================
               # ⚙️ POST-DEPLOY LARAVEL SETUP
               # ======================================================
-              DASHBOARD_CID=\$(docker compose ps -q dashboard)
-              echo '📦 Copying .env into container...' | tee -a \$LOG_PATH
-              docker cp ./.env \$DASHBOARD_CID:/var/www/.env || true
+              DASHBOARD_CID=$(docker compose ps -q dashboard)
+              echo "📦 Copying .env into container..." | tee -a $LOG_PATH
+              docker cp ./.env $DASHBOARD_CID:/var/www/.env || true
+              [ -f ./.env.example ] && docker cp ./.env.example $DASHBOARD_CID:/var/www/.env.example || true
 
-              if [ -f ./.env.example ]; then docker cp ./.env.example \$DASHBOARD_CID:/var/www/.env.example || true; fi
+              echo "🔧 Running php artisan package:discover..." | tee -a $LOG_PATH
+              docker exec $DASHBOARD_CID php artisan package:discover | tee -a $LOG_PATH
 
-              echo '🔧 Running php artisan package:discover...' | tee -a \$LOG_PATH
-              docker exec \$DASHBOARD_CID php artisan package:discover | tee -a \$LOG_PATH
-
-              echo '⚙️ Optimizing Laravel configuration...' | tee -a \$LOG_PATH
-              make dy-laravel-optimize-all | tee -a \$LOG_PATH
+              echo "⚙️ Optimizing Laravel configuration..." | tee -a $LOG_PATH
+              make dy-laravel-optimize-all | tee -a $LOG_PATH
 
               # ======================================================
               # 🧠 SMART MIGRATION CHECK
               # ======================================================
-              echo '🧠 Checking for pending migrations...' | tee -a \$LOG_PATH
+              echo "🧠 Checking for pending migrations..." | tee -a $LOG_PATH
 
-              FS_MIGRATIONS=\$(docker exec \$DASHBOARD_CID ls -1 database/migrations | sort)
-              DB_MIGRATIONS=\$(docker exec \$DASHBOARD_CID php artisan migrate:status --no-interaction \
+              FS_MIGRATIONS=$(docker exec $DASHBOARD_CID ls -1 database/migrations | sort)
+              DB_MIGRATIONS=$(docker exec $DASHBOARD_CID php artisan migrate:status --no-interaction \
                 | awk '/Yes/ {print $NF}' \
                 | sort || true)
 
-              DIFFERENCE=\$(comm -23 <(echo \"\$FS_MIGRATIONS\") <(echo \"\$DB_MIGRATIONS\") || true)
+              DIFFERENCE=$(comm -23 <(echo "$FS_MIGRATIONS") <(echo "$DB_MIGRATIONS") || true)
 
-              if [ -n \"\$DIFFERENCE\" ]; then
-                echo '🆕 Found new migrations:' | tee -a \$LOG_PATH
-                echo \"\$DIFFERENCE\" | tee -a \$LOG_PATH
-                echo '➡️ Running php artisan migrate --force ...' | tee -a \$LOG_PATH
+              if [ -n "$DIFFERENCE" ]; then
+                echo "🆕 Found new migrations:" | tee -a $LOG_PATH
+                echo "$DIFFERENCE" | tee -a $LOG_PATH
+                echo "➡️ Running php artisan migrate --force ..." | tee -a $LOG_PATH
 
-                if docker exec \$DASHBOARD_CID php artisan migrate --force | tee -a \$LOG_PATH; then
-                  echo '✅ Migrations applied successfully.' | tee -a \$LOG_PATH
+                if docker exec $DASHBOARD_CID php artisan migrate --force | tee -a $LOG_PATH; then
+                  echo "✅ Migrations applied successfully." | tee -a $LOG_PATH
                 else
-                  echo '⚠️ Migration failed! Rolling back and retrying...' | tee -a \$LOG_PATH
-                  docker exec \$DASHBOARD_CID php artisan migrate:rollback --force | tee -a \$LOG_PATH || true
-                  docker exec \$DASHBOARD_CID php artisan migrate --force | tee -a \$LOG_PATH || {
-                    echo '❌ Migration retry failed. Check logs.' | tee -a \$LOG_PATH
-                    docker exec \$DASHBOARD_CID tail -n 50 /var/www/storage/logs/laravel.log | tee -a \$LOG_PATH
+                  echo "⚠️ Migration failed! Rolling back and retrying..." | tee -a $LOG_PATH
+                  docker exec $DASHBOARD_CID php artisan migrate:rollback --force | tee -a $LOG_PATH || true
+                  docker exec $DASHBOARD_CID php artisan migrate --force | tee -a $LOG_PATH || {
+                    echo "❌ Migration retry failed. Check logs." | tee -a $LOG_PATH
+                    docker exec $DASHBOARD_CID tail -n 50 /var/www/storage/logs/laravel.log | tee -a $LOG_PATH
                     exit 1
                   }
                 fi
               else
-                echo '✅ No new migrations found. Skipping migrate.' | tee -a \$LOG_PATH
+                echo "✅ No new migrations found. Skipping migrate." | tee -a $LOG_PATH
               fi
 
               # ======================================================
               # 🌐 AUTO SERVER CONTEXT CONFIG
               # ======================================================
-              echo '🔍 Adjusting .env automatically for current server...' | tee -a \$LOG_PATH
-              PUBLIC_IP=\$(curl -s https://api.ipify.org || echo '127.0.0.1')
-              HOSTNAME=\$(hostname)
-              UPPER_HOSTNAME=\$(echo \$HOSTNAME | tr '[:lower:]' '[:upper:]')
+              echo "🔍 Adjusting .env automatically for current server..." | tee -a $LOG_PATH
+              PUBLIC_IP=$(curl -s https://api.ipify.org || echo "127.0.0.1")
+              HOSTNAME=$(hostname)
+              UPPER_HOSTNAME=$(echo $HOSTNAME | tr "[:lower:]" "[:upper:]")
 
-              docker exec \$DASHBOARD_CID sh -c \"
-                sed -i 's|APP_URL=.*|APP_URL=https://\$PUBLIC_IP|g' /var/www/.env
-                sed -i 's|APP_NAME=.*|APP_NAME=YOTTA-\$UPPER_HOSTNAME|g' /var/www/.env
+              docker exec $DASHBOARD_CID sh -c "
+                sed -i 's|APP_URL=.*|APP_URL=https://$PUBLIC_IP|g' /var/www/.env
+                sed -i 's|APP_NAME=.*|APP_NAME=YOTTA-$UPPER_HOSTNAME|g' /var/www/.env
                 php artisan config:clear
                 php artisan config:cache
-              \" | tee -a \$LOG_PATH
+              " | tee -a $LOG_PATH
 
-              echo '✅ Server environment adjusted automatically.' | tee -a \$LOG_PATH
+              echo "✅ Server environment adjusted automatically." | tee -a $LOG_PATH
 
               # ======================================================
               # 🩺 HEALTH CHECK
               # ======================================================
-              echo '🌐 Performing health check...' | tee -a \$LOG_PATH
-              APP_URL=\$(docker exec \$DASHBOARD_CID sh -c \"grep ^APP_URL= /var/www/.env | cut -d '=' -f2\")
-              for i in {1..20}; do
-                STATUS=\$(curl -k -s -o /dev/null -w '%{http_code}' \${APP_URL}/health || echo 000)
-                if [ \"\$STATUS\" = \"200\" ]; then
-                  echo \"✅ Health check OK (\$APP_URL, HTTP 200)\" | tee -a \$LOG_PATH
+              echo "🌐 Performing health check..." | tee -a $LOG_PATH
+              APP_URL=$(docker exec $DASHBOARD_CID sh -c "grep ^APP_URL= /var/www/.env | cut -d '=' -f2")
+              for i in $(seq 1 20); do
+                STATUS=$(curl -k -s -o /dev/null -w '%{http_code}' ${APP_URL}/health || echo "000")
+                if [ "$STATUS" = "200" ]; then
+                  echo "✅ Health check OK ($APP_URL, HTTP 200)" | tee -a $LOG_PATH
                   break
                 fi
-                echo \"Waiting for Laravel... (status: \$STATUS)\" | tee -a \$LOG_PATH
+                echo "Waiting for Laravel... (status: $STATUS)" | tee -a $LOG_PATH
                 sleep 5
               done
 
-              echo '🪵 Last 20 lines of deployment log:'
-              tail -n 20 \$LOG_PATH
+              echo "🪵 Last 20 lines of deployment log:"
+              tail -n 20 $LOG_PATH
 
-              echo '✅ Deployment to STAGING completed successfully!' | tee -a \$LOG_PATH
-            "
+              echo "✅ Deployment to STAGING completed successfully!" | tee -a $LOG_PATH
+
+              EOF
+
 
 
 # ================================================================
