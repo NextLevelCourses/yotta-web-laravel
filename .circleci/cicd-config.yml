@@ -415,6 +415,20 @@ jobs:
                   docker pull \$DOCKERHUB_REPO:latest | tee -a \$LOG_PATH
                   docker compose stop dashboard | tee -a \$LOG_PATH
                   docker compose rm -f dashboard | tee -a \$LOG_PATH
+                  
+                  # ✅ FIX: restart dashboard properly after pull
+                  echo '🚀 Starting dashboard container with new image...' | tee -a $LOG_PATH
+                  docker compose up -d dashboard --remove-orphans | tee -a $LOG_PATH
+
+                  # ✅ FIX: verify container started
+                  DASHBOARD_CID=$(docker compose ps -q dashboard)
+                  if [ -z "$DASHBOARD_CID" ]; then
+                    echo "❌ Dashboard failed to start properly — aborting!" | tee -a $LOG_PATH
+                    docker compose logs dashboard | tail -n 20 | tee -a $LOG_PATH
+                    exit 1
+                  else
+                    echo "✅ Dashboard container restarted successfully." | tee -a $LOG_PATH
+                  fi
                 fi
 
               else
