@@ -415,6 +415,7 @@ jobs:
                   docker pull \$DOCKERHUB_REPO:latest | tee -a \$LOG_PATH
                   docker compose stop dashboard | tee -a \$LOG_PATH
                   docker compose rm -f dashboard | tee -a \$LOG_PATH
+                  
                   # ✅ FIX: restart dashboard properly after pull
                   echo '🚀 Starting dashboard container with new image...' | tee -a $LOG_PATH
                   docker compose up -d dashboard --remove-orphans | tee -a $LOG_PATH
