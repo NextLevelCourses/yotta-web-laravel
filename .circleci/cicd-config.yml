@@ -477,9 +477,9 @@ jobs:
               # ======================================================
               DASHBOARD_CID=\$(docker compose ps -q dashboard)
               echo '📦 Copying .env into container...' | tee -a \$LOG_PATH
-              docker cp ./.env \$DASHBOARD_CID:/var/www/.env || true
+              docker cp .env \$DASHBOARD_CID:/var/www/.env || true
 
-              if [ -f ./.env.example ]; then docker cp ./.env.example \$DASHBOARD_CID:/var/www/.env.example || true; fi
+              if [ -f .env.example ]; then docker cp .env.example \$DASHBOARD_CID:/var/www/.env.example || true; fi
 
               echo '🔧 Running php artisan package:discover...' | tee -a \$LOG_PATH
               docker exec \$DASHBOARD_CID php artisan package:discover | tee -a \$LOG_PATH
