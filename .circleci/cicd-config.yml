@@ -423,8 +423,33 @@ jobs:
                   echo '🚀 Starting dashboard container with new image...' | tee -a \$LOG_PATH
                   docker compose up -d dashboard --remove-orphans | tee -a \$LOG_PATH
 
+                  # Wait a bit for container to initialize
+                  echo '⏳ Waiting for dashboard to initialize...' | tee -a \$LOG_PATH
+                  for i in {1..15}; do
+                    DASHBOARD_CID=\$(docker compose ps -q dashboard)
+                    if [ -n "\$DASHBOARD_CID" ]; then
+                      STATUS=\$(docker inspect -f '{{.State.Status}}' \$DASHBOARD_CID 2>/dev/null || echo "none")
+
+                      if [ "\$STATUS" = "running" ]; then
+                        echo "✅ Dashboard container is running (CID: \$DASHBOARD_CID)" | tee -a \$LOG_PATH
+                        break
+                      fi
+
+                      echo "⏳ Dashboard status: \$STATUS (attempt \$i)" | tee -a \$LOG_PATH
+                    else
+                      echo "⏳ Dashboard container not detected yet (attempt \$i)" | tee -a \$LOG_PATH
+                    fi
+                    sleep 4
+                  done
+
+                  if [ "\$STATUS" != "running" ]; then
+                    echo "❌ Dashboard failed to start after multiple checks." | tee -a \$LOG_PATH
+                    docker compose logs dashboard | tail -n 50 | tee -a \$LOG_PATH
+                    exit 1
+                  fi
+
                   # ✅ FIX: verify container started
-                  DASHBOARD_CID=$(docker compose ps -q dashboard)
+                  DASHBOARD_CID=\$(docker compose ps -q dashboard)
                   if [ -z "$DASHBOARD_CID" ]; then
                     echo "❌ Dashboard failed to start properly — aborting!" | tee -a \$LOG_PATH
                     docker compose logs dashboard | tail -n 20 | tee -a \$LOG_PATH
@@ -492,7 +517,7 @@ jobs:
               echo '🧠 Checking for pending migrations...' | tee -a \$LOG_PATH
 
               FS_MIGRATIONS=\$(docker exec \$DASHBOARD_CID ls -1 database/migrations | sort)
-              DB_MIGRATIONS=$(docker exec $DASHBOARD_CID php artisan migrate:status --no-interaction \
+              DB_MIGRATIONS=\$(docker exec \$DASHBOARD_CID php artisan migrate:status --no-interaction \
                 | awk '/Yes/ {print $NF}' \
                 | sort || true)
 
