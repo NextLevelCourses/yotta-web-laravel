@@ -423,23 +423,12 @@ jobs:
                   echo '🚀 Starting dashboard container with new image...' | tee -a \$LOG_PATH
                   docker compose up -d dashboard --remove-orphans | tee -a \$LOG_PATH
 
-                  # ✅ FIX: verify container started
-                  DASHBOARD_CID=''
-                  for i in {1..20}; do
-                    DASHBOARD_CID=$(docker compose ps -q dashboard)
-                    STATUS=$(docker inspect -f '{{.State.Status}}' "$DASHBOARD_CID" 2>/dev/null || echo "notfound")
-
-                    if [ "$STATUS" = "running" ]; then
-                      echo "✅ Dashboard container is running (CID: $DASHBOARD_CID)" | tee -a $LOG_PATH
-                      break
-                    else
-                      echo "⌛ Waiting for dashboard container... (status: $STATUS, attempt $i)" | tee -a $LOG_PATH
-                      sleep 5
-                    fi
-                  done
+                  # ✅ FIX: 
+                  sleep 20
+                  DASHBOARD_CID=$(docker compose ps -q dashboard)
                   if [ -z "$DASHBOARD_CID" ]; then
                     echo "❌ Dashboard failed to start properly — aborting!" | tee -a \$LOG_PATH
-                    docker compose logs dashboard | tail -n 50 | tee -a \$LOG_PATH
+                    docker compose logs dashboard | tail -n 20 | tee -a \$LOG_PATH
                     exit 1
                   else
                     echo "✅ Dashboard container restarted successfully." | tee -a \$LOG_PATH
@@ -537,12 +526,12 @@ jobs:
               PUBLIC_IP=\$(curl -s https://api.ipify.org || echo '127.0.0.1')
               HOSTNAME=\$(hostname)
 
-              docker exec \$DASHBOARD_CID sh -c \"
-                sed -i 's|APP_URL=.*|APP_URL=https://\$PUBLIC_IP|g' /var/www/.env
-                sed -i \"s|APP_NAME=.*|APP_NAME=YOTTA-$(echo \$HOSTNAME | tr '[:lower:]' '[:upper:]')|g\" /var/www/.env
-                php artisan config:clear
-                php artisan config:cache
-              \" | tee -a \$LOG_PATH
+              docker exec \$DASHBOARD_CID sh -c '
+                  sed -i "s|APP_URL=.*|APP_URL=https://\$PUBLIC_IP|g" /var/www/.env
+                  sed -i "s|APP_NAME=.*|APP_NAME=YOTTA-'"$(echo $HOSTNAME | tr '[:lower:]' '[:upper:]')"'"|g" /var/www/.env
+                  php artisan config:clear
+                  php artisan config:cache
+              ' | tee -a \$LOG_PATH
 
               echo '✅ Server environment adjusted automatically.' | tee -a \$LOG_PATH
 
