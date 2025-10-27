@@ -1,3 +1,4 @@
+---
 # ================================================================
 # 📁 File: .circleci/cicd-config.yml
 # 📘 CircleCI Configuration — Laravel + Docker + Smart Deploy
@@ -397,34 +398,70 @@ jobs:
 
               echo '✅ All required directories ready.' | tee -a \$LOG_PATH
 
+              cd \$BASE_DIR
+              echo '📂 Moving to base directory: \$BASE_DIR'
+
               # ======================================================
               # 🧠 CHECK RUNNING CONTAINERS
               # ======================================================
               echo '🔍 Checking existing Docker services...' | tee -a \$LOG_PATH
-              RUNNING_SERVICES=\$(docker compose ps --services --status running || true)
+              RUNNING_SERVICES=\$(docker compose ps --services --status running 2>/dev/null || true)
 
-              if echo \"\$RUNNING_SERVICES\" | grep -q 'dashboard'; then
-                echo '🔄 Existing dashboard container found — updating image...' | tee -a \$LOG_PATH
-                docker pull \$DOCKERHUB_REPO:latest | tee -a \$LOG_PATH
-                docker compose stop dashboard | tee -a \$LOG_PATH
-                docker compose rm -f dashboard | tee -a \$LOG_PATH
+              if [ -n \"\$RUNNING_SERVICES\" ]; then
+                echo '🔄 Existing docker environment detected — proceeding with rolling update.' | tee -a \$LOG_PATH 
+
+                if echo \"\$RUNNING_SERVICES\" | grep -q 'dashboard'; then
+                  echo '🔄 Updating dashboard container...' | tee -a \$LOG_PATH
+                  docker pull \$DOCKERHUB_REPO:latest | tee -a \$LOG_PATH
+                  docker compose stop dashboard | tee -a \$LOG_PATH
+                  docker compose rm -f dashboard | tee -a \$LOG_PATH
+                fi
+
               else
-                echo '🆕 No existing dashboard container — running fresh setup...' | tee -a \$LOG_PATH
-                docker pull \$DOCKERHUB_REPO:latest | tee -a \$LOG_PATH
+                echo '🆕 Fresh environment detected — running full setup...' | tee -a \$LOG_PATH
+
+                # ======================================================
+                # 🧩 PREPARE BASE STRUCTURE (Makefile & Docker Compose)
+                # ======================================================
+                echo '📄 Copying Makefile and docker-compose.yml from repo...' | tee -a \$LOG_PATH
+                mkdir -p \$BASE_DIR
+                cp makefile \$BASE_DIR/makefile
+                cp docker-compose.yml \$BASE_DIR/docker-compose.yml
+
+                echo '✅ Base infrastructure files copied.' | tee -a \$LOG_PATH
+
+                # ======================================================
+                # 🗄️ START MYSQL FIRST
+                # ======================================================
+                echo '🐬 Starting MySQL service...' | tee -a \$LOG_PATH
+                docker compose down --remove-orphans || true
+                docker compose up -d mysql | tee -a \$LOG_PATH
+
+                echo '⏳ Waiting for MySQL to initialize...' | tee -a \$LOG_PATH
+                for i in {1..20}; do
+                  if docker exec \$(docker compose ps -q mysql) mysqladmin ping -h localhost --silent; then
+                    echo '✅ MySQL is ready.' | tee -a \$LOG_PATH
+                    break
+                  fi
+                  echo '⏳ Waiting MySQL...' | tee -a \$LOG_PATH
+                  sleep 5
+                done
+
+                # ======================================================
+                # 🧱 THEN START DASHBOARD SERVICE
+                # ======================================================
+                echo '🚀 Starting dashboard service after MySQL is ready...' | tee -a \$LOG_PATH
+                docker compose up -d dashboard --remove-orphans | tee -a \$LOG_PATH
               fi
 
               # ======================================================
-              # 🚀 START NEW CONTAINER
+              # ⚙️ POST-DEPLOY LARAVEL SETUP
               # ======================================================
-              echo '🚀 Starting dashboard container...' | tee -a \$LOG_PATH
-              docker compose up -d dashboard --remove-orphans | tee -a \$LOG_PATH
               DASHBOARD_CID=\$(docker compose ps -q dashboard)
-
-              # ======================================================
-              # ⚙️ INITIAL LARAVEL SETUP
-              # ======================================================
               echo '📦 Copying .env into container...' | tee -a \$LOG_PATH
               docker cp ./.env \$DASHBOARD_CID:/var/www/.env || true
+
+              if [ -f ./.env.example ]; then docker cp ./.env.example \$DASHBOARD_CID:/var/www/.env.example || true; fi
 
               echo '🔧 Running php artisan package:discover...' | tee -a \$LOG_PATH
               docker exec \$DASHBOARD_CID php artisan package:discover | tee -a \$LOG_PATH
@@ -438,9 +475,8 @@ jobs:
               echo '🧠 Checking for pending migrations...' | tee -a \$LOG_PATH
 
               FS_MIGRATIONS=\$(docker exec \$DASHBOARD_CID ls -1 database/migrations | sort)
-              DB_MIGRATIONS=\$(docker exec \$DASHBOARD_CID php artisan migrate:status --no-interaction \
-                | grep '\[.*Ran.*\]' \
-                | awk '{print \$1}' \
+              DB_MIGRATIONS=$(docker exec $DASHBOARD_CID php artisan migrate:status --no-interaction \
+                | awk '/Yes/ {print $NF}' \
                 | sort || true)
 
               DIFFERENCE=\$(comm -23 <(echo \"\$FS_MIGRATIONS\") <(echo \"\$DB_MIGRATIONS\") || true)
@@ -474,7 +510,7 @@ jobs:
 
               docker exec \$DASHBOARD_CID sh -c \"
                 sed -i 's|APP_URL=.*|APP_URL=https://\$PUBLIC_IP|g' /var/www/.env
-                sed -i 's|APP_NAME=.*|APP_NAME=YOTTA-\$(echo \$HOSTNAME | tr '[:lower:]' '[:upper:]')|g' /var/www/.env
+                sed -i \"s|APP_NAME=.*|APP_NAME=YOTTA-$(echo \$HOSTNAME | tr '[:lower:]' '[:upper:]')|g\" /var/www/.env
                 php artisan config:clear
                 php artisan config:cache
               \" | tee -a \$LOG_PATH
@@ -495,6 +531,9 @@ jobs:
                 echo \"Waiting for Laravel... (status: \$STATUS)\" | tee -a \$LOG_PATH
                 sleep 5
               done
+
+              echo '🪵 Last 20 lines of deployment log:'
+              tail -n 20 \$LOG_PATH
 
               echo '✅ Deployment to STAGING completed successfully!' | tee -a \$LOG_PATH
             "
