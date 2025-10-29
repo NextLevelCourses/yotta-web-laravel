@@ -323,9 +323,9 @@ jobs:
             docker push ${DOCKERHUB_REPO}:latest
             echo "✅ Image pushed to DockerHub successfully."
 
-  # ---------------------------------------------------------------
-  # 🚀 JOB: DEPLOY TO STAGING (SMART DEPLOY + LOGGING)
-  # ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# 🚀 JOB: DEPLOY TO STAGING (SMART DEPLOY + LOGGING)
+# ---------------------------------------------------------------
   Deploy-Staging:
     docker:
       - image: cimg/base:stable
@@ -353,7 +353,7 @@ jobs:
             echo "🧾 Logging deployment output to: $LOG_PATH" | tee -a $LOG_PATH
 
             # -----------------------------
-            # A. ALWAYS: Prepare required directories on server
+            # ALWAYS: Prepare required directories on server
             # -----------------------------
             ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
               set -e
@@ -392,7 +392,7 @@ jobs:
             "
 
             # -----------------------------
-            # B. CHECK RUNNING CONTAINERS
+            # CHECK RUNNING CONTAINERS
             # -----------------------------
             RUNNING_SERVICES=$(ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP \
               "cd $BASE_DIR && docker compose ps --services --status running 2>/dev/null || true")
@@ -427,19 +427,18 @@ jobs:
                 echo '⏳ Waiting MySQL to initialize...' 
                 sleep 20
                 docker compose up -d dashboard
-                sleep 20
               "
             fi
 
             # -----------------------------
-            # C. POST-DEPLOY: Laravel Setup & Migration
+            # POST-DEPLOY: Laravel Setup & Migration
             # -----------------------------
             ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
               set -e
               cd $BASE_DIR
               DASHBOARD_CID=\$(docker compose ps -q dashboard)
 
-              # c.1 Copy .env
+              # Copy .env
               if [ -f \"$BASE_DIR/.env\" ]; then
                 docker cp $BASE_DIR/.env \$DASHBOARD_CID:/var/www/.env
               else
@@ -447,11 +446,11 @@ jobs:
                 exit 1
               fi
 
-              # c.2 Laravel optimize
+              # Laravel optimize
               docker exec \$DASHBOARD_CID php artisan package:discover | tee -a \$LOG_PATH
               make dy-laravel-optimize-all | tee -a \$LOG_PATH
 
-              # c.3 Smart migration
+              # Smart migration
               FS_MIGRATIONS=\$(docker exec \$DASHBOARD_CID ls -1 database/migrations | sort)
               DB_MIGRATIONS=\$(docker exec \$DASHBOARD_CID php artisan migrate:status --no-interaction \
                 | awk '/Yes/ {print \$NF}' | sort || true)
@@ -465,7 +464,7 @@ jobs:
                 }
               fi
 
-              # c.4 Auto .env adjustments
+              # Auto .env adjustments
               PUBLIC_IP=\$(curl -s https://api.ipify.org || echo '127.0.0.1')
               HOSTNAME=\$(hostname)
               docker exec \$DASHBOARD_CID sh -c \"
@@ -475,17 +474,16 @@ jobs:
                 php artisan config:cache
               \"
 
-              # c.5 Health check
+              # Health check
               APP_URL=\$(docker exec \$DASHBOARD_CID sh -c \"grep ^APP_URL= /var/www/.env | cut -d '=' -f2\")
               for i in {1..20}; do
                 STATUS=\$(curl -k -s -o /dev/null -w '%{http_code}' \$APP_URL/health || echo 000)
                 if [ \"\$STATUS\" = \"200\" ]; then break; fi
-                sleep 3
+                sleep 5
               done
 
               echo '✅ Deployment completed!' | tee -a \$LOG_PATH
             "
-
 
 # ================================================================
 # 🔄 WORKFLOW PIPELINE ORDER
