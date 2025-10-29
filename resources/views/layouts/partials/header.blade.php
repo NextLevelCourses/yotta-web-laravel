@@ -8,7 +8,7 @@
                         <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24">
                     </span>
                     <span class="logo-lg">
-                        <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24"> <span class="logo-txt">Yotta</span>
+                        <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24"> <span class="logo-txt">Yotta Aksara</span>
                     </span>
                 </a>
                 <a href="{{ route('dashboard') }}" class="logo logo-light">
