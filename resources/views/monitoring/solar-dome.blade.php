@@ -3,42 +3,43 @@
 @section('content')
 <div class="container-fluid py-4">
 
+    {{-- Header Section --}}
     <div class="d-flex align-items-center justify-content-between mb-4">
-        <h5 class="m-0 text-muted">Monitoring / 
+        <h5 class="m-0 text-muted">
+            Monitoring /
             <span class="fw-bold text-success">Solar Dome</span>
         </h5>
+
         <div class="d-flex align-items-center gap-2">
-    @if (Auth::user()->isAdmin())
-        <select class="form-select form-select-sm" name="export-month-select" id="export-month-select"
-            aria-label="Pilih Bulan untuk Ekspor">
-            <option value="" selected disabled>Pilih Bulan</option>
-            @foreach (range(1, 12) as $month)
-                <option value="{{ $month }}">
-                    {{ \Carbon\Carbon::create()->month($month)->translatedFormat('F') }}
-                </option>
-            @endforeach
-        </select>
+            @if (Auth::check() && method_exists(Auth::user(), 'isAdmin') && Auth::user()->isAdmin())
+                <select class="form-select form-select-sm" id="export-month-select" aria-label="Pilih Bulan untuk Ekspor">
+                    <option value="" selected disabled>Pilih Bulan</option>
+                    @foreach (range(1, 12) as $month)
+                        <option value="{{ $month }}">
+                            {{ \Carbon\Carbon::create()->month($month)->translatedFormat('F') }}
+                        </option>
+                    @endforeach
+                </select>
 
-        <button onclick="exportData()" class="btn btn-sm btn-success d-flex align-items-center">
-            <i class="fas fa-file-export me-1"></i> Export
-        </button>
-    @endif
+                <button onclick="exportData()" class="btn btn-sm btn-success d-flex align-items-center">
+                    <i class="fas fa-file-export me-1"></i> Export
+                </button>
+            @endif
 
-    <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary">
-        <i class="fas fa-arrow-left me-1"></i>
-    </a>
-</div>
-</div>
+            <a href="{{ route('dashboard') }}" class="btn btn-sm btn-secondary d-flex align-items-center">
+                <i class="fas fa-arrow-left me-1"></i> Back
+            </a>
+        </div>
+    </div>
 
-    {{-- Card Monitoring --}}
-    <div class="card shadow-lg rounded-3 border-0">
+    {{-- Card: Solar Dome Sensor Data --}}
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
         <div class="card-header bg-success text-white rounded-top-3">
             <h4 class="card-title mb-0 fw-bold text-center text-md-start">
-                ☀️ Solar Dome Sensor Data (Latest)
+                ☀️ Solar Dome Sensor Data (Live)
             </h4>
         </div>
         <div class="card-body p-4">
-
             <div id="solar-dome-data" class="row g-4 text-center">
                 <div class="col-md-3">
                     <div class="p-3 bg-light rounded shadow-sm">
@@ -88,36 +89,34 @@
             </div>
         </div>
     </div>
-</div>
 
-    {{-- Card Solar Dome --}}
-    <div class="card shadow-sm rounded-3">
-        <div class="card-header">
-            <h4 class="card-title mb-0">Solar Dome</h4>
+    {{-- Card: Solar Dome Chart --}}
+    <div class="card shadow-sm rounded-3 mt-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="card-title mb-0 fw-bold">
+                📈 Solar Dome Temperature & Humidity Chart
+            </h4>
         </div>
         <div class="card-body">
-            <p class="text-muted">
-                Berikut adalah simulasi data Solar Dome dalam bentuk grafik line chart.
+            <p class="text-muted text-center mb-3">
+                Simulasi data Solar Dome dalam bentuk grafik garis (line chart).
             </p>
-            <div id="greenhouse-chart" 
-                 data-colors='["#556ee6", "#50a5f1"]' 
-                 class="e-charts" 
-                 style="height: 400px;">
-            </div>
+            <div id="solar-chart" class="e-charts" style="height: 400px;"></div>
         </div>
     </div>
+
 </div>
 
-{{-- Script ECharts --}}
+{{-- Scripts --}}
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        var chartDom = document.getElementById('greenhouse-chart');
+        var chartDom = document.getElementById('solar-chart');
         var myChart = echarts.init(chartDom);
 
         var option = {
             tooltip: { trigger: 'axis' },
-            legend: { data: ['Suhu Greenhouse (°C)', 'Kelembaban (%)'] },
+            legend: { data: ['Dome Temp (°C)', 'Humidity (%)'] },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
             xAxis: {
                 type: 'category',
@@ -127,22 +126,21 @@
             yAxis: { type: 'value' },
             series: [
                 {
-                    name: 'Suhu Greenhouse (°C)',
+                    name: 'Dome Temp (°C)',
                     type: 'line',
                     smooth: true,
                     data: [26, 28, 32, 34, 31, 27],
-                    color: '#556ee6'
+                    color: '#28a745'
                 },
                 {
-                    name: 'Kelembaban (%)',
+                    name: 'Humidity (%)',
                     type: 'line',
                     smooth: true,
                     data: [80, 78, 74, 70, 76, 82],
-                    color: '#50a5f1'
+                    color: '#17a2b8'
                 }
             ]
         };
-
         myChart.setOption(option);
     });
 </script>
