@@ -17,7 +17,7 @@
                         <span data-key="t-monitoring">Monitoring</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        <li><a href="{{ route('air-quality') }}" data-key="t-air-quality">Air Quality</a></li>
+                        <li><a href="{{ route('stasiun-cuaca') }}" data-key="t-stasiun-cuaca">Stasiun Cuaca</a></li>
                         <li><a href="{{ route('monitoring.solar-dome') }}" data-key="t-solar-dome">Solar Dome</a></li>
                         <li><a href="{{ route('monitoring.lora') }}" data-key="t-greenhouse-quality">Lora Monitoring</a></li>
                         <li><a href="{{ route('soil-test') }}" data-key="t-soil-monitoring">Soil Test</a></li>

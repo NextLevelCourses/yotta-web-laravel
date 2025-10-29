@@ -15,7 +15,7 @@ class DashboardController extends Controller
     {
         // Mendefinisikan data modul di dalam controller
         $modules = [
-            ['href' => route('air-quality'), 'icon' => 'fas fa-wind', 'color' => 'primary', 'title' => 'Kualitas Udara', 'text' => 'Lihat data polusi dan kualitas udara secara real-time dari sensor.'],
+            ['href' => route('stasiun-cuaca'), 'icon' => 'fas fa-wind', 'color' => 'primary', 'title' => 'Kualitas Udara', 'text' => 'Lihat data polusi dan kualitas udara secara real-time dari sensor.'],
             ['href' => route('soil-test'), 'icon' => 'fas fa-seedling', 'color' => 'success', 'title' => 'Monitoring Tanah', 'text' => 'Pantau kelembaban, suhu, dan tingkat nutrisi tanah.'],
             ['href' => '#', 'icon' => 'fas fa-solar-panel', 'color' => 'warning', 'title' => 'Panel Surya', 'text' => 'Lacak produksi energi dan efisiensi panel secara keseluruhan.'],
             ['href' => '#', 'icon' => 'fas fa-tint', 'color' => 'info', 'title' => 'Kualitas Air', 'text' => 'Analisis tingkat kemurnian, pH, dan suhu air.'],

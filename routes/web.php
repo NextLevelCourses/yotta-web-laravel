@@ -6,7 +6,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Monitoring\SoilTestController;
 use App\Http\Controllers\Monitoring\SoilManagController;
 use App\Http\Controllers\Monitoring\SolarDomeController;
-use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitoring, bukan Api
+use App\Http\Controllers\Monitoring\StasiunCuacaController; // ✅ pakai Monitoring, bukan Api
 use App\Http\Controllers\Monitoring\LoraController;
 use App\Jobs\LorawanJob;
 
@@ -36,9 +36,9 @@ Route::middleware('auth')->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
-    // Monitoring Air Quality (hanya bisa diakses kalau sudah login)
+    // Monitoring Air Quality (hanya bisa diakses kalau sudah login) stasiun-cuaca
     Route::prefix('monitoring')->group(function () {
-        Route::get('air-quality', [AirQualityController::class, 'index'])->name('air-quality');
+        Route::get('stasiun-cuaca', [StasiunCuacaController::class, 'index'])->name('stasiun-cuaca');
         Route::prefix('soil-test')->group(function () {
             Route::get('/', [SoilTestController::class, 'index'])->name('soil-test');
             Route::get('/export/{date}', [SoilTestController::class, 'ExportByExcel'])->name('soil-test.export');
