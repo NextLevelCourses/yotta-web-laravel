@@ -21,7 +21,7 @@
                         <li><a href="{{ route('monitoring.solar-dome') }}" data-key="t-solar-dome">Solar Dome</a></li>
                         <li><a href="{{ route('monitoring.lora') }}" data-key="t-greenhouse-quality">Lora Monitoring</a></li>
                         <li><a href="{{ route('soil-test') }}" data-key="t-soil-monitoring">Soil Test</a></li>
-                        <li><a href="#" data-key="t-air-monitoring">Soil Monitoring</a></li>
+                        <li><a href="{{ route('stasiun-cuaca') }}" data-key="t-air-monitoring">Stasiun Cuaca</a></li>
                     </ul>
                 </li>
                 @if(Auth::user()->isAdmin())
