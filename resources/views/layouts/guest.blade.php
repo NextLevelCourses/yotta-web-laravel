@@ -11,7 +11,7 @@
     <!-- Di file .blade.php Anda, gunakan: <meta name="csrf-token" content="{{ csrf_token() }}"> -->
     <meta name="csrf-token" content="PLACEHOLDER_CSRF_TOKEN"> 
 
-    <link rel="shortcut icon" href="https://placehold.co/32x32/00994C/FFFFFF?text=YAE">
+    <link rel="shortcut icon" href="{{ asset('assets/images/YAE_Image.png') }}">
 
     <!-- CSS (Menggunakan placeholder CDN) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" type="text/css" />
