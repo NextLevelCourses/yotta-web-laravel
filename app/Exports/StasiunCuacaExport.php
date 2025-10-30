@@ -24,8 +24,10 @@ class StasiunCuacaExport implements FromCollection, WithHeadings, WithMapping
      */
     public function collection()
     {
-        return StasiunCuaca::whereMonth('measured_at', $this->month)
-            ->whereYear('measured_at', $this->year)
+        return StasiunCuaca::whereMonth('tanggal', $this->month)
+            ->whereYear('tanggal', $this->year)
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('jam', 'asc')
             ->get();
     }
 
