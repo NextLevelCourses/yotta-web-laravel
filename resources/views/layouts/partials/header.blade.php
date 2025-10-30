@@ -8,7 +8,7 @@
                         <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24">
                     </span>
                     <span class="logo-lg">
-                        <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24"> <span class="logo-txt">Yotta</span>
+                        <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="" height="24"> <span class="logo-txt">Yotta Aksara</span>
                     </span>
                 </a>
                 <a href="{{ route('dashboard') }}" class="logo logo-light">
@@ -23,25 +23,31 @@
 
             <button type="button" class="btn btn-sm px-3 font-size-16 header-item" id="vertical-menu-btn">
                 <i class="fa fa-fw fa-bars"></i>
+                
             </button>
         </div>
 
+         <!-- Right: User Dropdown -->
         <div class="d-flex align-items-center">
-            <div class="dropdown d-inline-block">
-                <button type="button" class="btn header-item bg-soft-light border-start border-end" id="page-header-user-dropdown"
-                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span class="d-none d-xl-inline-block ms-1 fw-medium">{{ Auth::user()->name }}</span>
-                    <i class="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
+            <div class="dropdown">
+                <button type="button" 
+                        class="btn header-item bg-soft-light border-0 d-flex align-items-center" 
+                        id="page-header-user-dropdown"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            {{-- Ikon User selalu tampil (mobile & desktop) --}}
+                    <i class="mdi mdi-account-circle fs-4 text-secondary me-1"></i>
+                    <span class="fw-medium d-none d-sm-inline me-1">{{ Auth::user()->name }}</span>
+                    <i class="mdi mdi-chevron-down"></i>
                 </button>
                 <div class="dropdown-menu dropdown-menu-end">
-                    <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                        <i class="mdi mdi-logout font-size-16 align-middle me-1"></i> Logout
+                    <a class="dropdown-item" href="#" 
+                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        <i class="mdi mdi-logout font-size-16 align-middle me-1 text-danger"></i> Logout
                     </a>
-                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">
                         @csrf
                     </form>
                 </div>
             </div>
-        </div>
     </div>
 </header>

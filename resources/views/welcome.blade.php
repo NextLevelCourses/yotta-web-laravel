@@ -255,24 +255,23 @@
                 <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="Logo" height="32">
                 <span class="fs-5">Yotta Aksara Energy</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+
+            {{-- Toggle (mobile) --}}
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarCollapse">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-                    <li ></li>
-                    <li ></li>
-                    <li ></li>
-                </ul>
-                <div class="d-flex gap-2">
-                    <!-- Tampilkan ini jika user belum login -->
-                    <a href="{{ route('login') }}" class="btn btn-yae"><i class="mdi mdi-login me-1"></i> Masuk</a>
-                    <a href="{{ route('register') }}" class="btn btn-outline-yae"><i class="mdi mdi-account-plus me-1"></i> Daftar</a>
-                    <!-- Tampilkan ini jika user sudah login
-                    <a href="#" class="btn btn-yae"><i class="mdi mdi-view-dashboard me-1"></i> Dashboard</a>
-                    -->
-                </div>
+
+            {{-- Login & Register --}}
+        <div class="collapse navbar-collapse justify-content-end" id="navbarCollapse">
+            <div class="d-flex flex-column flex-lg-row gap-2 mt-3 mt-lg-0">
+                <a href="{{ route('login') }}" class="btn btn-yae w-100 w-lg-auto">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Masuk
+                </a>
+                <a href="{{ route('register') }}" class="btn btn-outline-yae w-100 w-lg-auto">
+                    <i class="bi bi-person-plus me-1"></i> Daftar
+                </a>
             </div>
+        </div>
         </div>
     </nav>
 
