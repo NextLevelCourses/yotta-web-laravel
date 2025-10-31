@@ -1,93 +1,164 @@
 @extends('layouts.app')
 
-{{-- Bootstrap Icons --}}
-@section('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-@endsection
-
 @section('content')
-    <div class="bg-light">
-        <div class="container py-5">
-
-            {{-- Hero Section --}}
-            <div class="text-center py-2">
-                <div class="d-flex justify-content-center align-items-center mb-4">
-                    <img src="{{ asset('assets/images/YAE_Image.png') }}" alt="Yotta Aksara Energy Logo" class="img-fluid me-3"
-                        style="max-height: 80px;">
-                    <h1 class="fw-bold text-dark m-0" style="font-size: 2rem;">
-                        YOTTA AKSARA ENERGI
-                    </h1>
-                </div>
-
-                <h2 class="fw-bold text-primary mb-3">
-                    Mendorong Transformasi Industri 4.0
-                </h2>
-                <p class="lead text-secondary mx-auto" style="max-width: 750px;">
-                    Industri modern membutuhkan <strong>kecepatan, efisiensi, dan data real-time</strong>.
-                    Kami menghadirkan <strong>Industrial Internet of Things (IIoT)</strong> yang
-                    memungkinkan pabrik, energi, dan bisnis Anda beroperasi lebih <em>cerdas, hemat, dan aman</em>.
+<div class="dashboard-bg min-vh-100 py-5">
+    <div class="container">
+        {{-- Header --}}
+        <div class="row mb-5 align-items-center">
+            <div class="col-md-8">
+                <h1 class="fw-bold text-dark mb-2 display-5">Dashboard IoT Aksara Yotta</h1>
+                <p class="text-secondary fs-5 mb-0">
+                    Selamat datang 👋 — pantau data real-time dari sistem IoT Anda di sini.
                 </p>
-                <div class="mt-4">
-                    <a href="#solutions" class="btn btn-primary btn-lg px-4 me-sm-3 fw-bold">
-                        Jelajahi Solusi
-                    </a>
-                    <a href="#contact" class="btn btn-outline-dark btn-lg px-4">
-                        Konsultasi Gratis
-                    </a>
-                </div>
+            </div>
+            <div class="col-md-4 text-md-end mt-4 mt-md-0">
+                <img src="{{ asset('assets/images/YAE_Image.png') }}" 
+                     alt="Yotta Aksara Energy Logo" 
+                     class="img-fluid" 
+                     style="max-height: 70px;">
+            </div>
+        </div>
+
+        {{-- Main Cards --}}
+        <div id="solutions" class="row g-4">
+            {{-- Stasiun Cuaca --}}
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ route('stasiun-cuaca') }}" class="card-link">
+                    <div class="card dashboard-card h-100 shadow-sm">
+                        <div class="card-body text-center py-5 px-4">
+                            <div class="icon-wrapper bg-gradient-primary mb-4">
+                                <i class="bi bi-cloud-sun-fill fs-2 text-white"></i>
+                            </div>
+                            <h5 class="fw-bold mb-2">Stasiun Cuaca 
+                                <i class="bi bi-info-circle-fill text-primary" data-bs-toggle="tooltip" title="Pemantauan suhu, kelembaban, dan tekanan udara secara real-time."></i>
+                            </h5>
+                            <p class="text-muted small">
+                                Pantau kondisi atmosfer dengan sensor yang terhubung melalui jaringan IoT.
+                            </p>
+                        </div>
+                    </div>
+                </a>
             </div>
 
-            {{-- Solutions Section --}}
-            <div id="solutions" class="py-2">
-                <h3 class="text-center fw-bold mb-4">
-                    Solusi IIoT untuk Masa Depan Industri
-                </h3>
-                <p class="text-center text-muted mb-5 mx-auto" style="max-width: 700px;">
-                    Dari otomasi pabrik hingga manajemen energi, teknologi kami dirancang
-                    untuk <strong>membangun keunggulan kompetitif</strong> dan
-                    membuat bisnis Anda <strong>selangkah lebih maju</strong>.
-                </p>
-
-                <div class="row text-center g-4">
-                    <div class="col-md-6 col-lg-3">
-                        <div class="p-4 rounded shadow-sm h-100 border-top border-primary border-3">
-                            <i class="bi bi-gear-fill fs-1 text-primary"></i>
-                            <h5 class="fw-bold mt-3">Otomasi & Kontrol</h5>
-                            <p class="text-muted mb-0">
-                                Produksi tanpa hambatan dengan integrasi mesin dan sistem kontrol cerdas.
+            {{-- Soil Test --}}
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ route('soil-test') }}" class="card-link">
+                    <div class="card dashboard-card h-100 shadow-sm">
+                        <div class="card-body text-center py-5 px-4">
+                            <div class="icon-wrapper bg-gradient-success mb-4">
+                                <i class="bi bi-moisture fs-2 text-white"></i>
+                            </div>
+                            <h5 class="fw-bold mb-2">Soil Test
+                                <i class="bi bi-info-circle-fill text-success" data-bs-toggle="tooltip" title="Analisis pH tanah, kelembaban, dan nutrisi untuk pertanian cerdas."></i>
+                            </h5>
+                            <p class="text-muted small">
+                                Optimalkan kualitas tanah dengan data sensor berbasis LoRa.
                             </p>
                         </div>
                     </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="p-4 rounded shadow-sm h-100 border-top border-success border-3">
-                            <i class="bi bi-lightning-charge-fill fs-1 text-success"></i>
-                            <h5 class="fw-bold mt-3">Energi & Aset</h5>
-                            <p class="text-muted mb-0">
-                                Optimalkan konsumsi energi dan lakukan <em>predictive maintenance</em> mesin Anda.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="p-4 rounded shadow-sm h-100 border-top border-warning border-3">
-                            <i class="bi bi-bar-chart-line-fill fs-1 text-warning"></i>
-                            <h5 class="fw-bold mt-3">Monitoring Produksi</h5>
-                            <p class="text-muted mb-0">
-                                Dashboard OEE real-time untuk menemukan bottleneck lebih cepat.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-lg-3">
-                        <div class="p-4 rounded shadow-sm h-100 border-top border-danger border-3">
-                            <i class="bi bi-shield-check fs-1 text-danger"></i>
-                            <h5 class="fw-bold mt-3">Keselamatan & Kepatuhan</h5>
-                            <p class="text-muted mb-0">
-                                Sensor HSE pintar memastikan keamanan karyawan & standar regulasi terpenuhi.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                </a>
             </div>
 
+            {{-- Solar Dome --}}
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ route('monitoring.solar-dome') }}" class="card-link">
+                    <div class="card dashboard-card h-100 shadow-sm">
+                        <div class="card-body text-center py-5 px-4">
+                            <div class="icon-wrapper bg-gradient-warning mb-4">
+                                <i class="bi bi-brightness-high-fill fs-2 text-white"></i>
+                            </div>
+                            <h5 class="fw-bold mb-2">Solar Dome
+                                <i class="bi bi-info-circle-fill text-warning" data-bs-toggle="tooltip" title="Pemantauan panel surya dan konsumsi energi secara otomatis."></i>
+                            </h5>
+                            <p class="text-muted small">
+                                Sistem cerdas untuk efisiensi energi berbasis tenaga surya.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            {{-- LoRa Monitoring --}}
+            <div class="col-md-6 col-lg-3">
+                <a href="{{ route('monitoring.lora') }}" class="card-link">
+                    <div class="card dashboard-card h-100 shadow-sm">
+                        <div class="card-body text-center py-5 px-4">
+                            <div class="icon-wrapper bg-gradient-danger mb-4">
+                                <i class="bi bi-broadcast-pin fs-2 text-white"></i>
+                            </div>
+                            <h5 class="fw-bold mb-2">LoRa Monitoring
+                                <i class="bi bi-info-circle-fill text-danger" data-bs-toggle="tooltip" title="Jaringan komunikasi jarak jauh untuk perangkat IoT."></i>
+                            </h5>
+                            <p class="text-muted small">
+                                Pantau sensor IoT jarak jauh dengan protokol LoRaWAN.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
+</div>
 @endsection
+
+@push('styles')
+<style>
+    .dashboard-bg {
+        background: linear-gradient(135deg, #f8fafc, #eef2f7);
+    }
+
+    .card-link {
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .dashboard-card {
+        border: none;
+        border-radius: 1rem;
+        background: #fff;
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .icon-wrapper {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(45deg, #4f46e5, #3b82f6);
+    }
+
+    .bg-gradient-success {
+        background: linear-gradient(45deg, #10b981, #34d399);
+    }
+
+    .bg-gradient-warning {
+        background: linear-gradient(45deg, #f59e0b, #fbbf24);
+    }
+
+    .bg-gradient-danger {
+        background: linear-gradient(45deg, #ef4444, #f87171);
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
+@endpush

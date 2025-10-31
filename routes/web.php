@@ -8,7 +8,9 @@ use App\Http\Controllers\Monitoring\SoilManagController;
 use App\Http\Controllers\Monitoring\SolarDomeController;
 use App\Http\Controllers\Monitoring\AirQualityController; // ✅ pakai Monitoring, bukan Api
 use App\Http\Controllers\Monitoring\LoraController;
+use App\Http\Controllers\Monitoring\StasiunCuacaController;
 use App\Jobs\LorawanJob;
+use App\Models\StasiunCuaca;
 
 // PENTING!!
 // Rute untuk halaman Health Check for CircleCI
@@ -36,13 +38,18 @@ Route::middleware('auth')->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
-    // Monitoring Air Quality (hanya bisa diakses kalau sudah login)
+    // Monitoring (hanya bisa diakses kalau sudah login)
     Route::prefix('monitoring')->group(function () {
         Route::get('air-quality', [AirQualityController::class, 'index'])->name('air-quality');
         Route::prefix('soil-test')->group(function () {
             Route::get('/', [SoilTestController::class, 'index'])->name('soil-test');
             Route::get('/export/{date}', [SoilTestController::class, 'ExportByExcel'])->name('soil-test.export');
             Route::get('/linechart', [SoilTestController::class, 'linechart'])->name('soil-test.linechart');
+        });
+        Route::prefix('stasiun-cuaca')->group(function () {
+            Route::get('/', [StasiunCuacaController::class, 'index'])->name('stasiun-cuaca');
+            Route::get('/export/{date}', [StasiunCuacaController::class, 'ExportByExcel'])->name('stasiun-cuaca.export');
+            Route::get('/linechart', [StasiunCuacaController::class, 'linechart'])->name('stasiun-cuaca.linechart');
         });
         Route::get('soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');
     });
