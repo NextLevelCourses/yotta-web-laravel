@@ -27,7 +27,7 @@ on:
       - "artisan"
 
       # === Deployment & Assets ===
-      - "public/**"
+      - "public/assets/js/**"
       - "resources/**"
       - "storage/**"
 
@@ -48,7 +48,7 @@ on:
 jobs:
   dashboard-deploy:
     runs-on: ubuntu-latest
-    environment: production
+    environment: iot.aksarayotta.com
 
     steps:
       # Step 1: Checkout repository
@@ -58,7 +58,6 @@ jobs:
       - name: 📥 Debug message commit
         run: |
           echo "📥 Commit message: ${{ github.event.head_commit.message }}"
-
       - name: 🔍 Verify repo contents
         run: |
           echo "✅ Repo successfully checked out."
@@ -67,11 +66,11 @@ jobs:
       # Step 2: FTP Deployment
       - name: 📤 Deploy Laravel via FTP
         id: ftp-deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5 #base on https://github.com/SamKirkland/FTP-Deploy-Action
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6 #base on https://github.com/SamKirkland/FTP-Deploy-Action
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
           local-dir: ./
           protocol: ftps # gunakan ftp jika server belum support TLS
@@ -105,9 +104,6 @@ jobs:
             **/storage/framework/sessions/**
             **/storage/framework/views/**
 
-            # === Assets folder ===
-            **/public/assets/**
-
             # === Documentation / Non-production ===
             **/LICENSE
             **/README.md
@@ -120,7 +116,7 @@ jobs:
 
       - name: ✅ Confirm FTP upload
         if: steps.ftp-deploy.outcome == 'success'
-        run: echo "✅ FTP upload finished to ${{ secrets.FTP_SERVER }}:${{ secrets.FTP_SERVER_DIR }}"
+        run: echo "✅ FTP upload finished to ${{ secrets.FTP_HOST }}:${{ secrets.FTP_SERVER_DIR }}"
 
       # Step 3: Run Laravel optimization
       - name: 🛠️ Run Laravel optimization (SSH)
@@ -128,26 +124,22 @@ jobs:
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
+          username: ${{ secrets.SSH_USER }}
           port: ${{ secrets.SSH_PORT }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          password: ${{ secrets.SSH_PASS }}
           script: |
             set -x
             echo "🚀 Connected to server: $(hostname)"
             cd ${{ secrets.FTP_SERVER_DIR }}
-
             # echo "🗄️ Running database migrations..."
             # php artisan migrate --force >> jika diperlukan 
-
             echo "🧹 Clearing caches..."
             php artisan config:clear
             php artisan cache:clear
             php artisan route:clear
             php artisan view:clear
-
             echo "⚡ Rebuilding caches..."
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
-
             echo "✅ Deployment finished successfully!"

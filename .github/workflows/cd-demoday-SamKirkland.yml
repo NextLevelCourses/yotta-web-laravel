@@ -1,19 +1,19 @@
 # ==========================================================
-# 🏗️ Yotta Aksara Production Deployment (via FTP)
+# 🏗️ Yotta Aksara Production Deployment (via FTP + SSH)
 # CI/CD Pipeline for Laravel Production Server
 # ----------------------------------------------------------
 # Purpose:
 # - Automatically deploy when pushing to the "main" branch
-# - Upload files via FTP (TLS supported)
+# - Upload files via FTP (FTPS supported)
 # - Run Laravel optimization commands via SSH
 # ==========================================================
 
-name: Yotta Aksara Production (FTP Deployer)
+name: 🏗️ Yotta Aksara Production
 
 on:
   push:
-    branches: [ "main" ]
-
+    branches: [ 'main' ] # Trigger deployment only when pushing to the main branch
+    
     # Define which paths trigger deployment
     paths:
       # === Git & CI files ===
@@ -27,7 +27,7 @@ on:
       - "artisan"
 
       # === Deployment & Assets ===
-      - "public/**"
+      - "public/assets/js/**"
       - "resources/**"
       - "storage/**"
 
@@ -38,54 +38,52 @@ on:
       - "composer.json"
       - "composer.lock"
 
-      # === Optional JS build config files ===
+      # === Optional JS build config files  ===
       - "package.json"
       - "vite.config.js"
       - "README.md"
       - "tests/**"
-      # - "makefile"
+      - "makefile"
 
 jobs:
-  deploy:
-    name: Deploy Laravel to Production
+  dashboard-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     environment: production
 
     steps:
       # Step 1: Checkout repository
-      - name: Checkout Repository
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Debug Info
+      - name: 📥 Debug message commit
         run: |
-          echo "Commit message: ${{ github.event.head_commit.message }}"
-          echo "Repository checked out successfully."
+          echo "📥 Commit message: ${{ github.event.head_commit.message }}"
+      - name: 🔍 Verify repo contents
+        run: |
+          echo "✅ Repo successfully checked out."
           ls -lah
 
-      # Step 2: Deploy via FTP
-      - name: Deploy Laravel via FTP
-        uses: milanmk/actions-file-deployer@master
+      # Step 2: FTP Deployment
+      - name: 📤 Deploy Laravel via FTP
+        id: ftp-deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6 #base on https://github.com/SamKirkland/FTP-Deploy-Action
         with:
-          # === Connection Config ===
-          remote-protocol: "sftp"
-          remote-host: ${{ secrets.FTP_SERVER }}
-          remote-port: "65002"
-          remote-user: ${{ secrets.FTP_USERNAME }}
-          remote-password: ${{ secrets.FTP_PASSWORD }}
-          remote-path: ${{ secrets.FTP_SERVER_DIR }}
-          local-path: "./"
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          local-dir: ./
+          protocol: ftps # gunakan ftp jika server belum support TLS
+          port: 21
+          log-level: standard
+          security: loose
+          state-name: .ftp-deploy-sync-state.json
 
-
-          # === Sync Options ===
-          sync: "delta"                             # delta = only changed files
-          debug: "false"
-
-          # === Excluded Files/Folders ===
-          sync-delta-excludes: |
+          # exclude workdir paths
+          exclude: |
             # === Git & CI files ===
+            # **/.git*
+            # **/.github*
             **/.gitignore
             **/.gitattributes
 
@@ -106,15 +104,23 @@ jobs:
             **/storage/framework/sessions/**
             **/storage/framework/views/**
 
-            # === Assets folder ===
-            **/public/assets/**
-
             # === Documentation / Non-production ===
             **/LICENSE
             **/README.md
 
-      # Step 3: Laravel Optimization via SSH
-      - name: Run Laravel Optimization (SSH)
+      - name: ❌ Check FTP result
+        if: steps.ftp-deploy.outcome != 'success'
+        run: |
+          echo "❌ ERROR: FTP login or upload failed. Please check FTP credentials or server availability."
+          exit 1
+
+      - name: ✅ Confirm FTP upload
+        if: steps.ftp-deploy.outcome == 'success'
+        run: echo "✅ FTP upload finished to ${{ secrets.FTP_SERVER }}:${{ secrets.FTP_SERVER_DIR }}"
+
+      # Step 3: Run Laravel optimization
+      - name: 🛠️ Run Laravel optimization (SSH)
+        if: steps.ftp-deploy.outcome == 'success'
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -122,23 +128,18 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            set -ex
-            echo "Connected to server: $(hostname)"
+            set -x
+            echo "🚀 Connected to server: $(hostname)"
             cd ${{ secrets.FTP_SERVER_DIR }}
-
-            if [ -f composer.json ]; then
-              composer install --no-dev --optimize-autoloader
-            fi
-
-            echo "Clearing caches..."
+            # echo "🗄️ Running database migrations..."
+            # php artisan migrate --force >> jika diperlukan 
+            echo "🧹 Clearing caches..."
             php artisan config:clear
             php artisan cache:clear
             php artisan route:clear
             php artisan view:clear
-
-            echo "Rebuilding caches..."
+            echo "⚡ Rebuilding caches..."
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
-
             echo "✅ Deployment finished successfully!"
