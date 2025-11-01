@@ -67,6 +67,16 @@ class SolarDomeController extends Controller implements ExportDataInterface, Sol
         return $this->HandleGetDataSolarDome($solarDomeData, $request->query('key', 0));
     }
 
+    public function send_button_control_mode(Request $request)
+    {
+        dd($request->all());
+    }
+
+    public function send_target_humidity(Request $request)
+    {
+        dd($request->all());
+    }
+
     public function ExportByExcel(string $date): BinaryFileResponse|string
     {
         try {

@@ -31,25 +31,31 @@
                     <i class="fas fa-sliders-h me-2"></i>Kontrol Manual
                 </h5>
 
-                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                    <button id="modeAutoBtn" class="btn btn-info text-white fw-bold px-4">
-                        <i class="fas fa-robot me-1"></i> Mode AUTO
-                    </button>
-                    <button id="manualOnBtn" class="btn btn-success fw-bold px-4">
-                        <i class="fas fa-play me-1"></i> Manual ON
-                    </button>
-                    <button id="manualOffBtn" class="btn btn-danger fw-bold px-4">
-                        <i class="fas fa-stop me-1"></i> Manual OFF
-                    </button>
-                </div>
+                <form action="{{ route('solar-dome.send_button_control_mode') }}" method="post">
+                    @csrf
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                        <button id="modeAutoBtn" name="auto" class="btn btn-info text-white fw-bold px-4" value="AUTO">
+                            <i class="fas fa-robot me-1"></i> Mode AUTO
+                        </button>
+                        <button id="manualOnBtn" name="manual_on" class="btn btn-success fw-bold px-4" value="MANUAL_ON">
+                            <i class="fas fa-play me-1"></i> Manual ON
+                        </button>
+                        <button id="manualOffBtn" name="manual_off" class="btn btn-danger fw-bold px-4" value="MANUAL_OFF">
+                            <i class="fas fa-stop me-1"></i> Manual OFF
+                        </button>
+                    </div>
+                </form>
 
-                <div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
-                    <input type="number" class="form-control w-auto" id="targetHumidity"
-                        placeholder="Target Kelembapan (%)">
-                    <button id="setTargetBtn" class="btn btn-warning fw-bold">
-                        <i class="fas fa-bullseye me-1"></i> Set Target
-                    </button>
-                </div>
+                <form action="{{ route('solar-dome.send_target_humidity') }}" method="post">
+                    @csrf
+                    <div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
+                        <input type="number" class="form-control w-auto" name="targetHumidity" id="targetHumidity"
+                            placeholder="Target Kelembapan (%)">
+                        <button id="setTargetBtn" class="btn btn-warning fw-bold" value="submit">
+                            <i class="fas fa-bullseye me-1"></i> Set Target
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 

@@ -56,6 +56,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [SolarDomeController::class, 'index'])
                 ->name('monitoring.solar-dome');
             Route::get('/export/{date}', [SolarDomeController::class, 'ExportByExcel'])->name('solar-dome.export');
+            Route::post('/send-button-control-mode', [SolarDomeController::class, 'send_button_control_mode'])->name('solar-dome.send_button_control_mode');
+            Route::post('/send-target-humidity', [SolarDomeController::class, 'send_target_humidity'])->name('solar-dome.send_target_humidity');
         });
         Route::prefix('lora')->group(function () {
             // LorawanJob::dispatch();
