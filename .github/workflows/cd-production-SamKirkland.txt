@@ -1,0 +1,233 @@
+# ==========================================================
+# Yotta Aksara Production Deployment (Laravel + FTP + SSH)
+# ----------------------------------------------------------
+# Features:
+# - Build Composer dependencies inside GitHub Actions
+# - Upload full Laravel app via FTP (FTPS supported)
+# - Auto-detect first deploy vs update deploy
+# - Auto artisan optimize + migration + DB backup (via SSH)
+# ==========================================================
+
+name: Yotta Aksara Production
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "app/**"
+      - "bootstrap/**"
+      - "config/**"
+      - "database/**"
+      - "routes/**"
+      - "resources/**"
+      - "storage/**"
+      - "public/assets/js/**"
+      - "composer.json"
+      - "composer.lock"
+      - "artisan"
+      - "package.json"
+      - "vite.config.js"
+      - ".github/workflows/**"
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      # Step 1: Checkout Code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Debug commit message
+        run: | 
+            echo "Commit message: ${{ github.event.head_commit.message }}"
+
+      # Step 2: Setup PHP & Composer
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, intl, pdo, mysql, tokenizer, xml, ctype, json, fileinfo
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+          echo "Composer dependencies installed successfully."
+
+      # Step 3: Detect Laravel server state
+      - name: Detect Laravel state on server
+        id: detect-mode
+        run: |
+          echo "Checking Laravel installation on remote server..."
+          MODE=$(ssh -i "${{ secrets.SSH_PRIVATE_KEY }}" -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
+            ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} \
+            "if [ -f '${{ secrets.FTP_SERVER_DIR }}/artisan' ]; then echo 'update'; else echo 'fresh'; fi"
+          )
+          echo "Detected mode: $MODE"
+          echo "mode=$MODE" >> $GITHUB_OUTPUT
+
+      # Step 4: FTP Deploy (Fresh / Update)
+      - name: Full FTP Upload (Fresh Server)
+        if: steps.detect-mode.outputs.mode == 'fresh'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /public_html/
+          local-dir: ./
+          protocol: ftps
+          port: 21
+          log-level: standard
+          security: loose
+          exclude: |
+            **/.git*
+            **/.github*
+            **/tests/**
+            **/phpunit.xml
+            **/docker-compose.yml
+            **/Dockerfile
+            **/README.md
+            **/LICENSE
+            public/**
+            !public/assets/js/**
+
+      - name: Incremental FTP Upload (Existing Server)
+        if: steps.detect-mode.outputs.mode == 'update'
+        id: ftp-deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /public_html/
+          local-dir: ./
+          protocol: ftps
+          port: 21
+          log-level: standard
+          security: loose
+          state-name: .ftp-deploy-sync-state.json
+          exclude: |
+            **/.git*
+            **/.github*
+            **/node_modules/**
+            **/tests/**
+            **/phpunit.xml
+            **/docker-compose.yml
+            **/Dockerfile
+            **/makefile
+            **/storage/logs/**
+            **/storage/framework/cache/**
+            **/storage/framework/sessions/**
+            **/storage/framework/views/**
+            public/**
+            !public/assets/js/**
+            **/README.md
+            **/LICENSE
+
+      - name: Confirm FTP Upload
+        run: |
+          echo "FTP upload completed in mode: ${{ steps.detect-mode.outputs.mode }}"
+          echo "Target directory: /public_html/"
+
+      # Step 5: Run Laravel optimization + migrations + DB backup
+      - name: Run Laravel optimization (SSH)
+        if: steps.detect-mode.outputs.mode != ''
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "Connected to server: $(hostname)"
+            cd ${{ secrets.FTP_SERVER_DIR }}
+
+            # Ensure .env exists
+            if [ ! -f ".env" ]; then
+              cp .env.example .env
+              echo ".env created from .env.example"
+            fi
+
+            # Adjust paths for fresh deploy
+            if [ "${{ steps.detect-mode.outputs.mode }}" = "fresh" ]; then
+              sed -i.bak "s|require __DIR__.'/../vendor/autoload.php';|require __DIR__.'/vendor/autoload.php';|" public/index.php
+              sed -i.bak "s|\$app = require_once __DIR__.'/../bootstrap/app.php';|\$app = require_once __DIR__.'/bootstrap/app.php';|" public/index.php
+              echo "public/index.php paths adjusted for shared hosting"
+            fi
+
+            # Check migrations
+            if [ ! -d "database/migrations" ]; then
+              echo "Folder database/migrations tidak ditemukan!"
+              exit 1
+            fi
+
+            FILE_COUNT=$(ls -1 database/migrations/*.php | wc -l || echo 0)
+            DB_COUNT=$(php artisan migrate:status --no-interaction 2>/dev/null | grep '\[.\] Ran' | wc -l || echo 0)
+
+            echo "Migration files on disk : $FILE_COUNT"
+            echo "Migrations recorded in DB: $DB_COUNT"
+
+            if [ "$FILE_COUNT" -gt "$DB_COUNT" ]; then
+              echo "Detected new migrations."
+
+              # Backup DB before migrate
+              echo "Creating database backup before migration..."
+              BACKUP_DIR="storage/backups"
+              mkdir -p $BACKUP_DIR
+              BACKUP_NAME="backup_$(date +'%Y%m%d_%H%M%S').sql"
+
+              DB_NAME=$(grep "^DB_DATABASE=" .env | cut -d '=' -f2)
+              DB_USER=$(grep "^DB_USERNAME=" .env | cut -d '=' -f2)
+              DB_PASS=$(grep "^DB_PASSWORD=" .env | cut -d '=' -f2)
+              DB_HOST=$(grep "^DB_HOST=" .env | cut -d '=' -f2)
+              DB_PORT=$(grep "^DB_PORT=" .env | cut -d '=' -f2)
+
+              if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
+                echo "Database credentials not found in .env file!"
+                exit 1
+              fi
+
+              if [ -z "$DB_PASS" ]; then DB_PASS_ARG=""; else DB_PASS_ARG="-p$DB_PASS"; fi
+
+              echo "Dumping MySQL database '$DB_NAME'..."
+              mysqldump -h $DB_HOST -P $DB_PORT -u $DB_USER $DB_PASS_ARG --single-transaction --quick --lock-tables=false $DB_NAME > "$BACKUP_DIR/$BACKUP_NAME"
+
+              if [ $? -eq 0 ]; then
+                echo "Database backup created: $BACKUP_DIR/$BACKUP_NAME"
+              else
+                echo "Database backup failed! Cancelling migration for safety."
+                exit 1
+              fi
+
+              # Run migrations
+              echo "Running php artisan migrate --force ..."
+              php artisan migrate --force --no-interaction
+            elif [ "$FILE_COUNT" -lt "$DB_COUNT" ]; then
+              echo "Warning: DB has more migrations than files — possible rollback or rename."
+              php artisan migrate:status
+            else
+              echo "Database is already up to date. No migrations needed."
+            fi
+
+            # Clear & rebuild caches
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "Deployment finished successfully!"

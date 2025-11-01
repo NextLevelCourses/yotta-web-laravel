@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="id">
+
 <head>
     <meta charset="utf-8" />
     <title>Yotta Aksara Energy | Solusi IoT Profesional</title>
@@ -13,6 +14,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
 
     <style>
         :root {
@@ -24,85 +27,97 @@
 
         body {
             scroll-behavior: smooth;
-            font-family: 'Inter', sans-serif; /* Menggunakan font yang lebih modern */
+            font-family: 'Inter', sans-serif;
+            /* Menggunakan font yang lebih modern */
         }
 
         /* --- Navbar --- */
-        .navbar-light { 
+        .navbar-light {
             background: transparent;
-            transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out; 
+            transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
             padding-top: 1rem;
             padding-bottom: 1rem;
         }
+
         .navbar-light.navbar-scrolled {
             background: #fff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
         }
-        
-        .navbar-brand span { 
-            color: var(--yae-green); 
+
+        .navbar-brand span {
+            color: var(--yae-green);
             font-weight: 700;
         }
-        .navbar-light .nav-link { 
-            font-weight: 500; 
-            color: #333; 
-            transition: 0.2s; 
+
+        .navbar-light .nav-link {
+            font-weight: 500;
+            color: #333;
+            transition: 0.2s;
             padding: 0.5rem 1rem;
         }
+
         /* Saat di hero, navbar link berwarna putih */
         .navbar-light:not(.navbar-scrolled) .nav-link {
             color: #fff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
+
         .navbar-light:not(.navbar-scrolled) .nav-link:hover {
             color: var(--yae-yellow);
         }
+
         .navbar-light.navbar-scrolled .nav-link:hover {
             color: var(--yae-green);
         }
+
         .navbar-light:not(.navbar-scrolled) .navbar-brand span {
-             color: #fff;
+            color: #fff;
         }
 
         /* --- Tombol (Buttons) --- */
         .btn {
-            border-radius: 0.5rem; /* Sudut lebih bulat */
+            border-radius: 0.5rem;
+            /* Sudut lebih bulat */
             padding: 0.75rem 1.5rem;
             font-weight: 600;
             transition: all 0.3s ease;
         }
-        .btn-yae { 
-            background: var(--yae-green); 
-            color: #fff; 
-            border: none; 
+
+        .btn-yae {
+            background: var(--yae-green);
+            color: #fff;
+            border: none;
         }
-        .btn-yae:hover { 
-            background: #007a3b; 
+
+        .btn-yae:hover {
+            background: #007a3b;
             transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,153,76,0.2);
+            box-shadow: 0 4px 12px rgba(0, 153, 76, 0.2);
         }
-        
+
         /* Tombol kuning baru untuk CTA */
         .btn-yae-yellow {
             background: var(--yae-yellow);
             color: var(--yae-dark);
             border: none;
         }
+
         .btn-yae-yellow:hover {
             background: #e6c000;
             color: #000;
             transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(255,215,0,0.3);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
         }
-        
+
         /* Tombol outline kuning baru */
         .btn-outline-yae-yellow {
             border: 2px solid var(--yae-yellow);
             color: var(--yae-yellow);
             background: transparent;
         }
+
         .btn-outline-yae-yellow:hover {
             background: var(--yae-yellow);
             color: var(--yae-dark);
@@ -111,23 +126,27 @@
 
         /* Tombol outline hijau (dipakai di navbar) */
         .btn-outline-yae {
-             border: 2px solid var(--yae-yellow); 
-             color: var(--yae-yellow);
+            border: 2px solid var(--yae-yellow);
+            color: var(--yae-yellow);
         }
-        .btn-outline-yae:hover { 
-             background: var(--yae-yellow); 
-             color: var(--yae-dark); 
-             transform: translateY(-3px);
+
+        .btn-outline-yae:hover {
+            background: var(--yae-yellow);
+            color: var(--yae-dark);
+            transform: translateY(-3px);
         }
+
         /* Transparansi saat di hero */
         .navbar-light:not(.navbar-scrolled) .btn-yae {
             background: #fff;
             color: var(--yae-green);
         }
+
         .navbar-light:not(.navbar-scrolled) .btn-outline-yae {
             border-color: #fff;
             color: #fff;
         }
+
         .navbar-light:not(.navbar-scrolled) .btn-outline-yae:hover {
             background: #fff;
             color: var(--yae-green);
@@ -138,34 +157,45 @@
         /* --- Hero Section (REVISI) --- */
         .hero-section {
             color: #fff;
-            padding: 160px 0 100px 0; /* Padding lebih besar */
+            padding: 160px 0 100px 0;
+            /* Padding lebih besar */
             position: relative;
             background-image: url('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1770&q=80');
             background-size: cover;
             background-position: center;
         }
+
         /* Overlay gelap untuk keterbacaan teks */
         .hero-section::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(11, 46, 19, 0.7); /* Overlay hijau tua transparan */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(11, 46, 19, 0.7);
+            /* Overlay hijau tua transparan */
             z-index: 1;
         }
+
         /* Konten hero harus di atas overlay */
         .hero-section .container {
             position: relative;
             z-index: 2;
         }
-        .hero-section h1 { 
-            font-size: 3.2rem; /* Sedikit lebih besar */
-            font-weight: 800; 
+
+        .hero-section h1 {
+            font-size: 3.2rem;
+            /* Sedikit lebih besar */
+            font-weight: 800;
             line-height: 1.2;
         }
-        .hero-section p { 
-            font-size: 1.25rem; 
-            opacity: 0.95; 
-            max-width: 600px; /* Batasi lebar paragraf */
+
+        .hero-section p {
+            font-size: 1.25rem;
+            opacity: 0.95;
+            max-width: 600px;
+            /* Batasi lebar paragraf */
             margin-left: auto;
             margin-right: auto;
         }
@@ -174,6 +204,7 @@
         section {
             padding: 80px 0;
         }
+
         .section-title {
             color: var(--yae-green);
             font-weight: 700;
@@ -181,13 +212,15 @@
 
         /* --- Tentang Kami --- */
         #tentang-kami img {
-            border-radius: 0.75rem; /* Sudut lebih bulat */
+            border-radius: 0.75rem;
+            /* Sudut lebih bulat */
         }
-        
+
         /* --- Layanan (REVISI) --- */
         #layanan {
             background-color: var(--yae-light-gray);
         }
+
         /* Kartu layanan baru yang lebih menarik */
         .service-card {
             border: none;
@@ -195,14 +228,16 @@
             background: #fff;
             transition: all 0.3s ease-in-out;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             height: 100%;
             padding: 2rem;
         }
+
         .service-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 10px 25px rgba(0,153,76,0.15);
+            box-shadow: 0 10px 25px rgba(0, 153, 76, 0.15);
         }
+
         .service-card .icon-wrapper {
             font-size: 3rem;
             width: 80px;
@@ -214,37 +249,42 @@
             border-radius: 50%;
             background: linear-gradient(135deg, var(--yae-green), #00b359);
             color: #fff;
-            box-shadow: 0 5px 15px rgba(0,153,76,0.3);
+            box-shadow: 0 5px 15px rgba(0, 153, 76, 0.3);
         }
+
         .service-card h4 {
             color: var(--yae-dark);
             font-weight: 600;
         }
 
         /* --- Footer --- */
-        footer { 
-            background: var(--yae-dark); 
-            color: #ccc; 
+        footer {
+            background: var(--yae-dark);
+            color: #ccc;
             padding: 60px 0 40px 0;
         }
-        footer a { 
-            color: #aaa; 
-            transition: 0.2s; 
+
+        footer a {
+            color: #aaa;
+            transition: 0.2s;
             text-decoration: none;
         }
-        footer a:hover { 
-            color: var(--yae-yellow) !important; 
+
+        footer a:hover {
+            color: var(--yae-yellow) !important;
         }
+
         footer .list-unstyled li {
             margin-bottom: 0.5rem;
         }
+
         footer .social-icons a {
             font-size: 1.5rem;
             margin-right: 1rem;
         }
-
     </style>
 </head>
+
 <body data-bs-spy="scroll" data-bs-target="#navbar-yae" data-bs-offset="100">
 
     <!-- Navbar -->
@@ -257,21 +297,31 @@
             </a>
 
             {{-- Toggle (mobile) --}}
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false"
+                aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             {{-- Login & Register --}}
-        <div class="collapse navbar-collapse justify-content-end" id="navbarCollapse">
-            <div class="d-flex flex-column flex-lg-row gap-2 mt-3 mt-lg-0">
-                <a href="{{ route('login') }}" class="btn btn-yae w-100 w-lg-auto">
-                    <i class="bi bi-box-arrow-in-right me-1"></i> Masuk
-                </a>
-                <a href="{{ route('register') }}" class="btn btn-outline-yae w-100 w-lg-auto">
-                    <i class="bi bi-person-plus me-1"></i> Daftar
-                </a>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarCollapse">
+                <div class="d-flex flex-column flex-lg-row gap-4 mt-3 mt-lg-0">
+                    @guest
+                        <a href="{{ route('login') }}" class="btn btn-yae w-200 w-lg-auto">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Masuk
+                        </a>
+                        <a href="{{ route('register') }}" class="btn btn-outline-yae w-200 w-lg-auto">
+                            <i class="bi bi-person-plus me-1"></i> Daftar
+                        </a>
+                    @endguest
+
+                    @auth
+                        <a href="{{ route('dashboard') }}" class="btn btn-yae-yellow w-100 w-lg-auto">
+                            <i class="bi bi-person-circle me-1"></i> Dashboard | {{ Auth::user()->name }}
+                        </a>
+                    @endauth
+                </div>
             </div>
-        </div>
         </div>
     </nav>
 
@@ -279,10 +329,12 @@
     <section class="hero-section text-center">
         <div class="container">
             <h1 class="mb-3" data-aos="fade-up">Solusi Monitoring & Kontrol IoT Terintegrasi</h1>
-            <p class="mb-4" data-aos="fade-up" data-aos-delay="100">Pantau, analisis, dan kendalikan data Anda dalam satu platform pintar.</p>
+            <p class="mb-4" data-aos="fade-up" data-aos-delay="100">Pantau, analisis, dan kendalikan data Anda dalam
+                satu platform pintar.</p>
             <div data-aos="fade-up" data-aos-delay="200">
                 <!-- Menggunakan tombol kuning baru untuk CTA Utama -->
-                <a href="https://aksarayotta.com/" target="_blank" class="btn btn-outline-yae-yellow btn-lg">Pelajari Lebih Lanjut</a>
+                <a href="https://aksarayotta.com/" target="_blank" class="btn btn-outline-yae-yellow btn-lg">Pelajari
+                    Lebih Lanjut</a>
             </div>
         </div>
     </section>
@@ -293,14 +345,18 @@
             <div class="row align-items-center g-5">
                 <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-right">
                     <!-- Placeholder gambar yang lebih menarik -->
-                    <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1770&q=80" alt="Tentang Kami" class="img-fluid rounded shadow">
+                    <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1770&q=80"
+                        alt="Tentang Kami" class="img-fluid rounded shadow">
                 </div>
                 <div class="col-lg-6" data-aos="fade-left">
                     <span class="badge bg-success-subtle text-success mb-2 p-2">Tentang Kami</span>
                     <h2 class="section-title fw-bold mb-3">Siapa Yotta Aksara Energy?</h2>
-                    <p class="text-muted fs-5">Kami menyediakan solusi teknologi IoT untuk monitoring dan kontrol perangkat industri secara real-time dan terukur.</p>
-                    <p class="text-muted">Kami membantu sektor energi, pertanian, dan manufaktur untuk bertransformasi digital.</p>
-                    <a href="https://aksarayotta.com/" target="_blank" class="btn btn-outline-success mt-3">Info Lengkap Perusahaan</a>
+                    <p class="text-muted fs-5">Kami menyediakan solusi teknologi IoT untuk monitoring dan kontrol
+                        perangkat industri secara real-time dan terukur.</p>
+                    <p class="text-muted">Kami membantu sektor energi, pertanian, dan manufaktur untuk bertransformasi
+                        digital.</p>
+                    <a href="https://aksarayotta.com/" target="_blank" class="btn btn-outline-success mt-3">Info Lengkap
+                        Perusahaan</a>
                 </div>
             </div>
         </div>
@@ -310,8 +366,9 @@
     <section id="layanan" class="bg-light">
         <div class="container text-center">
             <h2 class="section-title fw-bold mb-3" data-aos="fade-up">Solusi Unggulan Kami</h2>
-            <p class="text-muted fs-5 mb-5" data-aos="fade-up" data-aos-delay="100">Dirancang untuk skalabilitas, keamanan, dan kemudahan integrasi.</p>
-            
+            <p class="text-muted fs-5 mb-5" data-aos="fade-up" data-aos-delay="100">Dirancang untuk skalabilitas,
+                keamanan, dan kemudahan integrasi.</p>
+
             <div class="row g-4">
                 <!-- Item Layanan 1 -->
                 <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
@@ -376,8 +433,10 @@
                 <div class="col-lg-5">
                     <h5 class="text-white mb-3">Kontak Kami</h5>
                     <ul class="list-unstyled">
-                        <li class="d-flex mb-2"><i class="mdi mdi-map-marker-outline me-2 fs-5"></i> Bukit Cemara Tidar Blok G10 No 2, Malang</li>
-                        <li class="d-flex mb-2"><i class="mdi mdi-email-outline me-2 fs-5"></i> support@yottaaksara.com</li>
+                        <li class="d-flex mb-2"><i class="mdi mdi-map-marker-outline me-2 fs-5"></i> Bukit Cemara
+                            Tidar Blok G10 No 2, Malang</li>
+                        <li class="d-flex mb-2"><i class="mdi mdi-email-outline me-2 fs-5"></i>
+                            support@yottaaksara.com</li>
                         <li class="d-flex"><i class="mdi mdi-phone-outline me-2 fs-5"></i> +62 811-2692-898</li>
                     </ul>
                 </div>
@@ -386,7 +445,11 @@
             <hr class="my-4 border-secondary">
             <div class="text-center">
                 <p class="mb-0">
-                    © <script>document.write(new Date().getFullYear())</script> Yotta Aksara Energy — Dibuat dengan <i class="mdi mdi-heart text-danger"></i> untuk masa depan IoT Indonesia.
+                    ©
+                    <script>
+                        document.write(new Date().getFullYear())
+                    </script> Yotta Aksara Energy — Dibuat dengan <i
+                        class="mdi mdi-heart text-danger"></i> untuk masa depan IoT Indonesia.
                 </p>
             </div>
         </div>
@@ -396,14 +459,17 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
-    
+
     <script>
         // Inisialisasi Feather Icons
         feather.replace();
 
         // Inisialisasi Bootstrap ScrollSpy
-        new bootstrap.ScrollSpy(document.body, { target: '#navbar-yae', offset: 100 });
-        
+        new bootstrap.ScrollSpy(document.body, {
+            target: '#navbar-yae',
+            offset: 100
+        });
+
         // Inisialisasi AOS
         AOS.init({
             duration: 700,
@@ -424,4 +490,5 @@
         }
     </script>
 </body>
+
 </html>
