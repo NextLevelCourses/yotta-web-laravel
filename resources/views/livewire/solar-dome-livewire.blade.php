@@ -31,22 +31,40 @@
                 <div class="col-md-3 col-6">
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">MODE</h6>
-                        <h4 id="mode" class="fw-bold text-primary">
-                            <i class="fas fa-circle text-info me-1"></i>{{ $controlMode }}
-                        </h4>
+                        @switch($controlMode)
+                            @case('AUTO')
+                                <h4 id="mode" class="fw-bold text-primary">
+                                    <i class="fas fa-circle text-primary me-1"></i>{{ $controlMode }}
+                                </h4>
+                            @break
+
+                            @case('MANUAL_ON')
+                                <h4 id="mode" class="fw-bold text-success">
+                                    <i class="fas fa-circle text-sucess me-1"></i>{{ $controlMode }}
+                                </h4>
+                            @break
+
+                            @default
+                                <h4 id="mode" class="fw-bold text-danger">
+                                    <i class="fas fa-circle text-danger me-1"></i>{{ $controlMode }}
+                                </h4>
+                        @endswitch
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
                     <div class="p-3 bg-light rounded shadow-sm">
                         <h6 class="text-muted">KIPAS</h6>
-                        <h4 id="fan_status" class="fw-bold text-success">
-                            <i class="fas fa-circle text-success me-1"></i>
-                            @if ($relayState)
+                        @if ($relayState)
+                            <h4 id="fan_status" class="fw-bold text-success">
+                                <i class="fas fa-circle text-success me-1"></i>
                                 {{ 'ON' }}
-                            @else
+                            </h4>
+                        @else
+                            <h4 id="fan_status" class="fw-bold text-danger">
+                                <i class="fas fa-circle text-danger me-1"></i>
                                 {{ 'OFF' }}
-                            @endif
-                        </h4>
+                            </h4>
+                        @endif
                     </div>
                 </div>
             </div>
