@@ -52,19 +52,13 @@ Route::middleware('auth')->group(function () {
             Route::get('/linechart', [StasiunCuacaController::class, 'linechart'])->name('stasiun-cuaca.linechart');
         });
         Route::get('soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');
-    });
-});
-
-Route::prefix('monitoring')->group(function () {
-    Route::get('/solar-dome', [SolarDomeController::class, 'index'])
-        ->name('monitoring.solar-dome');
-});
-
-Route::prefix('monitoring')->group(function () {
-    Route::prefix('lora')->group(function () {
-        // LorawanJob::dispatch();
-        Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
-        Route::get('/export/{date}', [LoraController::class, 'ExportByExcel'])->name('lora-test.export');
+        Route::get('solar-dome', [SolarDomeController::class, 'index'])
+            ->name('monitoring.solar-dome');
+        Route::prefix('lora')->group(function () {
+            // LorawanJob::dispatch();
+            Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
+            Route::get('/export/{date}', [LoraController::class, 'ExportByExcel'])->name('lora-test.export');
+        });
     });
 });
 
