@@ -14,10 +14,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // firestore
         $this->app->singleton('firebase.firestore.wheater_station', function () {
             return new FirestoreClient([
                 'keyFilePath' => config('firebase.credentials.wheater_station'),
             ]);
+        });
+
+        //realtime database
+        $this->app->singleton('firebase.database.solar_dome', function () {
+            return (new \Kreait\Firebase\Factory)
+                ->withServiceAccount(config('firebase.credentials.solar_dome'))
+                ->withDatabaseUri(config('firebase.database.solar_dome'))
+                ->createDatabase();
         });
     }
 
