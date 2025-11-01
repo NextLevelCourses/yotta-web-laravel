@@ -2,10 +2,20 @@
 
 namespace App\Http\Controllers\Monitoring;
 
+use App\ExportDataInterface;
+use App\Exports\SolarDomeExport;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Models\Solar_dome;
+use App\SolarDomeInterface;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
-class SolarDomeController extends Controller
+class SolarDomeController extends Controller implements ExportDataInterface, SolarDomeInterface
 {
     /**
      * Tampilkan halaman monitoring Solar Dome.
@@ -20,5 +30,82 @@ class SolarDomeController extends Controller
         ];
 
         return Auth::check() ? view('monitoring.solar-dome', compact('dummyData')) : redirect()->route('login')->with('error', 'Anda perlu login,silahkan login!');
+    }
+
+    public static function HandleGetDataSolarDome($data, int $key): array|JsonResponse
+    {
+        switch ($key) {
+            case 0:
+                return response()->json(array(
+                    "controlMode" => $data[$key]['controlMode'] ?? 0,
+                    "targetHumidity" => $data[$key]['targetHumidity'] ?? '-',
+                ));
+                break;
+            case 1:
+                return response()->json(array(
+                    "humidity" => $data[$key]['humidity'] ?? 0,
+                    "lastUpdate" => Carbon::createFromTimestamp($data[$key]['lastUpdate'] / 1000, config('app.timezone'))->toDateTimeString() ?? '-',
+                    // "lastUpdate" => $data[$key]['lastUpdate'] ?? '-',
+                    "relayState" => $data[$key]['relayState'] ?? '-',
+                    "temperature" => $data[$key]['temperature'] ?? 0,
+                ));
+            default:
+                return response()->json(array('message' => 'invalid key provided'), 422);
+                break;
+        }
+    }
+
+    public function test_snapshot(Request $request)
+    {
+        $db = app('firebase.database.solar_dome');
+        $snapshot = $db->getReference(config('firebase.database.solar_dome.table'))->getValue();
+
+        $solarDomeData = [];
+        foreach ($snapshot as $data) {
+            array_push($solarDomeData, $data);
+        }
+
+        return $this->HandleGetDataSolarDome($solarDomeData, $request->query('key', 0));
+    }
+
+    public function send_button_control_mode(Request $request)
+    {
+        $db = app('firebase.database.solar_dome');
+        $latest = Solar_dome::latest()->first();
+        $db->getReference(config('firebase.database.solar_dome.table'))->update([
+            'settings' => [
+                'controlMode' => $request->control_mode,
+                'targetHumidity' => $latest->targetHumidity,
+            ],
+        ]);
+
+        return redirect()->route('monitoring.solar-dome')->with('success', 'Control Mode berhasil dikirim ke Solar Dome.');
+    }
+
+    public function send_target_humidity(Request $request)
+    {
+        $db = app('firebase.database.solar_dome');
+        $latest = Solar_dome::latest()->first();
+        $db->getReference(config('firebase.database.solar_dome.table'))->update([
+            'settings' => [
+                'controlMode' => $latest->controlMode,
+                'targetHumidity' => $request->targetHumidity,
+            ],
+        ]);
+
+        return redirect()->route('monitoring.solar-dome')->with('success', 'Target Humidity berhasil dikirim ke Solar Dome.');
+    }
+
+    public function ExportByExcel(string $date): BinaryFileResponse|string
+    {
+        try {
+            $month = substr($date, 5, 2); // hasilnya mm (month) only without yyyy or dd
+            $year = substr($date, 0, 4); // hasilnya yyyy (year) only without mm or dd
+            $now = date('Y-m-d');
+            return Excel::download(new SolarDomeExport($month, $year), "stasiuncuaca_{$now}.xlsx");
+        } catch (\Exception $e) {
+            Log::error('Export error: ' . $e->getMessage());
+            return 'Error exporting data';
+        }
     }
 }

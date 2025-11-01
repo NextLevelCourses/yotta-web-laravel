@@ -52,19 +52,18 @@ Route::middleware('auth')->group(function () {
             Route::get('/linechart', [StasiunCuacaController::class, 'linechart'])->name('stasiun-cuaca.linechart');
         });
         Route::get('soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');
-    });
-});
-
-Route::prefix('monitoring')->group(function () {
-    Route::get('/solar-dome', [SolarDomeController::class, 'index'])
-        ->name('monitoring.solar-dome');
-});
-
-Route::prefix('monitoring')->group(function () {
-    Route::prefix('lora')->group(function () {
-        // LorawanJob::dispatch();
-        Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
-        Route::get('/export/{date}', [LoraController::class, 'ExportByExcel'])->name('lora-test.export');
+        Route::prefix('solar-dome')->group(function () {
+            Route::get('/', [SolarDomeController::class, 'index'])
+                ->name('monitoring.solar-dome');
+            Route::get('/export/{date}', [SolarDomeController::class, 'ExportByExcel'])->name('solar-dome.export');
+            Route::post('/send-button-control-mode', [SolarDomeController::class, 'send_button_control_mode'])->name('solar-dome.send_button_control_mode');
+            Route::post('/send-target-humidity', [SolarDomeController::class, 'send_target_humidity'])->name('solar-dome.send_target_humidity');
+        });
+        Route::prefix('lora')->group(function () {
+            // LorawanJob::dispatch();
+            Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
+            Route::get('/export/{date}', [LoraController::class, 'ExportByExcel'])->name('lora-test.export');
+        });
     });
 });
 
