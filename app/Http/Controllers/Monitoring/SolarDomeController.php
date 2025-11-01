@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\Monitoring;
 
+use App\ExportDataInterface;
+use App\Exports\SolarDomeExport;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-class SolarDomeController extends Controller
+class SolarDomeController extends Controller implements ExportDataInterface
 {
     /**
      * Tampilkan halaman monitoring Solar Dome.
@@ -28,5 +33,18 @@ class SolarDomeController extends Controller
         $snapshot = $db->getReference(config('firebase.database.solar_dome.table'))->getValue();
         // $snapshot = $this->database->getReference($this->table)->getValue();
         return response()->json($snapshot);
+    }
+
+    public function ExportByExcel(string $date): BinaryFileResponse|string
+    {
+        try {
+            $month = substr($date, 5, 2); // hasilnya mm (month) only without yyyy or dd
+            $year = substr($date, 0, 4); // hasilnya yyyy (year) only without mm or dd
+            $now = date('Y-m-d');
+            return Excel::download(new SolarDomeExport($month, $year), "stasiuncuaca_{$now}.xlsx");
+        } catch (\Exception $e) {
+            Log::error('Export error: ' . $e->getMessage());
+            return 'Error exporting data';
+        }
     }
 }
