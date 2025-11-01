@@ -128,56 +128,56 @@
                             type: 'line',
                             smooth: true,
                             data: payload.data.co2,
-                            color: '#9933ff'
+                            color: '#ff6600'
                         },
                         {
                             name: '🧪 NH₃ (ppm)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.nh3,
-                            color: '#009999'
+                            color: '#9933ff'
                         },
                         {
                             name: '🧪 NO₂ (ppm)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.no2,
-                            color: '#009999'
+                            color: '#ff33cc'
                         },
                         {
                             name: '🧪 O₃ (ppm)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.o3,
-                            color: '#009999'
+                            color: '#33ccff'
                         },
                         {
                             name: '🌫️ PM10 (µg/m³)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.pm10,
-                            color: '#009999'
+                            color: '#999999'
                         },
                         {
                             name: '🌫️ PM2.5 (µg/m³)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.pm25,
-                            color: '#009999'
+                            color: '#666666'
                         },
                         {
                             name: '🧪 SO₂ (ppm)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.so2,
-                            color: '#009999'
+                            color: '#cc0000'
                         },
                         {
                             name: '🧪 TVOC (ppb)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.tvoc,
-                            color: '#009999'
+                            color: '#00b3b3'
                         },
 
                     ]
