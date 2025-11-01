@@ -6,12 +6,14 @@ use App\ExportDataInterface;
 use App\Exports\SolarDomeExport;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\SolarDomeInterface;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Carbon\Carbon;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
-class SolarDomeController extends Controller implements ExportDataInterface
+class SolarDomeController extends Controller implements ExportDataInterface, SolarDomeInterface
 {
     /**
      * Tampilkan halaman monitoring Solar Dome.
@@ -28,25 +30,25 @@ class SolarDomeController extends Controller implements ExportDataInterface
         return Auth::check() ? view('monitoring.solar-dome', compact('dummyData')) : redirect()->route('login')->with('error', 'Anda perlu login,silahkan login!');
     }
 
-    private static function HandleGetDataSolarDome($data, int $key): array
+    public static function HandleGetDataSolarDome($data, int $key): array|JsonResponse
     {
         switch ($key) {
             case 0:
-                return array(
+                return response()->json(array(
                     "controlMode" => $data[$key]['controlMode'] ?? 0,
                     "targetHumidity" => $data[$key]['targetHumidity'] ?? '-',
-                );
+                ));
                 break;
             case 1:
-                return array(
+                return response()->json(array(
                     "humidity" => $data[$key]['humidity'] ?? 0,
                     "lastUpdate" => Carbon::createFromTimestamp($data[$key]['lastUpdate'] / 1000, config('app.timezone'))->toDateTimeString() ?? '-',
                     // "lastUpdate" => $data[$key]['lastUpdate'] ?? '-',
                     "relayState" => $data[$key]['relayState'] ?? '-',
                     "temperature" => $data[$key]['temperature'] ?? 0,
-                );
+                ));
             default:
-                return array('message' => 'invalid key provided');
+                return response()->json(array('message' => 'invalid key provided'), 422);
                 break;
         }
     }
@@ -61,7 +63,7 @@ class SolarDomeController extends Controller implements ExportDataInterface
             array_push($solarDomeData, $data);
         }
 
-        return $this->HandleGetDataSolarDome($solarDomeData, 1);
+        return $this->HandleGetDataSolarDome($solarDomeData, 2);
     }
 
     public function ExportByExcel(string $date): BinaryFileResponse|string
