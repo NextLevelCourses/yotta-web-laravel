@@ -15,7 +15,10 @@ return [
     |
     */
 
-    'credentials' => base_path(env('FIREBASE_CREDENTIALS')),
+    'credentials' => [
+        'wheater_station' => base_path(env('FIREBASE_CREDENTIALS_WHEATER_STATION')),
+        'solar_dome' => base_path(env('FIREBASE_CREDENTIALS_SOLAR_DOME'))
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -23,7 +26,8 @@ return [
     |--------------------------------------------------------------------------
     */
     'database' => [
-        'default' => env('FIREBASE_DATABASE_URL', null),
+        'wheater_station' => env('FIREBASE_DATABASE_COLLECTION_WHEATER_STATION', null),
+        'solar_dome' => env('FIREBASE_DATABASE_URL_WHEATER_STATION', null),
     ],
 
     /*

@@ -10,6 +10,12 @@ class SolarDomeController extends Controller
     /**
      * Tampilkan halaman monitoring Solar Dome.
      */
+    private $database, $table;
+    public function __construct()
+    {
+        $this->database = app('firebase.database');
+        $this->table = 'solarDome';
+    }
     public function index()
     {
         // Data dummy (sementara hardcoded)
@@ -20,5 +26,11 @@ class SolarDomeController extends Controller
         ];
 
         return Auth::check() ? view('monitoring.solar-dome', compact('dummyData')) : redirect()->route('login')->with('error', 'Anda perlu login,silahkan login!');
+    }
+
+    public function test_snapshot()
+    {
+        $snapshot = $this->database->getReference($this->table)->getValue();
+        return response()->json($snapshot);
     }
 }

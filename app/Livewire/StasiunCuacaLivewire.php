@@ -8,7 +8,7 @@ use Livewire\Component;
 use App\Models\StasiunCuaca;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Kreait\Firebase\Contract\Firestore;
+use Google\Cloud\Firestore\FirestoreClient;
 
 class StasiunCuacaLivewire extends Component implements GrafikInterface
 {
@@ -88,12 +88,11 @@ class StasiunCuacaLivewire extends Component implements GrafikInterface
     public function fetchData()
     {
         try {
-            /** @var Firestore $firestore */
-            $firestore = app('firebase.firestore');
-            $database = $firestore->database();
+            /** @var FirestoreClient $firestore */
+            $firestore = app('firebase.firestore.wheater_station');
 
             // Ambil dari path: stasiun_cuaca/lates
-            $snapshot = $database->collection('stasiun_cuaca')
+            $snapshot = $firestore->collection(config('firebase.database.wheater_station'))
                 ->document('lates')
                 ->snapshot();
 

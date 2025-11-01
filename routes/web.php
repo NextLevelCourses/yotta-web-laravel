@@ -52,8 +52,12 @@ Route::middleware('auth')->group(function () {
             Route::get('/linechart', [StasiunCuacaController::class, 'linechart'])->name('stasiun-cuaca.linechart');
         });
         Route::get('soil-manag', [SoilManagController::class, 'index'])->name('soil-manag');
-        Route::get('solar-dome', [SolarDomeController::class, 'index'])
-            ->name('monitoring.solar-dome');
+        Route::prefix('solar-dome')->group(function () {
+            Route::get('/', [SolarDomeController::class, 'index'])
+                ->name('monitoring.solar-dome');
+            Route::get('/test-snapshot', [SolarDomeController::class, 'test_snapshot'])
+                ->name('monitoring.solar-dome-test-snapshot');
+        });
         Route::prefix('lora')->group(function () {
             // LorawanJob::dispatch();
             Route::get('/', [LoraController::class, 'index'])->name('monitoring.lora');
