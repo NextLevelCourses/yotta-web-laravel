@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class SolarDomeController extends Controller implements ExportDataInterface, SolarDomeInterface
@@ -53,7 +54,7 @@ class SolarDomeController extends Controller implements ExportDataInterface, Sol
         }
     }
 
-    public function test_snapshot()
+    public function test_snapshot(Request $request)
     {
         $db = app('firebase.database.solar_dome');
         $snapshot = $db->getReference(config('firebase.database.solar_dome.table'))->getValue();
@@ -63,7 +64,7 @@ class SolarDomeController extends Controller implements ExportDataInterface, Sol
             array_push($solarDomeData, $data);
         }
 
-        return $this->HandleGetDataSolarDome($solarDomeData, 2);
+        return $this->HandleGetDataSolarDome($solarDomeData, $request->query('key', 0));
     }
 
     public function ExportByExcel(string $date): BinaryFileResponse|string
