@@ -40,7 +40,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Debug commit message
-        run: echo "Commit message: ${{ github.event.head_commit.message }}"
+        run: | 
+            echo "Commit message: ${{ github.event.head_commit.message }}"
 
       # Step 2: Setup PHP & Composer
       - name: Setup PHP
