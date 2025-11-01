@@ -37,7 +37,8 @@
             </div>
             <div class="card-body">
                 <p class="text-muted">
-                    Berikut adalah data pemantauan cuaca dalam bentuk grafik (suhu, kelembaban, tekanan, curah hujan, kecepatan dan arah angin).
+                    Berikut adalah data pemantauan cuaca dalam bentuk grafik (suhu, kelembaban, tekanan, curah hujan,
+                    kecepatan dan arah angin).
                 </p>
                 <div id="stasiuncuaca-chart" wire:ignore style="height: 400px;"></div>
             </div>
@@ -61,63 +62,124 @@
                 }
 
                 const option = {
-                    tooltip: { trigger: 'axis' },
+                    tooltip: {
+                        trigger: 'axis'
+                    },
                     legend: {
                         data: [
-                            'Suhu (°C)',
-                            'Kelembaban (%)',
-                            'Tekanan (hPa)',
-                            'Curah Hujan (mm)',
-                            'Kecepatan Angin (m/s)',
-                            'Arah Angin (°)'
+                            '🌡️ Suhu Udara (°C)',
+                            '💧 Kelembaban (%)',
+                            '🌦️ Curah Hujan (mm)',
+                            '☀️ Radiasi Matahari (W/m²)',
+                            '💨 CO₂ (ppm)',
+                            '🧪 NH₃ (ppm)',
+                            '🧪 NO₂ (ppm)',
+                            '🧪 O₃ (ppm)',
+                            '🌫️ PM10 (µg/m³)',
+                            '🌫️ PM2.5 (µg/m³)',
+                            '🧪 SO₂ (ppm)',
+                            '🧪 TVOC (ppb)',
                         ]
                     },
-                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                    xAxis: { type: 'category', boundaryGap: false, data: payload.data.labels },
-                    yAxis: { type: 'value' },
-                    series: [
-                        {
-                            name: 'Suhu (°C)',
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: payload.data.labels
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [{
+                            name: '🌡️ Suhu Udara (°C)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.temperature,
                             color: '#f46a6a'
                         },
                         {
-                            name: 'Kelembaban (%)',
+                            name: '💧 Kelembaban (%)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.humidity,
                             color: '#50a5f1'
                         },
                         {
-                            name: 'Tekanan (hPa)',
-                            type: 'line',
-                            smooth: true,
-                            data: payload.data.pressure,
-                            color: '#34c38f'
-                        },
-                        {
-                            name: 'Curah Hujan (mm)',
+                            name: '🌦️ Curah Hujan (mm)',
                             type: 'line',
                             smooth: true,
                             data: payload.data.rainfall,
+                            color: '#34c38f'
+                        },
+                        {
+                            name: '☀️ Radiasi Matahari (W/m²)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.solar,
                             color: '#ffcc00'
                         },
                         {
-                            name: 'Kecepatan Angin (m/s)',
+                            name: '💨 CO₂ (ppm)',
                             type: 'line',
                             smooth: true,
-                            data: payload.data.wind_speed,
+                            data: payload.data.co2,
+                            color: '#ff6600'
+                        },
+                        {
+                            name: '🧪 NH₃ (ppm)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.nh3,
                             color: '#9933ff'
                         },
                         {
-                            name: 'Arah Angin (°)',
+                            name: '🧪 NO₂ (ppm)',
                             type: 'line',
                             smooth: true,
-                            data: payload.data.wind_direction,
-                            color: '#009999'
-                        }
+                            data: payload.data.no2,
+                            color: '#ff33cc'
+                        },
+                        {
+                            name: '🧪 O₃ (ppm)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.o3,
+                            color: '#33ccff'
+                        },
+                        {
+                            name: '🌫️ PM10 (µg/m³)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.pm10,
+                            color: '#999999'
+                        },
+                        {
+                            name: '🌫️ PM2.5 (µg/m³)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.pm25,
+                            color: '#666666'
+                        },
+                        {
+                            name: '🧪 SO₂ (ppm)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.so2,
+                            color: '#cc0000'
+                        },
+                        {
+                            name: '🧪 TVOC (ppb)',
+                            type: 'line',
+                            smooth: true,
+                            data: payload.data.tvoc,
+                            color: '#00b3b3'
+                        },
+
                     ]
                 };
 
