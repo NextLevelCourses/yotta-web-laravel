@@ -56,8 +56,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [SolarDomeController::class, 'index'])
                 ->name('monitoring.solar-dome');
             Route::get('/export/{date}', [SolarDomeController::class, 'ExportByExcel'])->name('solar-dome.export');
-            Route::get('/test-snapshot', [SolarDomeController::class, 'test_snapshot'])
-                ->name('monitoring.solar-dome-test-snapshot');
         });
         Route::prefix('lora')->group(function () {
             // LorawanJob::dispatch();
