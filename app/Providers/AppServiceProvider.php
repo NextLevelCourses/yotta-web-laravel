@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton('firebase.database.solar_dome', function () {
             return (new \Kreait\Firebase\Factory)
                 ->withServiceAccount(config('firebase.credentials.solar_dome'))
-                ->withDatabaseUri(config('firebase.database.solar_dome'))
+                ->withDatabaseUri(config('firebase.database.solar_dome.host'))
                 ->createDatabase();
         });
     }
