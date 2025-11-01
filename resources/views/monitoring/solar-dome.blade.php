@@ -2,7 +2,11 @@
 
 @section('content')
     <div class="container-fluid py-4">
-
+        @session('success')
+            <div class="alert alert-success" role="alert">
+                {{ $value }}
+            </div>
+        @endsession
         <div class="d-flex align-items-center justify-content-between mb-4">
             <h5 class="m-0 text-muted">Monitoring / <span class="fw-bold text-primary">Solar Dome
             </h5>
@@ -34,13 +38,15 @@
                 <form action="{{ route('solar-dome.send_button_control_mode') }}" method="post">
                     @csrf
                     <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                        <button id="modeAutoBtn" name="auto" class="btn btn-info text-white fw-bold px-4" value="AUTO">
+                        <button id="modeAutoBtn" name="control_mode" class="btn btn-info text-white fw-bold px-4"
+                            value="AUTO">
                             <i class="fas fa-robot me-1"></i> Mode AUTO
                         </button>
-                        <button id="manualOnBtn" name="manual_on" class="btn btn-success fw-bold px-4" value="MANUAL_ON">
+                        <button id="manualOnBtn" name="control_mode" class="btn btn-success fw-bold px-4" value="MANUAL_ON">
                             <i class="fas fa-play me-1"></i> Manual ON
                         </button>
-                        <button id="manualOffBtn" name="manual_off" class="btn btn-danger fw-bold px-4" value="MANUAL_OFF">
+                        <button id="manualOffBtn" name="control_mode" class="btn btn-danger fw-bold px-4"
+                            value="MANUAL_OFF">
                             <i class="fas fa-stop me-1"></i> Manual OFF
                         </button>
                     </div>

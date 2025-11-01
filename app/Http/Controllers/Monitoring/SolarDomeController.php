@@ -6,6 +6,7 @@ use App\ExportDataInterface;
 use App\Exports\SolarDomeExport;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Models\Solar_dome;
 use App\SolarDomeInterface;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -69,12 +70,30 @@ class SolarDomeController extends Controller implements ExportDataInterface, Sol
 
     public function send_button_control_mode(Request $request)
     {
-        dd($request->all());
+        $db = app('firebase.database.solar_dome');
+        $latest = Solar_dome::latest()->first();
+        $db->getReference(config('firebase.database.solar_dome.table'))->update([
+            'settings' => [
+                'controlMode' => $request->control_mode,
+                'targetHumidity' => $latest->targetHumidity,
+            ],
+        ]);
+
+        return redirect()->route('monitoring.solar-dome')->with('success', 'Control Mode berhasil dikirim ke Solar Dome.');
     }
 
     public function send_target_humidity(Request $request)
     {
-        dd($request->all());
+        $db = app('firebase.database.solar_dome');
+        $latest = Solar_dome::latest()->first();
+        $db->getReference(config('firebase.database.solar_dome.table'))->update([
+            'settings' => [
+                'controlMode' => $latest->controlMode,
+                'targetHumidity' => $request->targetHumidity,
+            ],
+        ]);
+
+        return redirect()->route('monitoring.solar-dome')->with('success', 'Target Humidity berhasil dikirim ke Solar Dome.');
     }
 
     public function ExportByExcel(string $date): BinaryFileResponse|string
