@@ -9,7 +9,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 class StasiunCuacaExport implements FromCollection, WithHeadings, WithMapping
 {
-     /**
+    /**
      * @return \Illuminate\Support\Collection
      */
     protected $month, $year;
@@ -26,8 +26,8 @@ class StasiunCuacaExport implements FromCollection, WithHeadings, WithMapping
     {
         return StasiunCuaca::whereMonth('tanggal', $this->month)
             ->whereYear('tanggal', $this->year)
-            ->orderBy('tanggal', 'asc')
-            ->orderBy('jam', 'asc')
+            ->orderByDesc('tanggal')
+            ->orderByDesc('jam')
             ->get();
     }
 
@@ -37,22 +37,21 @@ class StasiunCuacaExport implements FromCollection, WithHeadings, WithMapping
     public function map($data): array
     {
         return [
-            $data->id,
-            $data->device_id,
-            $data->tanggal,
-            $data->jam,
-            $data->temperature,
-            $data->humidity,
-            $data->rainfall,
-            $data->solar_radiation,
-            $data->co2,
-            $data->nh3,
-            $data->no2,
-            $data->o3,
-            $data->pm10,
-            $data->pm25,
-            $data->so2,
-            $data->tvoc,
+            $data->tanggal ?? '0000-00-00',
+            $data->jam ?? '00:00',
+            $data->device_id ?? 'Unknown Device',
+            $data->temperature ? $data->temperature : '0',
+            $data->humidity ? $data->humidity : '0',
+            $data->rainfall ? $data->rainfall : '0',
+            $data->solar_radiation ? $data->solar_radiation : '0',
+            $data->co2 ? $data->co2 : '0',
+            $data->nh3 ? $data->nh3 : '0',
+            $data->no2 ? $data->no2 : '0',
+            $data->o3 ? $data->o3 : '0',
+            $data->pm10 ? $data->pm10 : '0',
+            $data->pm25 ? $data->pm25 : '0',
+            $data->so2 ? $data->so2 : '0',
+            $data->tvoc ? $data->tvoc : '0',
         ];
     }
 
@@ -62,10 +61,9 @@ class StasiunCuacaExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            'ID',
-            'Device ID',
             'Tanggal',
             'Jam',
+            'Device ID',
             'Temperature (°C)',
             'Humidity (%)',
             'Rainfall (mm)',

@@ -98,7 +98,7 @@ class StasiunCuacaLivewire extends Component implements GrafikInterface
                 ->snapshot();
 
             // Ambil label grafik dari database lokal
-            $chart_label = $this->HandleGetDataGrafik('tanggal', 'id', 'desc');
+            $chart_label = $this->HandleGetDataGrafik('created_at', 'id', 'desc');
 
             // ===== Jika Data Sensor Ada =====
             if ($snapshot->exists()) {
@@ -133,7 +133,7 @@ class StasiunCuacaLivewire extends Component implements GrafikInterface
                 $labels = array_map(function ($date) {
                     return is_string($date)
                         ? $date
-                        : ($date instanceof Carbon ? $date->format('Y-m-d') : (string) $date);
+                        : ($date instanceof Carbon ? $date->format('Y-m-d H:i:s') : (string) $date);
                 }, $chart_label);
 
                 // Kirim data ke frontend (JS chart)

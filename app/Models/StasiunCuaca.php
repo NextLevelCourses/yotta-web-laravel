@@ -28,6 +28,6 @@ class StasiunCuaca extends Model
     ];
 
     protected $casts = [
-        'measured_at' => 'datetime',
+        'created_at' => 'datetime',
     ];
 }
