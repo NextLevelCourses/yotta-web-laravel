@@ -92,7 +92,7 @@ class StasiunCuacaLivewire extends Component implements GrafikInterface
             $firestore = app('firebase.firestore.wheater_station');
 
             // Ambil dari path: stasiun_cuaca/lates
-            $snapshot = $firestore->collection(config('firebase.database.wheater_station'))
+            $snapshot = $firestore->collection(config('firebase.database.wheater_station.table'))
                 ->document('lates')
                 ->snapshot();
 

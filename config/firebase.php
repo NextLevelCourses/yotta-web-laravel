@@ -26,8 +26,13 @@ return [
     |--------------------------------------------------------------------------
     */
     'database' => [
-        'wheater_station' => env('FIREBASE_DATABASE_COLLECTION_WHEATER_STATION', null),
-        'solar_dome' => env('FIREBASE_DATABASE_URL_WHEATER_STATION', null),
+        'wheater_station' => [
+            'table' => env('FIREBASE_DATABASE_COLLECTION_WHEATER_STATION', null)
+        ],
+        'solar_dome' => [
+            'host' => env('FIREBASE_DATABASE_URL_WHEATER_STATION', null),
+            'table' => env('FIREBASE_DATABASE_TABLE_WHEATER_STATION', null)
+        ],
     ],
 
     /*

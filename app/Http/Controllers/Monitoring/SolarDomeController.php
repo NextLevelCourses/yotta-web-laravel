@@ -10,11 +10,6 @@ class SolarDomeController extends Controller
     /**
      * Tampilkan halaman monitoring Solar Dome.
      */
-    private $table;
-    public function __construct()
-    {
-        $this->table = 'solarDome';
-    }
     public function index()
     {
         // Data dummy (sementara hardcoded)
@@ -30,7 +25,7 @@ class SolarDomeController extends Controller
     public function test_snapshot()
     {
         $db = app('firebase.database.solar_dome');
-        $snapshot = $db->getReference($this->table)->getValue();
+        $snapshot = $db->getReference(config('firebase.database.solar_dome.table'))->getValue();
         // $snapshot = $this->database->getReference($this->table)->getValue();
         return response()->json($snapshot);
     }
