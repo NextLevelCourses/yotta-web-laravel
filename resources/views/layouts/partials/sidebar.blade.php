@@ -40,7 +40,7 @@
                         </li>
                         <li>
                             <a href="{{ route('soil-test') }}" data-key="t-soil-monitoring">
-                                Soil Test
+                                Soil Monitoring
                             </a>
                         </li>
                         <li>

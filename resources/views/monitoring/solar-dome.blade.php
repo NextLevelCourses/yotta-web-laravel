@@ -26,7 +26,7 @@
 
         {{-- Komponen Livewire --}}
         <livewire:solar-dome-livewire />
-
+        @if (Auth::user()->isAdmin())
         {{-- Kontrol Manual --}}
         <div class="card shadow-lg border-0 rounded-3 mb-4">
             <div class="card-body">
@@ -64,7 +64,7 @@
                 </form>
             </div>
         </div>
-
+        @endif
     </div>
 @endsection
 
