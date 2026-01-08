@@ -1,0 +1,497 @@
+version: 2.1
+
+# ================================================================
+# 🧩 REUSABLE COMMANDS
+# Common commands that can be reused across jobs
+# ================================================================
+commands:
+  # ---- Login to DockerHub using access token ----
+  docker-login:
+    description: "Login to DockerHub securely"
+    steps:
+      - run:
+          name: DockerHub Login
+          command: |
+            set -euo pipefail
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+  # ---- Application health verification (HTTP 200) ----
+  health-check:
+    description: "Verify Application Health (HTTP 200) from inside container"
+    steps:
+      - run:
+          name: Health Check
+          command: |
+            set -euo pipefail
+
+            # ---- Resolve dashboard container ID ----
+            DASH_CID="$(docker compose ps -q dashboard)"
+            echo "💓 Checking Health inside container (CID=$DASH_CID)..."
+            INTERNAL_PORT=8002
+
+            # ---- Retry health endpoint until success or timeout ----
+            for i in {1..12}; do
+              STATUS="$(docker exec "$DASH_CID" sh -lc "curl -s -o /dev/null -w '%{http_code}' http://localhost:$INTERNAL_PORT/health || echo 000")"
+              if [ "$STATUS" = "200" ]; then
+                echo "✅ Health Check Passed (200 OK)"
+                exit 0
+              fi
+              echo "⏳ Waiting for service... (Status: $STATUS) (try $i/12)"
+              sleep 5
+            done
+
+            # ---- Dump logs when health check fails ----
+            echo "❌ Health Check Failed after retries."
+            docker compose logs --tail=80 dashboard || true
+            exit 1
+
+# ================================================================
+# 🚀 JOBS
+# CI/CD jobs definition
+# ================================================================
+jobs:
+
+  # ==============================================================
+  # 🧪 TESTING JOB
+  # - Build containers
+  # - Run migrations
+  # - Validate app health
+  # ==============================================================
+  Testing:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      # ---- Checkout source code ----
+      - checkout
+
+      # ---- Enable Docker daemon inside CircleCI ----
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # ---- Prepare CI .env configuration ----
+      - run:
+          name: Setup CI Environment (.env)
+          command: |
+            set -euo pipefail
+            cp .env.example .env
+
+            sed -i 's/^DB_HOST=.*/DB_HOST=mysql/' .env || true
+            sed -i 's/^DB_PORT=.*/DB_PORT=3306/' .env || true
+            sed -i 's/^DB_DATABASE=.*/DB_DATABASE=yotta_db/' .env || true
+            sed -i 's/^DB_USERNAME=.*/DB_USERNAME=yotta/' .env || true
+            sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=yotta_pass/' .env || true
+
+            # ---- CI-only environment variables ----
+            echo "MYSQL_ROOT_PASSWORD=root" >> .env
+            echo "DOCKERHUB_REPO=local/yotta-dashboard" >> .env
+            echo "IMAGE_TAG=ci" >> .env
+
+      # ---- Build images and start all services ----
+      - run:
+          name: Build & Start Docker (CI)
+          command: |
+            set -euo pipefail
+            export DOCKERHUB_REPO="local/yotta-dashboard"
+            export IMAGE_TAG="ci"
+
+            docker compose up -d --build
+
+            # ---- Wait until MySQL is ready to accept connections ----
+            echo "⏳ Waiting for MySQL to be ready..."
+            MYSQL_CID="$(docker compose ps -q mysql)"
+
+            READY=0
+            for i in {1..30}; do
+              if docker exec "$MYSQL_CID" sh -lc 'mysqladmin ping -h localhost -p"$MYSQL_ROOT_PASSWORD" --silent'; then
+                READY=1
+                echo "✅ MySQL is ready"
+                break
+              fi
+              echo "⏳ MySQL not ready yet... (try $i/30)"
+              sleep 2
+            done
+
+            if [ "$READY" -ne 1 ]; then
+              echo "❌ MySQL did not become ready in time"
+              docker compose logs --tail=120 mysql || true
+              exit 1
+            fi
+
+      #  ---- Wait DB reachable from dashboard (PDO probe) ----
+      - run:
+          name: Wait DB reachable from dashboard (PDO probe)
+          command: |
+            set -euo pipefail
+            DASH_CID="$(docker compose ps -q dashboard)"
+
+            echo "⏳ Waiting DB reachable from dashboard..."
+            for i in {1..40}; do
+              if docker exec "$DASH_CID" sh -lc 'php -r "
+                $host=getenv(\"DB_HOST\")?:\"mysql\";
+                $port=getenv(\"DB_PORT\")?:\"3306\";
+                $db=getenv(\"DB_DATABASE\")?:\"yotta_db\";
+                $u=getenv(\"DB_USERNAME\")?:\"yotta\";
+                $p=getenv(\"DB_PASSWORD\")?:\"yotta_pass\";
+                try {
+                  new PDO(\"mysql:host=$host;port=$port;dbname=$db\", $u, $p, [
+                    PDO::ATTR_TIMEOUT => 2,
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                  ]);
+                  exit(0);
+                } catch (Exception $e) {
+                  exit(1);
+                }
+              "' >/dev/null 2>&1; then
+                echo "✅ DB reachable from dashboard"
+                exit 0
+              fi
+              echo "⏳ DB not reachable yet... (try $i/40)"
+              sleep 2
+            done
+
+            echo "❌ DB not reachable from dashboard after retries"
+            docker compose logs --tail=120 mysql || true
+            docker compose logs --tail=120 dashboard || true
+            exit 1
+
+
+
+
+      # ---- Laravel validation (key generation & migrations) ----
+      - run:
+          name: Validate Laravel
+          command: |
+            set -euo pipefail
+            DASH_CID="$(docker compose ps -q dashboard)"
+            docker exec "$DASH_CID" sh -lc 'php artisan key:generate --force'
+            docker exec "$DASH_CID" sh -lc 'php artisan migrate --force --no-interaction'
+
+      # ---- Final application health verification ----
+      - health-check
+
+
+  # ==============================================================
+  # 📦 BUILD & PUSH IMAGE
+  # Builds Docker image and pushes to DockerHub
+  # ==============================================================
+  Push-To-Docker:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - docker-login
+
+      - run:
+          name: Build & Push
+          command: |
+            set -euo pipefail
+
+            # ---- Prefer git tag, fallback to commit SHA ----
+            if [ -n "${CIRCLE_TAG:-}" ]; then
+              RAW_TAG="${CIRCLE_TAG}"
+            else
+              RAW_TAG="sha-${CIRCLE_SHA1:0:7}"
+            fi
+
+            # ---- Sanitize tag to be Docker-compatible ----
+            SAFE_TAG="$(echo "${RAW_TAG}" | sed 's/[^a-zA-Z0-9._-]/-/g')"
+            echo "${SAFE_TAG}" > /tmp/image_tag.txt
+
+            echo "🚀 Building & pushing image:"
+            echo "   - ${DOCKERHUB_REPO}:${SAFE_TAG}"
+            echo "   - ${DOCKERHUB_REPO}:latest"
+
+            # ---- Build image with versioned and latest tags ----
+            docker build -t "${DOCKERHUB_REPO}:${SAFE_TAG}" -t "${DOCKERHUB_REPO}:latest" -f dockerfile .
+            docker push "${DOCKERHUB_REPO}:${SAFE_TAG}"
+            docker push "${DOCKERHUB_REPO}:latest"
+
+      - persist_to_workspace:
+          root: /tmp
+          paths:
+            - image_tag.txt
+
+  # ==============================================================
+  # 🚀 DEPLOY TO STAGING SERVER
+  # Smart deployment with minimal downtime
+  # ==============================================================
+  Deploy-Staging:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp
+
+      # ---- SSH key for server access ----
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:B0nVmApbymFWeHvPvtf1dWL0GFbsKiNrijvoITT7VH0"
+
+      # ---- Trust target server SSH fingerprint ----
+      - run:
+          name: Prepare known_hosts
+          command: |
+            set -euo pipefail
+            mkdir -p ~/.ssh
+            timeout 10 ssh-keyscan -H "$SERVER_IP" >> ~/.ssh/known_hosts
+
+      # ---- Generate environment file for staging ----
+      - run:
+          name: Create .env.staging (file to upload)
+          command: |
+            set -euo pipefail
+            IMAGE_TAG="$(cat /tmp/image_tag.txt)"
+            APP_KEY="base64:$(openssl rand -base64 32)"
+
+            # ---- Create environment file consumed by docker-compose ----
+            cat > /tmp/.env.staging \<<EOF
+            APP_NAME=YottaDashboard
+            APP_ENV=production
+            APP_DEBUG=false
+            APP_URL=http://${SERVER_IP}
+            APP_KEY=${APP_KEY}
+
+            DB_CONNECTION=mysql
+            DB_HOST=mysql
+            DB_PORT=3306
+            DB_DATABASE=${DB_DATABASE}
+            DB_USERNAME=${DB_USERNAME}
+            DB_PASSWORD=${DB_PASSWORD}
+
+            MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+
+            DOCKERHUB_REPO=${DOCKERHUB_REPO}
+            IMAGE_TAG=${IMAGE_TAG}
+            EOF
+
+      # ---- Upload docker-compose and env files ----
+      - run:
+          name: Upload Deployment Files
+          command: |
+            set -euo pipefail
+            scp docker-compose.yml "$SERVER_USER@$SERVER_IP:/tmp/docker-compose.yml"
+            scp /tmp/.env.staging "$SERVER_USER@$SERVER_IP:/tmp/.env.staging"
+            scp makefile "$SERVER_USER@$SERVER_IP:/tmp/makefile" || true
+
+
+      # ---- Execute deployment logic remotely via SSH ----
+      # Run "smart deployment" on the staging server
+      - run:
+          name: Execute Smart Deployment
+          command: |
+            set -euo pipefail
+            IMAGE_TAG="$(cat /tmp/image_tag.txt)"
+
+            # ---- Encode DockerHub token to safely pass via SSH ----
+            DOCKERHUB_TOKEN_B64="$(printf '%s' "$DOCKERHUB_TOKEN" | base64 | tr -d '\n')"
+
+            # ---- Run deployment script on server ----
+            ssh "$SERVER_USER@$SERVER_IP" \
+              "DOCKERHUB_USERNAME='$DOCKERHUB_USERNAME' DOCKERHUB_TOKEN_B64='$DOCKERHUB_TOKEN_B64' DOCKERHUB_REPO='$DOCKERHUB_REPO' IMAGE_TAG='$IMAGE_TAG' bash -s" \<<'EOSH'
+            set -euo pipefail
+
+            # ---- Deployment directory & log file ----
+            BASE_DIR="/home/ubuntu/dev-yotta"
+            LOG_FILE="$BASE_DIR/deploy.log"
+
+            # ---- Prepare directories and move uploaded files ----
+            mkdir -p "$BASE_DIR"
+            mv /tmp/docker-compose.yml "$BASE_DIR/docker-compose.yml"
+            [ -f /tmp/makefile ] && mv /tmp/makefile "$BASE_DIR/makefile" || true
+            cd "$BASE_DIR"
+
+            echo "--- Deployment started at $(date -Is) ---" | tee -a "$LOG_FILE"
+
+            # ---- Verify docker and docker compose exist ----
+            command -v docker >/dev/null || { echo "❌ Docker missing" | tee -a "$LOG_FILE"; exit 1; }
+            docker compose version >/dev/null || { echo "❌ docker compose v2 missing" | tee -a "$LOG_FILE"; exit 1; }
+
+            # ---- SMART DETECT: fresh vs existing deployment ----
+            # HAS_ENV  : true if .env file exists
+            # HAS_DASH : true if dashboard container running
+            # IS_FRESH : first-time deployment if either missing
+            HAS_ENV=false; [ -f .env ] && HAS_ENV=true
+
+            HAS_DASH=false
+            CID="$(docker compose ps -q dashboard 2>/dev/null || true)"
+            if [ -n "$CID" ] && docker inspect -f '{{.State.Running}}' "$CID" 2>/dev/null | grep -q true; then
+              HAS_DASH=true
+            fi
+
+            IS_FRESH=false
+            if [ "$HAS_ENV" = false ] || [ "$HAS_DASH" = false ]; then IS_FRESH=true; fi
+
+            # ---- Handle .env file based on deployment type ----
+            if [ "$IS_FRESH" = true ]; then
+              echo "🆕 FRESH SERVER DETECTED" | tee -a "$LOG_FILE"
+              mv /tmp/.env.staging .env
+              chmod 600 .env
+            else
+              echo "🔄 EXISTING SERVER DETECTED" | tee -a "$LOG_FILE"
+              rm -f /tmp/.env.staging || true
+            fi
+
+            # ---- DockerHub login ----
+            DOCKERHUB_TOKEN="$(printf '%s' "$DOCKERHUB_TOKEN_B64" | base64 -d)"
+            echo "🔐 DockerHub login..." | tee -a "$LOG_FILE"
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin >/dev/null
+            unset DOCKERHUB_TOKEN DOCKERHUB_TOKEN_B64
+
+            export DOCKERHUB_REPO="$DOCKERHUB_REPO"
+            export IMAGE_TAG="$IMAGE_TAG"
+
+            # ---- Pull latest dashboard image ----
+            echo "📥 Pulling dashboard image ${DOCKERHUB_REPO}:${IMAGE_TAG}" | tee -a "$LOG_FILE"
+            docker compose pull dashboard | tee -a "$LOG_FILE"
+
+            # ---- Start containers ----
+            if [ "$IS_FRESH" = true ]; then
+              echo "🚀 Starting full stack..." | tee -a "$LOG_FILE"
+              docker compose up -d --no-build | tee -a "$LOG_FILE"
+            else
+              echo "♻️ Recreating dashboard only (DB stays up)..." | tee -a "$LOG_FILE"
+              docker compose up -d --no-build --no-deps --force-recreate dashboard | tee -a "$LOG_FILE"
+            fi
+
+            # ---- Wait for MySQL to be ready ----
+            echo "⏳ Waiting for MySQL..." | tee -a "$LOG_FILE"
+            MYSQL_CID="$(docker compose ps -q mysql)"
+            READY=0
+            for i in {1..40}; do
+              if docker exec "$MYSQL_CID" sh -lc 'mysqladmin ping -h localhost -p"$MYSQL_ROOT_PASSWORD" --silent'; then
+                READY=1
+                echo "✅ MySQL ready" | tee -a "$LOG_FILE"
+                break
+              fi
+              echo "⏳ MySQL not ready (try $i/40)" | tee -a "$LOG_FILE"
+              sleep 3
+            done
+
+            if [ "$READY" -ne 1 ]; then
+              echo "❌ MySQL did not become ready" | tee -a "$LOG_FILE"
+              docker compose logs --tail=200 mysql | tee -a "$LOG_FILE" || true
+              exit 1
+            fi
+
+            # --- WAIT DB REACHABLE FROM DASHBOARD (PDO probe) ---
+            echo "⏳ Waiting DB reachable from dashboard..." | tee -a "$LOG_FILE"
+            DASH_CID="$(docker compose ps -q dashboard)"
+
+            for i in {1..40}; do
+              if docker exec "$DASH_CID" sh -lc 'php -r "
+                $host=getenv(\"DB_HOST\")?:\"mysql\";
+                $port=getenv(\"DB_PORT\")?:\"3306\";
+                $db=getenv(\"DB_DATABASE\")?:\"yotta_db\";
+                $u=getenv(\"DB_USERNAME\")?:\"yotta\";
+                $p=getenv(\"DB_PASSWORD\")?:\"yotta_pass\";
+                try {
+                  new PDO(\"mysql:host=$host;port=$port;dbname=$db\", $u, $p, [
+                    PDO::ATTR_TIMEOUT => 2,
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                  ]);
+                  exit(0);
+                } catch (Exception $e) {
+                  exit(1);
+                }
+              "' >/dev/null 2>&1; then
+                echo "✅ DB reachable from dashboard" | tee -a "$LOG_FILE"
+                break
+              fi
+
+              echo "⏳ DB not reachable yet... (try $i/40)" | tee -a "$LOG_FILE"
+              sleep 2
+            done
+
+            # Final check: fail if still not reachable
+            if ! docker exec "$DASH_CID" sh -lc 'php -r "
+              $host=getenv(\"DB_HOST\")?:\"mysql\";
+              $port=getenv(\"DB_PORT\")?:\"3306\";
+              $db=getenv(\"DB_DATABASE\")?:\"yotta_db\";
+              $u=getenv(\"DB_USERNAME\")?:\"yotta\";
+              $p=getenv(\"DB_PASSWORD\")?:\"yotta_pass\";
+              try { new PDO(\"mysql:host=$host;port=$port;dbname=$db\", $u, $p); exit(0); }
+              catch (Exception $e) { exit(1); }
+            "'; then
+              echo "❌ DB still not reachable from dashboard" | tee -a "$LOG_FILE"
+              docker compose logs --tail=200 mysql | tee -a "$LOG_FILE" || true
+              docker compose logs --tail=200 dashboard | tee -a "$LOG_FILE" || true
+              exit 1
+            fi
+
+            # ---- Run database migrations ----
+            echo "🔧 Running migrations..." | tee -a "$LOG_FILE"
+            docker compose exec -T dashboard php artisan migrate --force --no-interaction | tee -a "$LOG_FILE"
+
+            # ---- Clear cache and optimize Laravel ----
+            echo "🧹 optimize:clear" | tee -a "$LOG_FILE"
+            docker compose exec -T dashboard php artisan optimize:clear | tee -a "$LOG_FILE"
+
+            # ---- Health check for dashboard ----
+            echo "💓 Final health check..." | tee -a "$LOG_FILE"
+            DASH_CID="$(docker compose ps -q dashboard)"
+            INTERNAL_PORT=8002
+
+            for i in {1..12}; do
+              STATUS="$(docker exec "$DASH_CID" sh -lc "curl -s -o /dev/null -w '%{http_code}' http://localhost:$INTERNAL_PORT/health || echo 000")"
+              if [ "$STATUS" = "200" ]; then
+                echo "✅ Deployment SUCCESS" | tee -a "$LOG_FILE"
+                exit 0
+              fi
+              echo "⏳ Health status=$STATUS (try $i/12)" | tee -a "$LOG_FILE"
+              sleep 5
+            done
+
+            # ---- Fail deployment if health check fails ----
+            echo "❌ Deployment FAILED Health Check" | tee -a "$LOG_FILE"
+            docker compose logs --tail=200 dashboard | tee -a "$LOG_FILE" || true
+            exit 1
+            EOSH
+
+# ================================================================
+# 🔄 WORKFLOWS
+# Branch & tag based pipelines
+# ================================================================
+workflows:
+  version: 2
+
+  # ---- Development branch pipeline ----
+  dev-pipeline:
+    jobs:
+      - Testing:
+          context: [dockerhub]
+          filters:
+            branches: { only: development }
+            tags: { ignore: /.*/ }
+
+      - Push-To-Docker:
+          context: [dockerhub]
+          requires: [Testing]
+          filters:
+            branches: { only: development }
+            tags: { ignore: /.*/ }
+
+      - Deploy-Staging:
+          context: [deploy_server, dockerhub]
+          requires: [Push-To-Docker]
+          filters:
+            branches: { only: development }
+            tags: { ignore: /.*/ }
+
+  # ---- Release pipeline (git tags) ----
+  release-pipeline:
+    jobs:
+      - Testing:
+          context: [dockerhub]
+          filters:
+            tags: { only: /^v.*/ }
+            branches: { ignore: /.*/ }
+
+      - Push-To-Docker:
+          context: [dockerhub]
+          requires: [Testing]
+          filters:
+            tags: { only: /^v.*/ }
+            branches: { ignore: /.*/ }
